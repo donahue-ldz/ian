@@ -1,0 +1,8 @@
+{
+  "expressions": {
+    "calm": { "overlay": null },
+    "happy": { "overlay": null },
+    "sleepy": { "overlay": null },
+    "wronged": { "overlay": null }
+  }
+}

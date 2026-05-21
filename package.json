@@ -1,0 +1,14 @@
+{
+  "name": "ian",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "desktop:dev": "npm run dev --workspace @ian/desktop",
+    "desktop:build": "npm run build --workspace @ian/desktop",
+    "desktop:typecheck": "npm run typecheck --workspace @ian/desktop",
+    "desktop:test": "npm run test --workspace @ian/desktop",
+    "desktop:tauri": "npm run tauri --workspace @ian/desktop"
+  }
+}

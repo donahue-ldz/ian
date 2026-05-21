@@ -6,7 +6,7 @@
 
 ## 状态
 
-草稿，等待用户确认。
+已确认，已执行到当前 P0 骨架验证边界；剩余后续项是类型生成链路和拖拽重启端到端验证。
 
 ## 概要
 
@@ -48,7 +48,7 @@
 
 3. 定义协议层。
    - 添加 Rust `IanEvent`、`IanAction`、`IanState`。
-   - 使用 `ts-rs` 添加 TypeScript 生成路径，或添加有明确标注的临时 generated file。
+   - 使用 `ts-rs` 添加 TypeScript 生成路径；在 Rust 工具链不可用时添加有明确标注的临时 generated file。
    - 保持 Rust 作为协议源头。
 
 4. 构建最小 Rust Core Runtime。
@@ -67,7 +67,7 @@
 6. 添加默认 Resource Pack。
    - 创建 `public/resources/pets/ian-alpaca`。
    - 添加 `pet.json`、`animations.json`、`expressions.json`。
-   - 添加 placeholder visual asset，或记录临时 placeholder renderer。
+   - 添加 placeholder visual asset，并记录临时 placeholder renderer。
 
 7. 构建前端 renderer。
    - 添加 `IanStage`、`IanSprite`、`AnimationPlayer`、`Bubble` 和最小 state hooks。
@@ -152,4 +152,3 @@ npm run tauri dev
 - 回滚 SDD packet 对应实现改动。
 
 除非产品方向变化，否则保留 SDD 文档。
-

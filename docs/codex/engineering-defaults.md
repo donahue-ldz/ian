@@ -97,6 +97,7 @@ Use risk-based verification.
 - Bug fixes should include the smallest regression test when practical.
 - New features should cover the main path, key edge cases, and likely failure paths.
 - Use existing test tools and style.
+- For frontend or desktop-visible behavior changes, run a Playwright-based local verification pass when practical. Cover the main visible path, key interaction state changes, and browser console errors, then record the result in the relevant `verification.md`.
 - Run the smallest relevant verification command before claiming completion.
 - If verification cannot run, explain why, what was checked instead, and the remaining risk.
 
@@ -146,4 +147,3 @@ Do not log secrets or high-volume noise.
 - For complex topics, give the conclusion first and details second.
 - For code changes, explain what changed, why, and how to verify.
 - For blocked work, state the blocker and next step.
-

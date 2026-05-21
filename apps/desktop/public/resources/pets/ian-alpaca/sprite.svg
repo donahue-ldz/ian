@@ -1,0 +1,158 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="96" viewBox="0 0 1344 96" role="img" aria-label="Ian alpaca sprite sheet">
+  <defs>
+    <style>
+      .shadow { fill: #29352f; opacity: 0.16; }
+      .wool { fill: #f4f1e8; stroke: #5a6b60; stroke-width: 3; }
+      .face { fill: none; stroke: #314138; stroke-width: 2; stroke-linecap: round; }
+      .eye { fill: #314138; }
+      .cheek { fill: #f0b7a4; opacity: 0.5; }
+    </style>
+    <g id="body">
+      <rect class="wool" x="20" y="38" width="50" height="34" rx="17"/>
+      <rect class="wool" x="58" y="22" width="28" height="34" rx="12"/>
+      <rect class="wool" x="62" y="5" width="9" height="24" rx="5" transform="rotate(-12 66 17)"/>
+      <rect class="wool" x="76" y="6" width="9" height="24" rx="5" transform="rotate(10 80 18)"/>
+    </g>
+    <g id="face-smile">
+      <circle class="eye" cx="67" cy="37" r="2.5"/>
+      <circle class="eye" cx="78" cy="37" r="2.5"/>
+      <path class="face" d="M69 47q4 4 8 0"/>
+    </g>
+    <g id="face-sleep">
+      <path class="face" d="M64 37h6"/>
+      <path class="face" d="M75 37h6"/>
+      <path class="face" d="M70 47q3 2 6 0"/>
+    </g>
+    <g id="face-happy">
+      <path class="face" d="M64 36q3 3 6 0"/>
+      <path class="face" d="M75 36q3 3 6 0"/>
+      <path class="face" d="M68 46q5 7 10 0"/>
+      <circle class="cheek" cx="64" cy="43" r="3"/>
+      <circle class="cheek" cx="82" cy="43" r="3"/>
+    </g>
+    <g id="legs-neutral">
+      <rect class="wool" x="28" y="66" width="9" height="18" rx="4"/>
+      <rect class="wool" x="54" y="66" width="9" height="18" rx="4"/>
+    </g>
+    <g id="legs-left">
+      <rect class="wool" x="24" y="66" width="9" height="18" rx="4" transform="rotate(8 28 75)"/>
+      <rect class="wool" x="58" y="66" width="9" height="18" rx="4" transform="rotate(-10 62 75)"/>
+    </g>
+    <g id="legs-right">
+      <rect class="wool" x="30" y="66" width="9" height="18" rx="4" transform="rotate(-10 34 75)"/>
+      <rect class="wool" x="52" y="66" width="9" height="18" rx="4" transform="rotate(8 56 75)"/>
+    </g>
+    <g id="idle-a">
+      <ellipse class="shadow" cx="46" cy="82" rx="30" ry="7"/>
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </defs>
+
+  <use href="#idle-a" x="0"/>
+  <g transform="translate(96 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="29" ry="6"/>
+    <g transform="translate(0 -2)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+
+  <g transform="translate(192 0)">
+    <ellipse class="shadow" cx="46" cy="82" rx="30" ry="7"/>
+    <use href="#body"/>
+    <use href="#face-smile"/>
+    <use href="#legs-left"/>
+  </g>
+  <g transform="translate(288 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="27" ry="6"/>
+    <g transform="translate(2 -2)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+  <g transform="translate(384 0)">
+    <ellipse class="shadow" cx="46" cy="82" rx="30" ry="7"/>
+    <use href="#body"/>
+    <use href="#face-smile"/>
+    <use href="#legs-right"/>
+  </g>
+  <g transform="translate(480 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="27" ry="6"/>
+    <g transform="translate(-2 -2)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+
+  <g transform="translate(576 0)">
+    <ellipse class="shadow" cx="46" cy="82" rx="30" ry="7"/>
+    <g transform="translate(0 3)">
+      <use href="#body"/>
+      <use href="#face-sleep"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+  <g transform="translate(672 0)">
+    <ellipse class="shadow" cx="46" cy="82" rx="31" ry="7"/>
+    <g transform="translate(0 4) rotate(-4 52 50)">
+      <use href="#body"/>
+      <use href="#face-sleep"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+
+  <g transform="translate(768 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="28" ry="6"/>
+    <g transform="rotate(-4 48 54)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-left"/>
+    </g>
+  </g>
+  <g transform="translate(864 0)">
+    <ellipse class="shadow" cx="46" cy="84" rx="25" ry="5"/>
+    <g transform="translate(4 -4) rotate(3 48 54)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+  <g transform="translate(960 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="28" ry="6"/>
+    <g transform="rotate(4 48 54)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-right"/>
+    </g>
+  </g>
+  <g transform="translate(1056 0)">
+    <ellipse class="shadow" cx="46" cy="84" rx="25" ry="5"/>
+    <g transform="translate(-4 -4) rotate(-3 48 54)">
+      <use href="#body"/>
+      <use href="#face-smile"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+
+  <g transform="translate(1152 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="27" ry="6"/>
+    <g transform="translate(0 -5) rotate(-3 48 54)">
+      <use href="#body"/>
+      <use href="#face-happy"/>
+      <use href="#legs-left"/>
+    </g>
+  </g>
+  <g transform="translate(1248 0)">
+    <ellipse class="shadow" cx="46" cy="84" rx="25" ry="5"/>
+    <g transform="translate(1 -8) rotate(4 48 54)">
+      <use href="#body"/>
+      <use href="#face-happy"/>
+      <use href="#legs-right"/>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,271 @@
+.ian-stage {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  background: transparent;
+  user-select: none;
+}
+
+.ian-creature-surface {
+  position: relative;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  transition: transform 120ms ease;
+}
+
+.ian-click-target {
+  position: absolute;
+  top: 22px;
+  left: 14px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 192px;
+  height: 192px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  outline: 1px solid rgba(90, 107, 96, 0.16);
+  cursor: grab;
+  -webkit-app-region: no-drag;
+}
+
+.ian-click-target:active {
+  cursor: grabbing;
+}
+
+.ian-click-target:focus-visible {
+  outline: 2px solid rgba(90, 107, 96, 0.28);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+
+.ian-bubble {
+  position: absolute;
+  right: 18px;
+  bottom: 176px;
+  z-index: 2;
+  max-width: 144px;
+  padding: 8px 10px;
+  border: 1px solid rgba(69, 86, 76, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #26322c;
+  font-size: 13px;
+  line-height: 1.35;
+  box-shadow: 0 10px 28px rgba(28, 34, 30, 0.14);
+  animation: bubble-in 160ms ease-out;
+  pointer-events: none;
+}
+
+.ian-bubble::after {
+  position: absolute;
+  right: 28px;
+  bottom: -6px;
+  width: 10px;
+  height: 10px;
+  border-right: 1px solid rgba(69, 86, 76, 0.18);
+  border-bottom: 1px solid rgba(69, 86, 76, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  content: "";
+  transform: rotate(45deg);
+}
+
+.ian-sprite {
+  position: relative;
+  display: block;
+  width: 116px;
+  height: 112px;
+  animation: ian-idle 1600ms ease-in-out infinite;
+  transform-origin: 50% 85%;
+}
+
+.ian-sprite--asset {
+  width: 192px;
+  height: 192px;
+}
+
+.ian-sprite-frame {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background-repeat: no-repeat;
+  image-rendering: auto;
+  pointer-events: none;
+}
+
+.ian-shadow {
+  position: absolute;
+  left: 20px;
+  bottom: 6px;
+  width: 76px;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(52, 58, 54, 0.16);
+}
+
+.ian-body,
+.ian-head,
+.ian-ear,
+.ian-leg {
+  position: absolute;
+  background: #f4f1e8;
+  border: 3px solid #5a6b60;
+}
+
+.ian-body {
+  left: 18px;
+  bottom: 20px;
+  width: 78px;
+  height: 58px;
+  border-radius: 48% 48% 38% 38%;
+}
+
+.ian-head {
+  right: 6px;
+  bottom: 50px;
+  width: 46px;
+  height: 48px;
+  border-radius: 44% 44% 38% 38%;
+}
+
+.ian-ear {
+  top: 2px;
+  width: 14px;
+  height: 36px;
+  border-radius: 10px 10px 6px 6px;
+  transform-origin: bottom center;
+}
+
+.ian-ear-left {
+  right: 36px;
+  transform: rotate(-14deg);
+}
+
+.ian-ear-right {
+  right: 12px;
+  transform: rotate(10deg);
+}
+
+.ian-face {
+  position: absolute;
+  right: 14px;
+  bottom: 64px;
+  width: 30px;
+  height: 20px;
+}
+
+.ian-eye {
+  position: absolute;
+  top: 2px;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: #314138;
+}
+
+.ian-eye-left {
+  left: 4px;
+}
+
+.ian-eye-right {
+  right: 4px;
+}
+
+.ian-mouth {
+  position: absolute;
+  left: 10px;
+  bottom: 1px;
+  width: 10px;
+  height: 5px;
+  border-bottom: 2px solid #314138;
+  border-radius: 0 0 999px 999px;
+}
+
+.ian-leg {
+  bottom: 12px;
+  width: 13px;
+  height: 26px;
+  border-radius: 8px;
+}
+
+.ian-leg-left {
+  left: 34px;
+}
+
+.ian-leg-right {
+  left: 72px;
+}
+
+.ian-sprite[data-animation="happy"] {
+  animation: ian-happy 700ms ease-in-out infinite;
+}
+
+.ian-sprite[data-animation="walk"] {
+  animation: ian-walk 520ms ease-in-out infinite;
+}
+
+.ian-sprite[data-animation="run"] {
+  animation: ian-run 260ms ease-in-out infinite;
+}
+
+.ian-sprite[data-animation="sleep"] .ian-eye {
+  height: 2px;
+  border-radius: 0;
+}
+
+@keyframes bubble-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ian-idle {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes ian-happy {
+  0%,
+  100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  50% {
+    transform: rotate(4deg) translateY(-8px);
+  }
+}
+
+@keyframes ian-walk {
+  0%,
+  100% {
+    transform: translateX(-3px);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes ian-run {
+  0%,
+  100% {
+    transform: translateX(-7px) rotate(-2deg);
+  }
+  50% {
+    transform: translateX(7px) rotate(2deg);
+  }
+}

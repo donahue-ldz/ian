@@ -2,7 +2,7 @@
 
 ## 状态
 
-草稿，等待用户确认。
+已确认，已实现到当前 P0 骨架验证边界。
 
 ## 背景
 
@@ -234,6 +234,5 @@ Security skeleton 应存在，但 P0 不应请求高敏权限。
 
 ## 开放问题
 
-- P0 第一版视觉应使用生成的 placeholder sprite sheet、简单 CSS creature，还是最小 checked-in bitmap asset？
-- BYOM provider 实现是否完全延后到 v0.1.x，P0 只保留 dialogue provider boundary？
-
+- Rust -> TypeScript 类型生成链路仍需接通，当前 `generated.ts` 是已标注 placeholder。
+- 位置持久化需要补一次拖拽后重启的端到端验证记录。
