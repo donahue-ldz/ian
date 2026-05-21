@@ -41,11 +41,10 @@ impl DialogueEngine {
             source,
             mood,
             bond,
-            day_phase: state.day_phase.clone(),
-            interaction_count: 0,
-            recent_activity_level: "none".to_string(),
         };
-        let reply = self.policy.apply(self.provider.reply(&text, &context));
+        let reply = self
+            .policy
+            .trim_for_bubble(self.provider.reply(&text, &context));
 
         vec![
             IanAction::BubbleOpen,
@@ -85,7 +84,6 @@ mod tests {
             assert!(matches!(context.current_behavior, CurrentBehavior::Idle));
             assert!(matches!(context.mood, MoodState::Happy));
             assert!(matches!(context.bond, BondStateView::GettingCloser));
-            assert_eq!(context.day_phase, "day");
             "我正在安静地陪你待一会儿。".to_string()
         }
     }
@@ -112,27 +110,6 @@ mod tests {
         assert!(actions.iter().any(|action| matches!(
             action,
             IanAction::AnimationPlay { name, .. } if name == "happy"
-        )));
-    }
-
-    #[test]
-    fn demo_dialogue_uses_life_context_without_network() {
-        let engine = DialogueEngine::default();
-        let mut state = IanState::default();
-        state.current_animation = "sleep".to_string();
-        state.day_phase = "night".to_string();
-
-        let actions = engine.reply_to(
-            "你在吗".to_string(),
-            &state,
-            DialogueSource::UserBubble,
-            MoodState::Calm,
-            BondStateView::Familiar,
-        );
-
-        assert!(actions.iter().any(|action| matches!(
-            action,
-            IanAction::SpeechShow { text, .. } if text.contains("小声")
         )));
     }
 }

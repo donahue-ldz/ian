@@ -1,12 +1,6 @@
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import type {
-  IanAction,
-  IanEvent,
-  MovementSpeed,
-  Position,
-} from "../protocol/generated";
+import { useCallback, useEffect, useState } from "react";
+import type { IanEvent, Position } from "../protocol/generated";
 import { getIanState, saveIanPosition, sendIanEvent } from "../lib/tauriBridge";
-import { moveDesktopWindow } from "../lib/position";
 import {
   createInitialIanViewState,
   expireRunAroundIfNeeded,
@@ -19,8 +13,8 @@ export function useIanActions() {
     createInitialIanViewState(),
   );
 
-  const applyActions = useCallback((actions: IanAction[]) => {
-    void applyActionSequence(actions, setViewState);
+  const applyActions = useCallback((actions: Parameters<typeof reduceIanActions>[1]) => {
+    setViewState((current) => reduceIanActions(current, actions));
   }, []);
 
   useEffect(() => {
@@ -62,33 +56,4 @@ export function useIanActions() {
     sendEvent,
     savePosition,
   };
-}
-
-async function applyActionSequence(
-  actions: IanAction[],
-  setViewState: Dispatch<SetStateAction<IanViewState>>,
-) {
-  for (const action of actions) {
-    setViewState((current) => reduceIanActions(current, [action]));
-
-    if (action.type === "movement.move_to") {
-      await moveDesktopWindow({ x: action.x, y: action.y });
-      await delay(durationForSpeed(action.speed));
-    }
-  }
-}
-
-function durationForSpeed(speed: MovementSpeed): number {
-  switch (speed) {
-    case "fast":
-      return 180;
-    case "slow":
-      return 420;
-    default:
-      return 280;
-  }
-}
-
-function delay(durationMs: number): Promise<void> {
-  return new Promise((resolve) => window.setTimeout(resolve, durationMs));
 }

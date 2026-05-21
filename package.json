@@ -9,7 +9,6 @@
     "desktop:build": "npm run build --workspace @ian/desktop",
     "desktop:typecheck": "npm run typecheck --workspace @ian/desktop",
     "desktop:test": "npm run test --workspace @ian/desktop",
-    "desktop:acceptance": "npm run desktop:test && npm run desktop:typecheck && npm run desktop:build && cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml",
     "desktop:tauri": "npm run tauri --workspace @ian/desktop"
   }
 }

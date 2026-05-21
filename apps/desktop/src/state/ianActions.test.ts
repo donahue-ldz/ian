@@ -37,18 +37,6 @@ describe("reduceIanActions", () => {
     expect(next.runAroundUntil).toBe(2800);
   });
 
-  it("records the latest movement target from Rust Core movement actions", () => {
-    const actions: IanAction[] = [
-      { type: "movement.move_to", x: 24, y: 36, speed: "normal" },
-    ];
-
-    const next = reduceIanActions(createInitialIanViewState(), actions, 1000);
-
-    expect(next.position).toEqual({ x: 24, y: 36 });
-    expect(next.movementTarget).toEqual({ x: 24, y: 36, speed: "normal" });
-    expect(next.lastMovementAt).toBe(1000);
-  });
-
   it("returns to idle after run-around duration expires", () => {
     const running = reduceIanActions(
       createInitialIanViewState(),

@@ -1,0 +1,12 @@
+{
+  "id": "ian-kitten",
+  "name": "Ian Kitten",
+  "version": "0.1.0",
+  "species": "cat",
+  "defaultPersonality": "gentle_playful",
+  "sprite": "sprite.svg",
+  "animations": "animations.json",
+  "expressions": "expressions.json",
+  "sounds": "sounds/",
+  "capabilities": ["idle", "walk", "sleep", "run", "happy"]
+}

@@ -13,8 +13,6 @@
 | 2026-05-21 | 用户确认后安装 Rust stable toolchain 并继续 Tauri 验证。 | `cargo check` 和 Tauri dev 是 0001 的必要验证。 | Rust/Cargo 已可用；Tauri dev 已能启动 `ian_desktop`。 |
 | 2026-05-21 | 为 Tauri dev 添加有效 `src-tauri/icons/icon.png` 并启用 `app.macOSPrivateApi=true`。 | Tauri 运行期需要有效图标；macOS 透明窗口需要 private API 配置。 | 修复 Tauri setup panic，并支持 P0 透明窗口目标。 |
 | 2026-05-21 | 人工验收后将窗口从临时居中 360x360 调回右下角 260x260。 | 临时居中用于解决“找不到窗口”的验收问题；收尾需要回到 P0 常驻桌面形态。 | 产品形态仍在右下角，保留淡色轮廓以降低不可见风险。 |
-| 2026-05-21 | Ian 拖拽只在 pointer 移动超过阈值后开始并捕获 pointer。 | 验收发现父级 surface 在 pointer down 立即捕获，导致真实 click / double-click 不落到 Ian button。 | 普通点击和双击回到 `button[aria-label="Ian"]`，拖拽仍在明显移动后生效。 |
-| 2026-05-21 | 启动位置优先使用已保存 position，默认 `0,0` 继续视为未保存并回退右下角。 | 既要完成拖动后重启恢复，也不能让首次启动出现在左上角。 | Rust window setup 和前端 state 加载都会应用已保存位置；首次启动仍保持右下角默认形态。 |
 
 ## 范围变化
 

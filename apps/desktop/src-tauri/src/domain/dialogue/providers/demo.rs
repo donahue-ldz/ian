@@ -9,10 +9,6 @@ impl DialogueProvider for DemoDialogueProvider {
     fn reply(&self, text: &str, context: &DialogueContext) -> String {
         let lowered = text.to_lowercase();
 
-        if context.day_phase == "night" {
-            return "小声陪你。".to_string();
-        }
-
         if lowered.contains("water") || text.contains('水') {
             return "喝水水。".to_string();
         }

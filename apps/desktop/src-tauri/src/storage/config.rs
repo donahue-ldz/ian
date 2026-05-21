@@ -3,23 +3,13 @@ use std::{fs, io, path::Path};
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
 
-use crate::protocol::{BehaviorMode, IanState, Position, QuietHours};
+use crate::protocol::{BehaviorMode, IanState, Position};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigFile {
     app: AppConfig,
     behavior: BehaviorConfig,
-    #[serde(default)]
-    reminder: ReminderConfig,
-    #[serde(default)]
-    capabilities: CapabilityConfig,
     position: Position,
-    #[serde(default)]
-    home_anchor: Option<Position>,
-    #[serde(default)]
-    quiet_hours: QuietHours,
-    #[serde(default)]
-    creature: CreatureConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -31,47 +21,6 @@ struct AppConfig {
 #[derive(Debug, Serialize, Deserialize)]
 struct BehaviorConfig {
     mode: BehaviorMode,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct CreatureConfig {
-    movement_intensity: String,
-    bubble_frequency: String,
-    rest_behavior: String,
-    surface_scale: f64,
-    diagnostics_enabled: bool,
-}
-
-impl Default for CreatureConfig {
-    fn default() -> Self {
-        Self {
-            movement_intensity: "normal".to_string(),
-            bubble_frequency: "normal".to_string(),
-            rest_behavior: "normal".to_string(),
-            surface_scale: 1.0,
-            diagnostics_enabled: true,
-        }
-    }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct ReminderConfig {
-    enabled: bool,
-}
-
-impl Default for ReminderConfig {
-    fn default() -> Self {
-        Self { enabled: true }
-    }
-}
-
-#[derive(Debug, Default, Serialize, Deserialize)]
-struct CapabilityConfig {
-    byom_enabled: bool,
-    git_metadata_enabled: bool,
-    build_test_events_enabled: bool,
-    keyboard_rhythm_enabled: bool,
-    active_app_presence_enabled: bool,
 }
 
 pub fn ian_app_dir() -> io::Result<std::path::PathBuf> {
@@ -140,11 +89,11 @@ mod tests {
 
         let state = load_state(dir.path()).expect("load recovered state");
 
-        assert_eq!(state.active_pet_id, "ian-alpaca");
+        assert_eq!(state.active_pet_id, "ian-kitten");
         assert_eq!(state.position.x, 0.0);
         assert!(fs::read_to_string(dir.path().join("config.toml"))
             .expect("read recovered config")
-            .contains("ian-alpaca"));
+            .contains("ian-kitten"));
     }
 
     #[test]
@@ -152,77 +101,14 @@ mod tests {
         let dir = tempdir().expect("temp dir");
         let mut state = IanState::default();
         state.position = Position { x: 44.0, y: 88.0 };
-        state.home_anchor = Position { x: 40.0, y: 80.0 };
         state.behavior_mode = BehaviorMode::Lively;
-        state.reminders_enabled = false;
-        state.quiet_hours.enabled = true;
-        state.quiet_hours.start_minute = 22 * 60;
-        state.quiet_hours.end_minute = 7 * 60;
-        state.movement_intensity = "low".to_string();
-        state.bubble_frequency = "quiet".to_string();
-        state.rest_behavior = "restful".to_string();
-        state.surface_scale = 1.2;
-        state.diagnostics_enabled = false;
 
         persist_state(dir.path(), &state).expect("persist state");
         let loaded = load_state(dir.path()).expect("load state");
 
         assert_eq!(loaded.position.x, 44.0);
         assert_eq!(loaded.position.y, 88.0);
-        assert_eq!(loaded.home_anchor.x, 40.0);
-        assert_eq!(loaded.home_anchor.y, 80.0);
         assert!(matches!(loaded.behavior_mode, BehaviorMode::Lively));
-        assert!(!loaded.reminders_enabled);
-        assert!(loaded.quiet_hours.enabled);
-        assert_eq!(loaded.quiet_hours.start_minute, 22 * 60);
-        assert_eq!(loaded.quiet_hours.end_minute, 7 * 60);
-        assert_eq!(loaded.movement_intensity, "low");
-        assert_eq!(loaded.bubble_frequency, "quiet");
-        assert_eq!(loaded.rest_behavior, "restful");
-        assert_eq!(loaded.surface_scale, 1.2);
-        assert!(!loaded.diagnostics_enabled);
-    }
-
-    #[test]
-    fn quiet_hours_support_cross_midnight_and_disabled_state() {
-        let mut state = IanState::default();
-        state.quiet_hours.enabled = true;
-        state.quiet_hours.start_minute = 22 * 60;
-        state.quiet_hours.end_minute = 7 * 60;
-
-        assert!(state.quiet_hours.is_active_at_minute(23 * 60));
-        assert!(state.quiet_hours.is_active_at_minute(6 * 60 + 30));
-        assert!(!state.quiet_hours.is_active_at_minute(12 * 60));
-
-        state.quiet_hours.enabled = false;
-        assert!(!state.quiet_hours.is_active_at_minute(23 * 60));
-    }
-
-    #[test]
-    fn load_state_defaults_reminders_enabled_for_older_config() {
-        let dir = tempdir().expect("temp dir");
-        fs::write(
-            dir.path().join("config.toml"),
-            r#"
-[app]
-active_pet = "ian-alpaca"
-active_resource_pack = "ian-alpaca"
-
-[behavior]
-mode = "normal"
-
-[position]
-x = 12.0
-y = 24.0
-"#,
-        )
-        .expect("write older config");
-
-        let loaded = load_state(dir.path()).expect("load old config");
-
-        assert!(loaded.reminders_enabled);
-        assert_eq!(loaded.home_anchor.x, 12.0);
-        assert_eq!(loaded.home_anchor.y, 24.0);
     }
 }
 
@@ -236,26 +122,7 @@ impl From<IanState> for ConfigFile {
             behavior: BehaviorConfig {
                 mode: state.behavior_mode,
             },
-            reminder: ReminderConfig {
-                enabled: state.reminders_enabled,
-            },
-            capabilities: CapabilityConfig {
-                byom_enabled: state.byom_enabled,
-                git_metadata_enabled: state.git_metadata_enabled,
-                build_test_events_enabled: state.build_test_events_enabled,
-                keyboard_rhythm_enabled: state.keyboard_rhythm_enabled,
-                active_app_presence_enabled: state.active_app_presence_enabled,
-            },
             position: state.position,
-            home_anchor: Some(state.home_anchor),
-            quiet_hours: state.quiet_hours,
-            creature: CreatureConfig {
-                movement_intensity: state.movement_intensity,
-                bubble_frequency: state.bubble_frequency,
-                rest_behavior: state.rest_behavior,
-                surface_scale: state.surface_scale,
-                diagnostics_enabled: state.diagnostics_enabled,
-            },
         }
     }
 }
@@ -266,25 +133,9 @@ impl From<ConfigFile> for IanState {
             active_pet_id: config.app.active_pet,
             current_behavior: Default::default(),
             current_animation: "idle".to_string(),
-            position: config.position.clone(),
+            position: config.position,
             active_resource_pack: config.app.active_resource_pack,
             behavior_mode: config.behavior.mode,
-            reminders_enabled: config.reminder.enabled,
-            byom_enabled: config.capabilities.byom_enabled,
-            git_metadata_enabled: config.capabilities.git_metadata_enabled,
-            build_test_events_enabled: config.capabilities.build_test_events_enabled,
-            keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
-            active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
-            home_anchor: config.home_anchor.unwrap_or(config.position),
-            quiet_hours: config.quiet_hours,
-            movement_intensity: config.creature.movement_intensity,
-            bubble_frequency: config.creature.bubble_frequency,
-            rest_behavior: config.creature.rest_behavior,
-            surface_scale: config.creature.surface_scale,
-            diagnostics_enabled: config.creature.diagnostics_enabled,
-            day_phase: "day".to_string(),
-            is_dragging: false,
-            is_bubble_input_active: false,
         }
     }
 }

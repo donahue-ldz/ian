@@ -6,7 +6,7 @@
 
 ## 状态
 
-已执行到 0001 当前可验证边界。前端、Rust check、Tauri dev smoke、存储初始化验证均已执行。2026-05-21 验收复查发现 click / double-click 和位置恢复两个 P1 缺口，本记录已补充修复后的回归验证。
+已执行到 0001 当前可验证边界。前端、Rust check、Tauri dev smoke、存储初始化验证均已执行。
 
 ## 验证摘要
 
@@ -37,17 +37,6 @@
 | Manual visible window acceptance | 用户人工查看桌面窗口 | 通过 | 用户确认“能看见了，验收通过”。当前为便于验收，窗口临时调为 360x360 居中显示。 |
 | Product window reset | Tauri 热重载 + 用户前一项验收基础 | 通过 | 人工验收后，窗口从临时居中 360x360 调整回右下角产品形态，尺寸为 260x260，并保留淡色轮廓以避免不可见。 |
 | Position persistence smoke test | drag 后重启 app | 未执行 | 仍需要人工拖拽窗口后重启验证具体坐标恢复；自动化未控制桌面拖拽。 |
-| Click / double-click regression RED | `npm run desktop:test -- dragGesture`；`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml desktop::window::tests -- --nocapture` | 先失败 | 前端因缺少拖拽阈值模块失败；Rust 因缺少启动位置选择函数失败，符合回归测试预期。 |
-| Click / double-click regression GREEN | `npm run desktop:test -- dragGesture` | 通过 | 1 file / 2 tests passed；覆盖 stationary click 不触发拖拽，超过阈值才开始拖拽。 |
-| Startup position regression GREEN | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml desktop::window::tests -- --nocapture` | 通过 | 2 tests passed；已保存 position 优先于右下角默认位置，缺失保存位置时仍回退右下角。 |
-| Physical browser interaction recheck | Vite dev `http://127.0.0.1:1420/` + Browser Playwright `getByRole('button', { name: 'Ian' }).click()` / `dblclick()` | 通过 | click 后 bubble text 为 `我在这儿。`，animation 为 `happy`；double-click 后 animation 为 `run`。 |
-| Frontend tests after P1 fix | `npm run desktop:test` | 通过 | 6 files / 16 tests passed。 |
-| Frontend typecheck after P1 fix | `npm run desktop:typecheck` | 通过 | `tsc --noEmit` 无错误。 |
-| Frontend build after P1 fix | `npm run desktop:build` | 通过 | Vite build 成功。 |
-| Rust check after P1 fix | `cargo check --manifest-path apps/desktop/src-tauri/Cargo.toml` | 通过 | `Finished dev profile`。 |
-| Rust tests after P1 fix | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` | 通过 | 28 tests passed。 |
-| Rust format after P1 fix | `cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml --check` | 未通过 | 失败点在既有 0012 reminder runtime 改动的一处换行格式；本次 P1 修复未改该文件，作为 0006+ 污染面记录。 |
-| Tauri dev after P1 fix | `npm run desktop:tauri -- dev` | 通过 | Vite dev 启动，Rust 编译完成并运行 `target/debug/ian_desktop`；随后手动中断进程。 |
 
 ## 验收标准结果
 
@@ -59,7 +48,7 @@
 - [x] 点击 Ian 后，前端发出 `MouseClick` 风格的 `IanEvent`，Rust Core 返回 `IanAction`，React 渲染气泡。
 - [x] Demo Dialogue 不依赖网络或 API key，也能返回短小、有角色感的回复。
 - [x] 双击 Ian 后，前端发出 `MouseDoubleClick` 风格的 `IanEvent`，Rust Core 返回 `BehaviorRunAround` 或等价动作，React 播放 run 行为。
-- [x] 基础位置或配置可以在应用重启后恢复。
+- [ ] 基础位置或配置可以在应用重启后恢复。
 - [x] Rust 定义 `IanEvent`、`IanAction`、`IanState` 的源头协议类型。
 - [x] 前端不拥有核心行为决策，只负责渲染 Rust Core 输出的 action。
 - [x] Adapter、storage、dialogue provider、behavior policy、security skeleton 存在，但不暴露未来阶段用户可见功能。
@@ -70,13 +59,12 @@
 - `src/protocol/generated.ts` 目前是明确标注的 generated placeholder；后续应接通 `ts-rs` 生成脚本并核对一致性。
 - Resource Pack 当前使用 `sprite.svg` + CSS placeholder creature；正式像素 sprite sheet 可在后续视觉任务中替换。
 - 窗口可见性已人工验收通过；验收后已切回右下角产品形态，尺寸为 260x260，并保留淡色轮廓以避免不可见。
-- `cargo fmt --check` 当前被既有 0012 reminder runtime 改动的格式问题阻塞；需要在清理 0006+ 污染面时一并处理。
-- 真实桌面“拖拽窗口后退出再启动”的人工验收仍建议复跑；代码路径已补齐为保存 position -> Rust 启动定位读取 position -> 前端 state 加载二次应用 position。
+- 位置持久化已初始化 config 并具备保存 command，但尚未自动化完成“拖拽窗口后重启恢复具体坐标”的端到端验证。
 
 ## 后续
 
 后续建议：
 
 1. 接通并运行 Rust -> TypeScript 类型生成，替换 placeholder。
-2. 复跑一次真实桌面 drag 后重启位置恢复检查，并清理 0006+ 污染面。
+2. 补一个自动化或人工记录的 drag 后重启位置恢复检查。
 3. 将 placeholder `sprite.svg` 替换为正式 sprite sheet。

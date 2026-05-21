@@ -53,24 +53,6 @@ impl StorageService {
             .record(event.event_type(), event)
             .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
     }
-
-    pub fn record_life_event(
-        &self,
-        event_type: &str,
-        payload_json: &str,
-        created_at_ms: i64,
-    ) -> io::Result<()> {
-        let Some(app_dir) = &self.app_dir else {
-            return Ok(());
-        };
-
-        let database = db::Database::open(app_dir)?;
-        let repository =
-            repositories::life_event_repo::LifeEventRepository::new(database.connection());
-        repository
-            .record(event_type, payload_json, created_at_ms)
-            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
-    }
 }
 
 #[cfg(test)]

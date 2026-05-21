@@ -19,11 +19,7 @@ pub fn run() {
             desktop::commands::get_ian_state,
             desktop::commands::save_window_position,
             desktop::commands::get_settings,
-            desktop::commands::save_behavior_mode,
-            desktop::commands::save_quiet_hours,
-            desktop::commands::save_creature_settings,
-            desktop::commands::save_reminders_enabled,
-            desktop::commands::save_capability_enabled
+            desktop::commands::save_behavior_mode
         ])
         .setup(|app| {
             desktop::window::configure_main_window(app)?;

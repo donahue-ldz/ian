@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
+import kittenAnimations from "../../public/resources/pets/ian-kitten/animations.json";
+import kittenExpressions from "../../public/resources/pets/ian-kitten/expressions.json";
+import kittenPet from "../../public/resources/pets/ian-kitten/pet.json";
 import {
   getResourcePackVersion,
-  resolveExpressionWithFallback,
+  type AnimationManifest,
   resolveAnimationWithFallback,
-  validatePetManifestFields,
   validatePetResourcePack,
   type PetResourcePack,
 } from "./resourceLoader";
@@ -31,12 +33,7 @@ const pack: PetResourcePack = {
       sleep: { frames: [4], fps: 1, loop: true },
     },
   },
-  expressions: {
-    expressions: {
-      idle: { overlay: null },
-      happy: { overlay: "blush" },
-    },
-  },
+  expressions: { expressions: {} },
 };
 
 describe("resourceLoader contract", () => {
@@ -64,18 +61,35 @@ describe("resourceLoader contract", () => {
     expect(resolveAnimationWithFallback(pack, "run")).toBe("run");
   });
 
-  it("resolves expressions with an idle fallback", () => {
-    expect(resolveExpressionWithFallback(pack, "happy")).toEqual({
-      overlay: "blush",
-    });
-    expect(resolveExpressionWithFallback(pack, "curious")).toEqual({
-      overlay: null,
-    });
-  });
+  it("validates the checked-in kitten resource pack contract", () => {
+    const kittenPack: PetResourcePack = {
+      pet: kittenPet,
+      animations: kittenAnimations,
+      expressions: kittenExpressions,
+    };
 
-  it("reports concrete manifest field errors for resource authors", () => {
-    expect(() =>
-      validatePetManifestFields({ ...pack.pet, animations: "" }),
-    ).toThrow("pet.animations");
+    validatePetResourcePack(kittenPack);
+
+    expect(kittenPack.pet.id).toBe("ian-kitten");
+    expect(kittenPack.pet.species).toBe("cat");
+    expect(kittenPack.pet.sprite).toBe("sprite.svg");
+    expect(getSpriteFrameCount(kittenPack.animations)).toBe(14);
+    expect(Object.keys(kittenPack.animations.animations).sort()).toEqual([
+      "happy",
+      "idle",
+      "run",
+      "sleep",
+      "walk",
+    ]);
   });
 });
+
+function getSpriteFrameCount(manifest: AnimationManifest): number {
+  const maxFrame = Math.max(
+    ...Object.values(manifest.animations).flatMap(
+      (animation) => animation.frames,
+    ),
+  );
+
+  return maxFrame + 1;
+}

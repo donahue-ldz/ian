@@ -76,7 +76,7 @@
   top: 42px;
   right: 8px;
   z-index: 4;
-  width: 196px;
+  width: 176px;
   padding: 10px;
   border: 1px solid rgba(69, 86, 76, 0.18);
   border-radius: 8px;
@@ -103,48 +103,6 @@
 
 .ian-settings-row {
   margin-top: 10px;
-}
-
-.ian-settings-toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 10px;
-  gap: 8px;
-}
-
-.ian-settings-time-row,
-.ian-settings-select-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.ian-settings-time-row input,
-.ian-settings-select-row select {
-  min-width: 0;
-  height: 24px;
-  border: 1px solid rgba(69, 86, 76, 0.2);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #26322c;
-  font: inherit;
-}
-
-.ian-settings-toggle-row input {
-  width: 16px;
-  height: 16px;
-  accent-color: #5a6b60;
-}
-
-.ian-settings-capabilities {
-  display: grid;
-  gap: 4px;
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(90, 107, 96, 0.12);
 }
 
 .ian-segmented {

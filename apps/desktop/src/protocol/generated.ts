@@ -5,17 +5,10 @@ export type AnimationName = "idle" | "walk" | "happy" | "run" | "sleep";
 export type MovementSpeed = "slow" | "normal" | "fast";
 export type CurrentBehavior = "idle" | "walking" | "happy" | "running" | "sleeping";
 export type BehaviorMode = "quiet" | "normal" | "lively";
-export type BuildTestStatus = "success" | "failure";
 
 export type Position = {
   x: number;
   y: number;
-};
-
-export type QuietHours = {
-  enabled: boolean;
-  start_minute: number;
-  end_minute: number;
 };
 
 export type IanState = {
@@ -25,22 +18,6 @@ export type IanState = {
   position: Position;
   active_resource_pack: string;
   behavior_mode: BehaviorMode;
-  reminders_enabled: boolean;
-  byom_enabled: boolean;
-  git_metadata_enabled: boolean;
-  build_test_events_enabled: boolean;
-  keyboard_rhythm_enabled: boolean;
-  active_app_presence_enabled: boolean;
-  home_anchor: Position;
-  quiet_hours: QuietHours;
-  movement_intensity: string;
-  bubble_frequency: string;
-  rest_behavior: string;
-  surface_scale: number;
-  diagnostics_enabled: boolean;
-  day_phase: string;
-  is_dragging: boolean;
-  is_bubble_input_active: boolean;
 };
 
 export type IanEvent =
@@ -48,35 +25,10 @@ export type IanEvent =
   | { type: "time.tick"; now_ms: number }
   | { type: "mouse.click"; x: number; y: number }
   | { type: "mouse.double_click"; x: number; y: number }
-  | { type: "mouse.near"; x: number; y: number; now_ms: number }
-  | { type: "mouse.leave"; x: number; y: number }
+  | { type: "mouse.near"; x: number; y: number }
   | { type: "mouse.drag_start"; x: number; y: number }
   | { type: "mouse.drag_end"; x: number; y: number }
-  | { type: "dialogue.user_message"; text: string }
-  | { type: "bubble.input_started" }
-  | { type: "bubble.input_ended" }
-  | {
-      type: "developer.git_status_changed";
-      branch: string;
-      dirty: boolean;
-      short_commit: string;
-    }
-  | {
-      type: "developer.build_test_summary";
-      tool: string;
-      status: BuildTestStatus;
-      duration_ms: number;
-      tests_total: number;
-      tests_failed: number;
-      error_kind?: string | null;
-    }
-  | { type: "keyboard.rhythm"; window_ms: number; intensity: string; count: number }
-  | {
-      type: "active_app.presence";
-      category: string;
-      confidence: number;
-      app_id?: string | null;
-    };
+  | { type: "dialogue.user_message"; text: string };
 
 export type IanAction =
   | { type: "animation.play"; name: AnimationName; looped: boolean }

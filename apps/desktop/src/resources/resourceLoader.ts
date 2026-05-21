@@ -66,20 +66,6 @@ export async function loadPetResourcePack(id: string): Promise<PetResourcePack> 
 }
 
 export function validatePetResourcePack(pack: PetResourcePack): void {
-  validatePetManifestFields(pack.pet);
-
-  const { frameHeight, frameWidth, scale } = pack.animations.meta;
-  if (frameWidth <= 0 || frameHeight <= 0 || scale <= 0) {
-    throw new ResourcePackError("Resource pack animation meta must be positive");
-  }
-
-  const idle = pack.animations.animations.idle;
-  if (!idle || idle.frames.length === 0) {
-    throw new ResourcePackError("Resource pack must define idle animation");
-  }
-}
-
-export function validatePetManifestFields(pet: PetManifest): void {
   const requiredPetFields: Array<keyof PetManifest> = [
     "id",
     "name",
@@ -90,9 +76,19 @@ export function validatePetManifestFields(pet: PetManifest): void {
   ];
 
   for (const field of requiredPetFields) {
-    if (!pet[field]) {
+    if (!pack.pet[field]) {
       throw new ResourcePackError(`Resource pack is missing pet.${field}`);
     }
+  }
+
+  const { frameHeight, frameWidth, scale } = pack.animations.meta;
+  if (frameWidth <= 0 || frameHeight <= 0 || scale <= 0) {
+    throw new ResourcePackError("Resource pack animation meta must be positive");
+  }
+
+  const idle = pack.animations.animations.idle;
+  if (!idle || idle.frames.length === 0) {
+    throw new ResourcePackError("Resource pack must define idle animation");
   }
 }
 
@@ -109,14 +105,4 @@ export function resolveAnimationWithFallback(
   }
 
   return "idle";
-}
-
-export function resolveExpressionWithFallback(
-  pack: PetResourcePack,
-  requested: string,
-): { overlay: string | null } {
-  return (
-    pack.expressions.expressions[requested] ??
-    pack.expressions.expressions.idle ?? { overlay: null }
-  );
 }
