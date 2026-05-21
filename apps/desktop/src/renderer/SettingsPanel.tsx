@@ -1,5 +1,12 @@
-import type { BehaviorMode } from "../protocol/generated";
-import { behaviorModeOptions } from "./settingsModel";
+import type { BehaviorMode, QuietHours } from "../protocol/generated";
+import {
+  behaviorModeOptions,
+  bubbleFrequencyOptions,
+  fromTimeInputValue,
+  movementIntensityOptions,
+  restBehaviorOptions,
+  toTimeInputValue,
+} from "./settingsModel";
 
 type SettingsPanelProps = {
   behaviorMode: BehaviorMode;
@@ -9,10 +16,24 @@ type SettingsPanelProps = {
   buildTestEventsEnabled: boolean;
   keyboardRhythmEnabled: boolean;
   activeAppPresenceEnabled: boolean;
+  quietHours: QuietHours;
+  movementIntensity: string;
+  bubbleFrequency: string;
+  restBehavior: string;
+  surfaceScale: number;
+  diagnosticsEnabled: boolean;
   isOpen: boolean;
   onClose: () => void;
   onModeChange: (mode: BehaviorMode) => void;
   onRemindersEnabledChange: (enabled: boolean) => void;
+  onQuietHoursChange: (quietHours: QuietHours) => void;
+  onCreatureSettingsChange: (settings: {
+    movementIntensity: string;
+    bubbleFrequency: string;
+    restBehavior: string;
+    surfaceScale: number;
+    diagnosticsEnabled: boolean;
+  }) => void;
   onCapabilityEnabledChange: (capability: string, enabled: boolean) => void;
 };
 
@@ -24,10 +45,18 @@ export function SettingsPanel({
   buildTestEventsEnabled,
   keyboardRhythmEnabled,
   activeAppPresenceEnabled,
+  quietHours,
+  movementIntensity,
+  bubbleFrequency,
+  restBehavior,
+  surfaceScale,
+  diagnosticsEnabled,
   isOpen,
   onClose,
   onModeChange,
   onRemindersEnabledChange,
+  onQuietHoursChange,
+  onCreatureSettingsChange,
   onCapabilityEnabledChange,
 }: SettingsPanelProps) {
   if (!isOpen) {
@@ -71,6 +100,106 @@ export function SettingsPanel({
           onChange={(event) => onRemindersEnabledChange(event.currentTarget.checked)}
         />
       </label>
+      <label className="ian-settings-toggle-row">
+        <span>安静时段</span>
+        <input
+          aria-label="启用安静时段"
+          checked={quietHours.enabled}
+          type="checkbox"
+          onChange={(event) =>
+            onQuietHoursChange({
+              ...quietHours,
+              enabled: event.currentTarget.checked,
+            })
+          }
+        />
+      </label>
+      <div className="ian-settings-time-row">
+        <input
+          aria-label="安静开始"
+          type="time"
+          value={toTimeInputValue(quietHours.start_minute)}
+          onChange={(event) =>
+            onQuietHoursChange({
+              ...quietHours,
+              start_minute: fromTimeInputValue(event.currentTarget.value),
+            })
+          }
+        />
+        <input
+          aria-label="安静结束"
+          type="time"
+          value={toTimeInputValue(quietHours.end_minute)}
+          onChange={(event) =>
+            onQuietHoursChange({
+              ...quietHours,
+              end_minute: fromTimeInputValue(event.currentTarget.value),
+            })
+          }
+        />
+      </div>
+      <SettingsSelect
+        label="移动"
+        value={movementIntensity}
+        options={movementIntensityOptions}
+        onChange={(value) =>
+          onCreatureSettingsChange({
+            movementIntensity: value,
+            bubbleFrequency,
+            restBehavior,
+            surfaceScale,
+            diagnosticsEnabled,
+          })
+        }
+      />
+      <SettingsSelect
+        label="气泡"
+        value={bubbleFrequency}
+        options={bubbleFrequencyOptions}
+        onChange={(value) =>
+          onCreatureSettingsChange({
+            movementIntensity,
+            bubbleFrequency: value,
+            restBehavior,
+            surfaceScale,
+            diagnosticsEnabled,
+          })
+        }
+      />
+      <SettingsSelect
+        label="休息"
+        value={restBehavior}
+        options={restBehaviorOptions}
+        onChange={(value) =>
+          onCreatureSettingsChange({
+            movementIntensity,
+            bubbleFrequency,
+            restBehavior: value,
+            surfaceScale,
+            diagnosticsEnabled,
+          })
+        }
+      />
+      <label className="ian-settings-toggle-row">
+        <span>大小</span>
+        <input
+          aria-label="Ian 大小"
+          type="range"
+          min="0.8"
+          max="1.4"
+          step="0.1"
+          value={surfaceScale}
+          onChange={(event) =>
+            onCreatureSettingsChange({
+              movementIntensity,
+              bubbleFrequency,
+              restBehavior,
+              surfaceScale: Number(event.currentTarget.value),
+              diagnosticsEnabled,
+            })
+          }
+        />
+      </label>
       <div className="ian-settings-capabilities" aria-label="能力状态">
         <span>能力</span>
         <CapabilityToggle
@@ -100,6 +229,32 @@ export function SettingsPanel({
         />
       </div>
     </aside>
+  );
+}
+
+type SettingsSelectProps = {
+  label: string;
+  value: string;
+  options: ReadonlyArray<{ label: string; value: string }>;
+  onChange: (value: string) => void;
+};
+
+function SettingsSelect({ label, value, options, onChange }: SettingsSelectProps) {
+  return (
+    <label className="ian-settings-select-row">
+      <span>{label}</span>
+      <select
+        aria-label={label}
+        value={value}
+        onChange={(event) => onChange(event.currentTarget.value)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
   );
 }
 

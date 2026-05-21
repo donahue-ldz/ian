@@ -5,9 +5,16 @@ import { normalizeBubbleMessage } from "./bubbleModel";
 type BubbleProps = {
   bubble: IanViewState["bubble"];
   onSubmitMessage: (text: string) => void;
+  onInputStarted?: () => void;
+  onInputEnded?: () => void;
 };
 
-export function Bubble({ bubble, onSubmitMessage }: BubbleProps) {
+export function Bubble({
+  bubble,
+  onSubmitMessage,
+  onInputEnded,
+  onInputStarted,
+}: BubbleProps) {
   const [draft, setDraft] = useState("");
 
   if (!bubble.isOpen || !bubble.text) {
@@ -54,6 +61,8 @@ export function Bubble({ bubble, onSubmitMessage }: BubbleProps) {
           placeholder="说一句..."
           value={draft}
           onChange={(event) => setDraft(event.currentTarget.value)}
+          onBlur={onInputEnded}
+          onFocus={onInputStarted}
           onKeyDown={handleInputKeyDown}
         />
       </form>

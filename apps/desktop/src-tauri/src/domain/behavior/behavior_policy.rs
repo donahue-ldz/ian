@@ -1,6 +1,7 @@
 pub struct BehaviorPolicy {
     click_phrases: [&'static str; 4],
     run_around_duration_ms: u64,
+    attention_cooldown_ms: i64,
 }
 
 impl Default for BehaviorPolicy {
@@ -8,6 +9,7 @@ impl Default for BehaviorPolicy {
         Self {
             click_phrases: ["我在这儿。", "哞？", "喝水水。", "才不是担心你。"],
             run_around_duration_ms: 1800,
+            attention_cooldown_ms: 5_000,
         }
     }
 }
@@ -19,6 +21,10 @@ impl BehaviorPolicy {
 
     pub fn run_around_duration_ms(&self) -> u64 {
         self.run_around_duration_ms
+    }
+
+    pub fn attention_cooldown_ms(&self) -> i64 {
+        self.attention_cooldown_ms
     }
 
     pub fn affectionate_phrase(&self, interaction_count: u32) -> &'static str {

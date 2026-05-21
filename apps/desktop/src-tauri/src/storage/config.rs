@@ -3,7 +3,7 @@ use std::{fs, io, path::Path};
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
 
-use crate::protocol::{BehaviorMode, IanState, Position};
+use crate::protocol::{BehaviorMode, IanState, Position, QuietHours};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigFile {
@@ -16,6 +16,10 @@ struct ConfigFile {
     position: Position,
     #[serde(default)]
     home_anchor: Option<Position>,
+    #[serde(default)]
+    quiet_hours: QuietHours,
+    #[serde(default)]
+    creature: CreatureConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,6 +31,27 @@ struct AppConfig {
 #[derive(Debug, Serialize, Deserialize)]
 struct BehaviorConfig {
     mode: BehaviorMode,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CreatureConfig {
+    movement_intensity: String,
+    bubble_frequency: String,
+    rest_behavior: String,
+    surface_scale: f64,
+    diagnostics_enabled: bool,
+}
+
+impl Default for CreatureConfig {
+    fn default() -> Self {
+        Self {
+            movement_intensity: "normal".to_string(),
+            bubble_frequency: "normal".to_string(),
+            rest_behavior: "normal".to_string(),
+            surface_scale: 1.0,
+            diagnostics_enabled: true,
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -130,6 +155,14 @@ mod tests {
         state.home_anchor = Position { x: 40.0, y: 80.0 };
         state.behavior_mode = BehaviorMode::Lively;
         state.reminders_enabled = false;
+        state.quiet_hours.enabled = true;
+        state.quiet_hours.start_minute = 22 * 60;
+        state.quiet_hours.end_minute = 7 * 60;
+        state.movement_intensity = "low".to_string();
+        state.bubble_frequency = "quiet".to_string();
+        state.rest_behavior = "restful".to_string();
+        state.surface_scale = 1.2;
+        state.diagnostics_enabled = false;
 
         persist_state(dir.path(), &state).expect("persist state");
         let loaded = load_state(dir.path()).expect("load state");
@@ -140,6 +173,29 @@ mod tests {
         assert_eq!(loaded.home_anchor.y, 80.0);
         assert!(matches!(loaded.behavior_mode, BehaviorMode::Lively));
         assert!(!loaded.reminders_enabled);
+        assert!(loaded.quiet_hours.enabled);
+        assert_eq!(loaded.quiet_hours.start_minute, 22 * 60);
+        assert_eq!(loaded.quiet_hours.end_minute, 7 * 60);
+        assert_eq!(loaded.movement_intensity, "low");
+        assert_eq!(loaded.bubble_frequency, "quiet");
+        assert_eq!(loaded.rest_behavior, "restful");
+        assert_eq!(loaded.surface_scale, 1.2);
+        assert!(!loaded.diagnostics_enabled);
+    }
+
+    #[test]
+    fn quiet_hours_support_cross_midnight_and_disabled_state() {
+        let mut state = IanState::default();
+        state.quiet_hours.enabled = true;
+        state.quiet_hours.start_minute = 22 * 60;
+        state.quiet_hours.end_minute = 7 * 60;
+
+        assert!(state.quiet_hours.is_active_at_minute(23 * 60));
+        assert!(state.quiet_hours.is_active_at_minute(6 * 60 + 30));
+        assert!(!state.quiet_hours.is_active_at_minute(12 * 60));
+
+        state.quiet_hours.enabled = false;
+        assert!(!state.quiet_hours.is_active_at_minute(23 * 60));
     }
 
     #[test]
@@ -192,6 +248,14 @@ impl From<IanState> for ConfigFile {
             },
             position: state.position,
             home_anchor: Some(state.home_anchor),
+            quiet_hours: state.quiet_hours,
+            creature: CreatureConfig {
+                movement_intensity: state.movement_intensity,
+                bubble_frequency: state.bubble_frequency,
+                rest_behavior: state.rest_behavior,
+                surface_scale: state.surface_scale,
+                diagnostics_enabled: state.diagnostics_enabled,
+            },
         }
     }
 }
@@ -212,6 +276,15 @@ impl From<ConfigFile> for IanState {
             keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
             active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
             home_anchor: config.home_anchor.unwrap_or(config.position),
+            quiet_hours: config.quiet_hours,
+            movement_intensity: config.creature.movement_intensity,
+            bubble_frequency: config.creature.bubble_frequency,
+            rest_behavior: config.creature.rest_behavior,
+            surface_scale: config.creature.surface_scale,
+            diagnostics_enabled: config.creature.diagnostics_enabled,
+            day_phase: "day".to_string(),
+            is_dragging: false,
+            is_bubble_input_active: false,
         }
     }
 }

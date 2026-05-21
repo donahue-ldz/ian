@@ -51,9 +51,12 @@ impl PermissionGate {
             | IanEvent::MouseClick { .. }
             | IanEvent::MouseDoubleClick { .. }
             | IanEvent::MouseNear { .. }
+            | IanEvent::MouseLeave { .. }
             | IanEvent::MouseDragStart { .. }
             | IanEvent::MouseDragEnd { .. }
-            | IanEvent::DialogueUserMessage { .. } => Ok(()),
+            | IanEvent::DialogueUserMessage { .. }
+            | IanEvent::BubbleInputStarted
+            | IanEvent::BubbleInputEnded => Ok(()),
             IanEvent::DeveloperGitStatusChanged { .. } if self.state.git_metadata_enabled => Ok(()),
             IanEvent::DeveloperBuildTestSummary { .. } if self.state.build_test_events_enabled => {
                 Ok(())

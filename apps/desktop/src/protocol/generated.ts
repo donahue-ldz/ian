@@ -12,6 +12,12 @@ export type Position = {
   y: number;
 };
 
+export type QuietHours = {
+  enabled: boolean;
+  start_minute: number;
+  end_minute: number;
+};
+
 export type IanState = {
   active_pet_id: string;
   current_behavior: CurrentBehavior;
@@ -26,6 +32,15 @@ export type IanState = {
   keyboard_rhythm_enabled: boolean;
   active_app_presence_enabled: boolean;
   home_anchor: Position;
+  quiet_hours: QuietHours;
+  movement_intensity: string;
+  bubble_frequency: string;
+  rest_behavior: string;
+  surface_scale: number;
+  diagnostics_enabled: boolean;
+  day_phase: string;
+  is_dragging: boolean;
+  is_bubble_input_active: boolean;
 };
 
 export type IanEvent =
@@ -33,11 +48,13 @@ export type IanEvent =
   | { type: "time.tick"; now_ms: number }
   | { type: "mouse.click"; x: number; y: number }
   | { type: "mouse.double_click"; x: number; y: number }
-  | { type: "mouse.near"; x: number; y: number }
+  | { type: "mouse.near"; x: number; y: number; now_ms: number }
   | { type: "mouse.leave"; x: number; y: number }
   | { type: "mouse.drag_start"; x: number; y: number }
   | { type: "mouse.drag_end"; x: number; y: number }
   | { type: "dialogue.user_message"; text: string }
+  | { type: "bubble.input_started" }
+  | { type: "bubble.input_ended" }
   | {
       type: "developer.git_status_changed";
       branch: string;

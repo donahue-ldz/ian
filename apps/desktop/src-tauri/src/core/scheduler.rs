@@ -18,7 +18,7 @@ pub struct BehaviorScheduler;
 
 impl BehaviorScheduler {
     pub fn action_for_tick(&self, now_ms: i64, state: &IanState) -> Option<IanAction> {
-        if state.current_animation == "run" {
+        if state.current_animation == "run" || state.is_dragging || state.is_bubble_input_active {
             return None;
         }
 
@@ -81,6 +81,18 @@ mod tests {
         let mut state = IanState::default();
         state.current_animation = "run".to_string();
 
+        assert!(scheduler.action_for_tick(90_000, &state).is_none());
+    }
+
+    #[test]
+    fn scheduler_does_not_interrupt_active_user_interaction() {
+        let scheduler = BehaviorScheduler::default();
+        let mut state = IanState::default();
+        state.is_dragging = true;
+        assert!(scheduler.action_for_tick(90_000, &state).is_none());
+
+        state.is_dragging = false;
+        state.is_bubble_input_active = true;
         assert!(scheduler.action_for_tick(90_000, &state).is_none());
     }
 }

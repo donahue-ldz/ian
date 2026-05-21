@@ -5,6 +5,7 @@ import type {
   IanEvent,
   IanState,
   Position,
+  QuietHours,
 } from "../protocol/generated";
 
 const browserFallbackState: IanState = {
@@ -21,8 +22,18 @@ const browserFallbackState: IanState = {
   keyboard_rhythm_enabled: false,
   active_app_presence_enabled: false,
   home_anchor: { x: 0, y: 0 },
+  quiet_hours: { enabled: false, start_minute: 22 * 60, end_minute: 7 * 60 },
+  movement_intensity: "normal",
+  bubble_frequency: "normal",
+  rest_behavior: "normal",
+  surface_scale: 1,
+  diagnostics_enabled: true,
+  day_phase: "day",
+  is_dragging: false,
+  is_bubble_input_active: false,
 };
 let browserInteractionCount = 0;
+let browserAttentionAvailableAfterMs = 0;
 
 function isTauriRuntime(): boolean {
   return "__TAURI_INTERNALS__" in window;
@@ -34,7 +45,21 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
   }
 
   if (event.type === "mouse.near") {
+    if (event.now_ms < browserAttentionAvailableAfterMs) {
+      return [];
+    }
+    browserAttentionAvailableAfterMs = event.now_ms + 5_000;
     return [{ type: "animation.play", name: "happy", looped: false }];
+  }
+
+  if (event.type === "bubble.input_started") {
+    browserFallbackState.is_bubble_input_active = true;
+    return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (event.type === "bubble.input_ended") {
+    browserFallbackState.is_bubble_input_active = false;
+    return [{ type: "state.sync", state: browserFallbackState }];
   }
 
   if (event.type === "mouse.leave") {
@@ -63,17 +88,47 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
 
   if (event.type === "mouse.click") {
     browserInteractionCount += 1;
+    if (browserInteractionCount % 4 === 3) {
+      return [];
+    }
     const text =
-      browserInteractionCount >= 2 ? "再摸摸也可以。" : "我在这儿。";
+      browserInteractionCount >= 4 && browserInteractionCount % 4 === 0
+        ? "有点痒，我挪一下。"
+        : browserInteractionCount >= 2
+          ? "再摸摸也可以。"
+          : "我在这儿。";
 
-    return [
+    const actions: IanAction[] = [
       { type: "bubble.open" },
       { type: "speech.show", text, mood: "calm", duration_ms: 2400 },
       { type: "animation.play", name: "happy", looped: false },
     ];
+
+    if (browserInteractionCount >= 4 && browserInteractionCount % 4 === 0) {
+      actions.push({
+        type: "movement.move_to",
+        x: browserFallbackState.position.x + 18,
+        y: browserFallbackState.position.y,
+        speed: "slow",
+      });
+    }
+
+    return actions;
+  }
+
+  if (event.type === "mouse.drag_start") {
+    browserFallbackState.is_dragging = true;
+    return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (event.type === "mouse.drag_end") {
+    browserFallbackState.is_dragging = false;
+    browserFallbackState.position = { x: event.x, y: event.y };
+    return [{ type: "state.sync", state: browserFallbackState }];
   }
 
   if (event.type === "dialogue.user_message") {
+    browserFallbackState.is_bubble_input_active = false;
     const text =
       event.text.toLowerCase().includes("water") || event.text.includes("水")
         ? "喝水水。"
@@ -121,6 +176,40 @@ export async function saveBehaviorMode(mode: BehaviorMode): Promise<IanState> {
   }
 
   browserFallbackState.behavior_mode = mode;
+  return browserFallbackState;
+}
+
+export async function saveQuietHours(quietHours: QuietHours): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_quiet_hours", { quietHours });
+  }
+
+  browserFallbackState.quiet_hours = quietHours;
+  return browserFallbackState;
+}
+
+export async function saveCreatureSettings(settings: {
+  movement_intensity: string;
+  bubble_frequency: string;
+  rest_behavior: string;
+  surface_scale: number;
+  diagnostics_enabled: boolean;
+}): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_creature_settings", {
+      movementIntensity: settings.movement_intensity,
+      bubbleFrequency: settings.bubble_frequency,
+      restBehavior: settings.rest_behavior,
+      surfaceScale: settings.surface_scale,
+      diagnosticsEnabled: settings.diagnostics_enabled,
+    });
+  }
+
+  browserFallbackState.movement_intensity = settings.movement_intensity;
+  browserFallbackState.bubble_frequency = settings.bubble_frequency;
+  browserFallbackState.rest_behavior = settings.rest_behavior;
+  browserFallbackState.surface_scale = settings.surface_scale;
+  browserFallbackState.diagnostics_enabled = settings.diagnostics_enabled;
   return browserFallbackState;
 }
 

@@ -3,6 +3,7 @@ import {
   getResourcePackVersion,
   resolveExpressionWithFallback,
   resolveAnimationWithFallback,
+  validatePetManifestFields,
   validatePetResourcePack,
   type PetResourcePack,
 } from "./resourceLoader";
@@ -70,5 +71,11 @@ describe("resourceLoader contract", () => {
     expect(resolveExpressionWithFallback(pack, "curious")).toEqual({
       overlay: null,
     });
+  });
+
+  it("reports concrete manifest field errors for resource authors", () => {
+    expect(() =>
+      validatePetManifestFields({ ...pack.pet, animations: "" }),
+    ).toThrow("pet.animations");
   });
 });

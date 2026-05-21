@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import type { BehaviorMode } from "./protocol/generated";
+import type { BehaviorMode, QuietHours } from "./protocol/generated";
 import { IanStage } from "./renderer/IanStage";
 import { loadPetResourcePack, type PetResourcePack } from "./resources/resourceLoader";
 import {
   getIanSettings,
   saveBehaviorMode,
   saveCapabilityEnabled,
+  saveCreatureSettings,
+  saveQuietHours,
   saveRemindersEnabled,
 } from "./lib/tauriBridge";
 import { moveDesktopWindow } from "./lib/position";
@@ -18,6 +20,12 @@ export default function App() {
   const [behaviorMode, setBehaviorMode] = useState<BehaviorMode>("normal");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [capabilities, setCapabilities] = useState(createCapabilityState());
+  const [quietHours, setQuietHours] = useState<QuietHours>({
+    enabled: false,
+    start_minute: 22 * 60,
+    end_minute: 7 * 60,
+  });
+  const [creatureSettings, setCreatureSettings] = useState(createCreatureSettingsState());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { savePosition, sendEvent, viewState } = useIanActions();
 
@@ -27,6 +35,8 @@ export default function App() {
       setBehaviorMode(state.behavior_mode);
       setRemindersEnabled(state.reminders_enabled);
       setCapabilities(capabilityStateFromIanState(state));
+      setQuietHours(state.quiet_hours);
+      setCreatureSettings(creatureSettingsFromIanState(state));
       void moveDesktopWindow(state.position);
     });
     void sendEvent({ type: "app.started" });
@@ -51,6 +61,12 @@ export default function App() {
       buildTestEventsEnabled={capabilities.buildTestEvents}
       keyboardRhythmEnabled={capabilities.keyboardRhythm}
       activeAppPresenceEnabled={capabilities.activeAppPresence}
+      quietHours={quietHours}
+      movementIntensity={creatureSettings.movementIntensity}
+      bubbleFrequency={creatureSettings.bubbleFrequency}
+      restBehavior={creatureSettings.restBehavior}
+      surfaceScale={creatureSettings.surfaceScale}
+      diagnosticsEnabled={creatureSettings.diagnosticsEnabled}
       isSettingsOpen={isSettingsOpen}
       onIanClick={(point) => {
         void sendEvent({ type: "mouse.click", ...point });
@@ -59,13 +75,19 @@ export default function App() {
         void sendEvent({ type: "mouse.double_click", ...point });
       }}
       onIanNear={(point) => {
-        void sendEvent({ type: "mouse.near", ...point });
+        void sendEvent({ type: "mouse.near", ...point, now_ms: Date.now() });
       }}
       onIanLeave={(point) => {
         void sendEvent({ type: "mouse.leave", ...point });
       }}
       onSubmitMessage={(text) => {
         void sendEvent({ type: "dialogue.user_message", text });
+      }}
+      onBubbleInputStarted={() => {
+        void sendEvent({ type: "bubble.input_started" });
+      }}
+      onBubbleInputEnded={() => {
+        void sendEvent({ type: "bubble.input_ended" });
       }}
       onSettingsToggle={() => setIsSettingsOpen((current) => !current)}
       onSettingsClose={() => setIsSettingsOpen(false)}
@@ -81,6 +103,24 @@ export default function App() {
           setRemindersEnabled(state.reminders_enabled);
         });
       }}
+      onQuietHoursChange={(nextQuietHours) => {
+        setQuietHours(nextQuietHours);
+        void saveQuietHours(nextQuietHours).then((state) => {
+          setQuietHours(state.quiet_hours);
+        });
+      }}
+      onCreatureSettingsChange={(nextSettings) => {
+        setCreatureSettings(nextSettings);
+        void saveCreatureSettings({
+          movement_intensity: nextSettings.movementIntensity,
+          bubble_frequency: nextSettings.bubbleFrequency,
+          rest_behavior: nextSettings.restBehavior,
+          surface_scale: nextSettings.surfaceScale,
+          diagnostics_enabled: nextSettings.diagnosticsEnabled,
+        }).then((state) => {
+          setCreatureSettings(creatureSettingsFromIanState(state));
+        });
+      }}
       onCapabilityEnabledChange={(capability, enabled) => {
         setCapabilities((current) => ({
           ...current,
@@ -91,7 +131,11 @@ export default function App() {
         });
       }}
       onDragEnd={(point) => {
+        void sendEvent({ type: "mouse.drag_end", ...point });
         void savePosition(point);
+      }}
+      onDragStart={(point) => {
+        void sendEvent({ type: "mouse.drag_start", ...point });
       }}
     />
   );
@@ -107,6 +151,16 @@ function createCapabilityState() {
   };
 }
 
+function createCreatureSettingsState() {
+  return {
+    movementIntensity: "normal",
+    bubbleFrequency: "normal",
+    restBehavior: "normal",
+    surfaceScale: 1,
+    diagnosticsEnabled: true,
+  };
+}
+
 function capabilityStateFromIanState(state: Awaited<ReturnType<typeof getIanSettings>>) {
   return {
     byom: state.byom_enabled,
@@ -114,6 +168,16 @@ function capabilityStateFromIanState(state: Awaited<ReturnType<typeof getIanSett
     buildTestEvents: state.build_test_events_enabled,
     keyboardRhythm: state.keyboard_rhythm_enabled,
     activeAppPresence: state.active_app_presence_enabled,
+  };
+}
+
+function creatureSettingsFromIanState(state: Awaited<ReturnType<typeof getIanSettings>>) {
+  return {
+    movementIntensity: state.movement_intensity,
+    bubbleFrequency: state.bubble_frequency,
+    restBehavior: state.rest_behavior,
+    surfaceScale: state.surface_scale,
+    diagnosticsEnabled: state.diagnostics_enabled,
   };
 }
 

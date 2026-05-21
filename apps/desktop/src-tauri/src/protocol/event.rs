@@ -22,7 +22,7 @@ pub enum IanEvent {
     #[serde(rename = "mouse.double_click")]
     MouseDoubleClick { x: f64, y: f64 },
     #[serde(rename = "mouse.near")]
-    MouseNear { x: f64, y: f64 },
+    MouseNear { x: f64, y: f64, now_ms: i64 },
     #[serde(rename = "mouse.leave")]
     MouseLeave { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_start")]
@@ -31,6 +31,10 @@ pub enum IanEvent {
     MouseDragEnd { x: f64, y: f64 },
     #[serde(rename = "dialogue.user_message")]
     DialogueUserMessage { text: String },
+    #[serde(rename = "bubble.input_started")]
+    BubbleInputStarted,
+    #[serde(rename = "bubble.input_ended")]
+    BubbleInputEnded,
     #[serde(rename = "developer.git_status_changed")]
     DeveloperGitStatusChanged {
         branch: String,
@@ -72,6 +76,8 @@ impl IanEvent {
             Self::MouseDragStart { .. } => "mouse.drag_start",
             Self::MouseDragEnd { .. } => "mouse.drag_end",
             Self::DialogueUserMessage { .. } => "dialogue.user_message",
+            Self::BubbleInputStarted => "bubble.input_started",
+            Self::BubbleInputEnded => "bubble.input_ended",
             Self::DeveloperGitStatusChanged { .. } => "developer.git_status_changed",
             Self::DeveloperBuildTestSummary { .. } => "developer.build_test_summary",
             Self::KeyboardRhythm { .. } => "keyboard.rhythm",

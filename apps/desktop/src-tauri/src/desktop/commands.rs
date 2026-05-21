@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::{
     app::IanRuntime,
-    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position},
+    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position, QuietHours},
 };
 
 #[tauri::command]
@@ -51,6 +51,38 @@ pub fn save_behavior_mode(
         .lock()
         .map_err(|_| "Ian runtime lock poisoned".to_string())?
         .save_behavior_mode(mode)
+}
+
+#[tauri::command]
+pub fn save_quiet_hours(
+    quiet_hours: QuietHours,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_quiet_hours(quiet_hours)
+}
+
+#[tauri::command]
+pub fn save_creature_settings(
+    movement_intensity: String,
+    bubble_frequency: String,
+    rest_behavior: String,
+    surface_scale: f64,
+    diagnostics_enabled: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_creature_settings(
+            movement_intensity,
+            bubble_frequency,
+            rest_behavior,
+            surface_scale,
+            diagnostics_enabled,
+        )
 }
 
 #[tauri::command]

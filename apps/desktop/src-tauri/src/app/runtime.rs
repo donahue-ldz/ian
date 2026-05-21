@@ -1,13 +1,13 @@
 use crate::{
     core::{ActionDispatcher, CreatureState, EventBus},
     domain::{
-        behavior::BehaviorEngine,
+        behavior::{day_phase_policy::phase_from_epoch_ms, BehaviorEngine},
         bond::{BondEngine, BondSignal},
         dialogue::{providers::DialogueSource, DialogueEngine},
         mood::{MoodEngine, MoodSignal},
         reminder::ReminderEngine,
     },
-    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position},
+    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position, QuietHours},
     security::permission::PermissionState,
     security::SecurityGate,
     storage::StorageService,
@@ -53,29 +53,36 @@ impl IanRuntime {
 
         self.event_bus.record(event.clone());
         let _ = self.storage.record_interaction_event(&event);
+        self.apply_interaction_lifecycle(&event);
         self.apply_internal_signals(&event);
+        if let IanEvent::TimeTick { now_ms } = &event {
+            self.state
+                .set_day_phase(phase_from_epoch_ms(*now_ms).as_str().to_string());
+        }
 
-        let mut actions = match event {
+        let mut actions = match &event {
             IanEvent::DialogueUserMessage { text } => self.dialogue.reply_to(
-                text,
+                text.clone(),
                 self.state.snapshot(),
                 DialogueSource::UserBubble,
                 self.mood.current(),
                 self.bond.current(),
             ),
             IanEvent::TimeTick { now_ms } => {
-                let mut actions = self
-                    .behavior
-                    .decide(&IanEvent::TimeTick { now_ms }, self.state.snapshot());
+                let mut actions = self.behavior.decide(
+                    &IanEvent::TimeTick { now_ms: *now_ms },
+                    self.state.snapshot(),
+                );
                 actions.extend(
                     self.reminder
-                        .actions_for_tick(now_ms, self.state.snapshot()),
+                        .actions_for_tick(*now_ms, self.state.snapshot()),
                 );
                 actions
             }
-            other => self.behavior.decide(&other, self.state.snapshot()),
+            other => self.behavior.decide(other, self.state.snapshot()),
         };
 
+        self.record_life_events(&event, &actions);
         self.state.apply_actions(&actions);
         actions.push(IanAction::StateSync {
             state: self.state.snapshot().clone(),
@@ -103,6 +110,35 @@ impl IanRuntime {
 
     pub fn save_behavior_mode(&mut self, mode: BehaviorMode) -> Result<IanState, String> {
         self.state.set_behavior_mode(mode);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_quiet_hours(&mut self, quiet_hours: QuietHours) -> Result<IanState, String> {
+        self.state.set_quiet_hours(quiet_hours);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_creature_settings(
+        &mut self,
+        movement_intensity: String,
+        bubble_frequency: String,
+        rest_behavior: String,
+        surface_scale: f64,
+        diagnostics_enabled: bool,
+    ) -> Result<IanState, String> {
+        self.state.set_creature_settings(
+            movement_intensity,
+            bubble_frequency,
+            rest_behavior,
+            surface_scale,
+            diagnostics_enabled,
+        );
         self.storage
             .persist_state(self.state.snapshot())
             .map_err(|error| error.to_string())?;
@@ -150,7 +186,9 @@ impl IanRuntime {
             IanEvent::DeveloperBuildTestSummary { .. }
             | IanEvent::DeveloperGitStatusChanged { .. }
             | IanEvent::KeyboardRhythm { .. }
-            | IanEvent::ActiveAppPresence { .. } => {}
+            | IanEvent::ActiveAppPresence { .. }
+            | IanEvent::BubbleInputStarted
+            | IanEvent::BubbleInputEnded => {}
             IanEvent::MouseDoubleClick { .. }
             | IanEvent::MouseDragEnd { .. }
             | IanEvent::MouseDragStart { .. }
@@ -159,6 +197,100 @@ impl IanRuntime {
             }
             IanEvent::AppStarted => {}
         }
+    }
+
+    fn apply_interaction_lifecycle(&mut self, event: &IanEvent) {
+        match event {
+            IanEvent::MouseDragStart { .. } => self.state.set_dragging(true),
+            IanEvent::MouseDragEnd { .. } => self.state.set_dragging(false),
+            IanEvent::BubbleInputStarted => self.state.set_bubble_input_active(true),
+            IanEvent::BubbleInputEnded | IanEvent::DialogueUserMessage { .. } => {
+                self.state.set_bubble_input_active(false);
+            }
+            _ => {}
+        }
+    }
+
+    fn record_life_events(&self, event: &IanEvent, actions: &[IanAction]) {
+        let now_ms = match event {
+            IanEvent::TimeTick { now_ms } => *now_ms,
+            _ => chrono::Utc::now().timestamp_millis(),
+        };
+        let event_kind = event.event_type();
+
+        let life_event_type = match event {
+            IanEvent::AppStarted => Some("life.started"),
+            IanEvent::MouseClick { .. } => Some("interaction.click"),
+            IanEvent::MouseDoubleClick { .. } => Some("interaction.double_click"),
+            IanEvent::DialogueUserMessage { .. } => Some("dialogue.reply"),
+            _ => None,
+        };
+
+        if let Some(life_event_type) = life_event_type {
+            let payload = serde_json::json!({
+                "event": event_kind,
+                "action_count": actions.len(),
+            });
+            let _ = self
+                .storage
+                .record_life_event(life_event_type, &payload.to_string(), now_ms);
+        }
+
+        for action in actions {
+            let Some(action_event_type) = life_event_type_for_action(action) else {
+                continue;
+            };
+            let payload = serde_json::json!({
+                "event": event_kind,
+                "action": action_type(action),
+            });
+            let _ = self
+                .storage
+                .record_life_event(action_event_type, &payload.to_string(), now_ms);
+        }
+
+        if self.state.snapshot().diagnostics_enabled {
+            let action_types: Vec<&'static str> = actions.iter().map(action_type).collect();
+            let payload = serde_json::json!({
+                "event": event_kind,
+                "actions": action_types,
+                "reason": diagnostic_reason(event, actions),
+            });
+            let _ = self.storage.record_life_event(
+                "diagnostic.behavior_decision",
+                &payload.to_string(),
+                now_ms,
+            );
+        }
+    }
+}
+
+fn action_type(action: &IanAction) -> &'static str {
+    match action {
+        IanAction::AnimationPlay { .. } => "animation.play",
+        IanAction::MovementMoveTo { .. } => "movement.move_to",
+        IanAction::SpeechShow { .. } => "speech.show",
+        IanAction::BubbleOpen => "bubble.open",
+        IanAction::BubbleClose => "bubble.close",
+        IanAction::BehaviorRunAround { .. } => "behavior.run_around",
+        IanAction::StateSync { .. } => "state.sync",
+    }
+}
+
+fn life_event_type_for_action(action: &IanAction) -> Option<&'static str> {
+    match action {
+        IanAction::MovementMoveTo { .. } => Some("movement.move"),
+        IanAction::AnimationPlay { name, .. } if name == "sleep" => Some("rest.sleep"),
+        IanAction::AnimationPlay { name, .. } if name == "idle" => Some("rest.wake"),
+        _ => None,
+    }
+}
+
+fn diagnostic_reason(event: &IanEvent, actions: &[IanAction]) -> &'static str {
+    if matches!(event, IanEvent::TimeTick { .. }) && actions.is_empty() {
+        "cooldown_or_suppressed"
+    } else {
+        "policy_action"
     }
 }
 
@@ -203,10 +335,42 @@ mod tests {
         assert!(!second.iter().any(is_reminder_speech));
     }
 
+    #[test]
+    fn interaction_lifecycle_events_suppress_autonomous_tick_actions() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let _ = runtime
+            .handle_event(IanEvent::MouseDragStart { x: 1.0, y: 1.0 })
+            .expect("drag starts");
+        let dragging_tick = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 90_000 })
+            .expect("tick while dragging");
+        let _ = runtime
+            .handle_event(IanEvent::MouseDragEnd { x: 1.0, y: 1.0 })
+            .expect("drag ends");
+        let _ = runtime
+            .handle_event(IanEvent::BubbleInputStarted)
+            .expect("input starts");
+        let input_tick = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 90_000 })
+            .expect("tick while input active");
+
+        assert_no_autonomous_movement_or_sleep(&dragging_tick);
+        assert_no_autonomous_movement_or_sleep(&input_tick);
+    }
+
     fn is_reminder_speech(action: &IanAction) -> bool {
         matches!(
             action,
             IanAction::SpeechShow { text, .. } if text == "喝口水吧。" || text == "起来伸一下。"
         )
+    }
+
+    fn assert_no_autonomous_movement_or_sleep(actions: &[IanAction]) {
+        assert!(!actions.iter().any(|action| match action {
+            IanAction::MovementMoveTo { .. } => true,
+            IanAction::AnimationPlay { name, .. } => name == "sleep",
+            _ => false,
+        }));
     }
 }

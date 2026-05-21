@@ -48,6 +48,46 @@ impl Default for Position {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+pub struct QuietHours {
+    pub enabled: bool,
+    pub start_minute: u16,
+    pub end_minute: u16,
+}
+
+impl Default for QuietHours {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            start_minute: 22 * 60,
+            end_minute: 7 * 60,
+        }
+    }
+}
+
+impl QuietHours {
+    pub fn is_active_at_minute(&self, minute: u16) -> bool {
+        if !self.enabled {
+            return false;
+        }
+
+        let start = self.start_minute.min(24 * 60);
+        let end = self.end_minute.min(24 * 60);
+        let minute = minute.min(24 * 60);
+
+        if start == end {
+            return true;
+        }
+
+        if start < end {
+            minute >= start && minute < end
+        } else {
+            minute >= start || minute < end
+        }
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct IanState {
     pub active_pet_id: String,
     pub current_behavior: CurrentBehavior,
@@ -62,6 +102,15 @@ pub struct IanState {
     pub keyboard_rhythm_enabled: bool,
     pub active_app_presence_enabled: bool,
     pub home_anchor: Position,
+    pub quiet_hours: QuietHours,
+    pub movement_intensity: String,
+    pub bubble_frequency: String,
+    pub rest_behavior: String,
+    pub surface_scale: f64,
+    pub diagnostics_enabled: bool,
+    pub day_phase: String,
+    pub is_dragging: bool,
+    pub is_bubble_input_active: bool,
 }
 
 impl Default for IanState {
@@ -80,6 +129,15 @@ impl Default for IanState {
             keyboard_rhythm_enabled: false,
             active_app_presence_enabled: false,
             home_anchor: Position { x: 0.0, y: 0.0 },
+            quiet_hours: QuietHours::default(),
+            movement_intensity: "normal".to_string(),
+            bubble_frequency: "normal".to_string(),
+            rest_behavior: "normal".to_string(),
+            surface_scale: 1.0,
+            diagnostics_enabled: true,
+            day_phase: "day".to_string(),
+            is_dragging: false,
+            is_bubble_input_active: false,
         }
     }
 }

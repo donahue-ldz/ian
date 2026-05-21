@@ -17,6 +17,9 @@ pub struct DialogueContext {
     pub source: DialogueSource,
     pub mood: MoodState,
     pub bond: BondStateView,
+    pub day_phase: String,
+    pub interaction_count: u32,
+    pub recent_activity_level: String,
 }
 
 pub trait DialogueProvider: Send + Sync {

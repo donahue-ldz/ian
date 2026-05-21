@@ -66,6 +66,20 @@ export async function loadPetResourcePack(id: string): Promise<PetResourcePack> 
 }
 
 export function validatePetResourcePack(pack: PetResourcePack): void {
+  validatePetManifestFields(pack.pet);
+
+  const { frameHeight, frameWidth, scale } = pack.animations.meta;
+  if (frameWidth <= 0 || frameHeight <= 0 || scale <= 0) {
+    throw new ResourcePackError("Resource pack animation meta must be positive");
+  }
+
+  const idle = pack.animations.animations.idle;
+  if (!idle || idle.frames.length === 0) {
+    throw new ResourcePackError("Resource pack must define idle animation");
+  }
+}
+
+export function validatePetManifestFields(pet: PetManifest): void {
   const requiredPetFields: Array<keyof PetManifest> = [
     "id",
     "name",
@@ -76,19 +90,9 @@ export function validatePetResourcePack(pack: PetResourcePack): void {
   ];
 
   for (const field of requiredPetFields) {
-    if (!pack.pet[field]) {
+    if (!pet[field]) {
       throw new ResourcePackError(`Resource pack is missing pet.${field}`);
     }
-  }
-
-  const { frameHeight, frameWidth, scale } = pack.animations.meta;
-  if (frameWidth <= 0 || frameHeight <= 0 || scale <= 0) {
-    throw new ResourcePackError("Resource pack animation meta must be positive");
-  }
-
-  const idle = pack.animations.animations.idle;
-  if (!idle || idle.frames.length === 0) {
-    throw new ResourcePackError("Resource pack must define idle animation");
   }
 }
 
