@@ -105,6 +105,28 @@
   margin-top: 10px;
 }
 
+.ian-settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+.ian-settings-toggle-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: #5a6b60;
+}
+
+.ian-settings-capabilities {
+  display: grid;
+  gap: 4px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(90, 107, 96, 0.12);
+}
+
 .ian-segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);

@@ -42,9 +42,7 @@ impl DialogueEngine {
             mood,
             bond,
         };
-        let reply = self
-            .policy
-            .trim_for_bubble(self.provider.reply(&text, &context));
+        let reply = self.policy.apply(self.provider.reply(&text, &context));
 
         vec![
             IanAction::BubbleOpen,

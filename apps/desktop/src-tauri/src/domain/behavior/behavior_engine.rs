@@ -3,11 +3,12 @@ use crate::{
     protocol::{IanAction, IanEvent, IanState, MovementSpeed},
 };
 
-use super::behavior_policy::BehaviorPolicy;
+use super::{behavior_policy::BehaviorPolicy, developer_rhythm_policy::DeveloperRhythmPolicy};
 
 pub struct BehaviorEngine {
     policy: BehaviorPolicy,
     scheduler: BehaviorScheduler,
+    developer_rhythm: std::sync::Mutex<DeveloperRhythmPolicy>,
 }
 
 impl Default for BehaviorEngine {
@@ -15,6 +16,7 @@ impl Default for BehaviorEngine {
         Self {
             policy: BehaviorPolicy::default(),
             scheduler: BehaviorScheduler::default(),
+            developer_rhythm: std::sync::Mutex::new(DeveloperRhythmPolicy::default()),
         }
     }
 }
@@ -60,6 +62,13 @@ impl BehaviorEngine {
                 .action_for_tick(*now_ms, state)
                 .into_iter()
                 .collect(),
+            IanEvent::DeveloperBuildTestSummary { .. }
+            | IanEvent::DeveloperGitStatusChanged { .. } => self
+                .developer_rhythm
+                .lock()
+                .map(|mut policy| policy.actions_for_event(event, 0))
+                .unwrap_or_default(),
+            IanEvent::KeyboardRhythm { .. } | IanEvent::ActiveAppPresence { .. } => vec![],
             IanEvent::MouseDragStart { .. } | IanEvent::DialogueUserMessage { .. } => vec![],
         }
     }

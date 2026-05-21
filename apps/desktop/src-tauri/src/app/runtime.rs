@@ -5,8 +5,10 @@ use crate::{
         bond::{BondEngine, BondSignal},
         dialogue::{providers::DialogueSource, DialogueEngine},
         mood::{MoodEngine, MoodSignal},
+        reminder::ReminderEngine,
     },
     protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position},
+    security::permission::PermissionState,
     security::SecurityGate,
     storage::StorageService,
 };
@@ -18,6 +20,7 @@ pub struct IanRuntime {
     dialogue: DialogueEngine,
     mood: MoodEngine,
     bond: BondEngine,
+    reminder: ReminderEngine,
     dispatcher: ActionDispatcher,
     security: SecurityGate,
     storage: StorageService,
@@ -34,6 +37,7 @@ impl IanRuntime {
             dialogue: DialogueEngine::default(),
             mood: MoodEngine::default(),
             bond: BondEngine::default(),
+            reminder: ReminderEngine::default(),
             dispatcher: ActionDispatcher::default(),
             security: SecurityGate::default(),
             storage,
@@ -41,6 +45,8 @@ impl IanRuntime {
     }
 
     pub fn handle_event(&mut self, event: IanEvent) -> Result<Vec<IanAction>, String> {
+        self.security
+            .set_permissions(PermissionState::from(self.state.snapshot()));
         self.security
             .inspect(&event)
             .map_err(|error| error.message)?;
@@ -57,6 +63,16 @@ impl IanRuntime {
                 self.mood.current(),
                 self.bond.current(),
             ),
+            IanEvent::TimeTick { now_ms } => {
+                let mut actions = self
+                    .behavior
+                    .decide(&IanEvent::TimeTick { now_ms }, self.state.snapshot());
+                actions.extend(
+                    self.reminder
+                        .actions_for_tick(now_ms, self.state.snapshot()),
+                );
+                actions
+            }
             other => self.behavior.decide(&other, self.state.snapshot()),
         };
 
@@ -93,6 +109,31 @@ impl IanRuntime {
         Ok(self.state.snapshot().clone())
     }
 
+    pub fn save_reminders_enabled(&mut self, enabled: bool) -> Result<IanState, String> {
+        self.state.set_reminders_enabled(enabled);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_capability_enabled(
+        &mut self,
+        capability: String,
+        enabled: bool,
+    ) -> Result<IanState, String> {
+        if !self
+            .state
+            .set_capability_enabled(capability.as_str(), enabled)
+        {
+            return Err("unknown Ian capability".to_string());
+        }
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
     fn apply_internal_signals(&mut self, event: &IanEvent) {
         match event {
             IanEvent::MouseClick { .. } | IanEvent::MouseNear { .. } => {
@@ -106,6 +147,10 @@ impl IanRuntime {
             IanEvent::TimeTick { .. } => {
                 self.mood.apply(MoodSignal::TimeTick);
             }
+            IanEvent::DeveloperBuildTestSummary { .. }
+            | IanEvent::DeveloperGitStatusChanged { .. }
+            | IanEvent::KeyboardRhythm { .. }
+            | IanEvent::ActiveAppPresence { .. } => {}
             IanEvent::MouseDoubleClick { .. }
             | IanEvent::MouseDragEnd { .. }
             | IanEvent::MouseDragStart { .. } => {
@@ -113,5 +158,54 @@ impl IanRuntime {
             }
             IanEvent::AppStarted => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::IanRuntime;
+    use crate::{
+        protocol::{IanAction, IanEvent},
+        storage::StorageService,
+    };
+
+    #[test]
+    fn time_tick_can_emit_reminder_after_cooldown() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let first = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 1_000 })
+            .expect("first tick");
+        let second = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 5_401_000 })
+            .expect("second tick");
+
+        assert!(!first.iter().any(is_reminder_speech));
+        assert!(second.iter().any(is_reminder_speech));
+    }
+
+    #[test]
+    fn disabled_reminders_do_not_emit_runtime_reminders() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+        runtime
+            .save_reminders_enabled(false)
+            .expect("disable reminders");
+
+        let first = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 1_000 })
+            .expect("first tick");
+        let second = runtime
+            .handle_event(IanEvent::TimeTick { now_ms: 5_401_000 })
+            .expect("second tick");
+
+        assert!(!first.iter().any(is_reminder_speech));
+        assert!(!second.iter().any(is_reminder_speech));
+    }
+
+    fn is_reminder_speech(action: &IanAction) -> bool {
+        matches!(
+            action,
+            IanAction::SpeechShow { text, .. } if text == "喝口水吧。" || text == "起来伸一下。"
+        )
     }
 }

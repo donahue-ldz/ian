@@ -49,6 +49,12 @@ pub struct IanState {
     pub position: Position,
     pub active_resource_pack: String,
     pub behavior_mode: BehaviorMode,
+    pub reminders_enabled: bool,
+    pub byom_enabled: bool,
+    pub git_metadata_enabled: bool,
+    pub build_test_events_enabled: bool,
+    pub keyboard_rhythm_enabled: bool,
+    pub active_app_presence_enabled: bool,
 }
 
 impl Default for IanState {
@@ -60,6 +66,12 @@ impl Default for IanState {
             position: Position { x: 0.0, y: 0.0 },
             active_resource_pack: "ian-alpaca".to_string(),
             behavior_mode: BehaviorMode::Normal,
+            reminders_enabled: true,
+            byom_enabled: false,
+            git_metadata_enabled: false,
+            build_test_events_enabled: false,
+            keyboard_rhythm_enabled: false,
+            active_app_presence_enabled: false,
         }
     }
 }

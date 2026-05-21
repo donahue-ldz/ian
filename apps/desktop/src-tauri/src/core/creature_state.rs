@@ -21,6 +21,22 @@ impl CreatureState {
         self.state.behavior_mode = mode;
     }
 
+    pub fn set_reminders_enabled(&mut self, enabled: bool) {
+        self.state.reminders_enabled = enabled;
+    }
+
+    pub fn set_capability_enabled(&mut self, capability: &str, enabled: bool) -> bool {
+        match capability {
+            "byom" => self.state.byom_enabled = enabled,
+            "git_metadata" => self.state.git_metadata_enabled = enabled,
+            "build_test_events" => self.state.build_test_events_enabled = enabled,
+            "keyboard_rhythm" => self.state.keyboard_rhythm_enabled = enabled,
+            "active_app_presence" => self.state.active_app_presence_enabled = enabled,
+            _ => return false,
+        }
+        true
+    }
+
     pub fn apply_actions(&mut self, actions: &[IanAction]) {
         for action in actions {
             match action {

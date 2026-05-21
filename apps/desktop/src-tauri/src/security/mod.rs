@@ -12,6 +12,10 @@ pub struct SecurityGate {
 }
 
 impl SecurityGate {
+    pub fn set_permissions(&mut self, state: permission::PermissionState) {
+        self.permissions.set_state(state);
+    }
+
     pub fn inspect(&mut self, event: &IanEvent) -> Result<(), IanError> {
         self.permissions.allow(event)?;
         self.rate_limiter.allow(event)?;

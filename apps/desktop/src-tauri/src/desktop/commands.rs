@@ -52,3 +52,26 @@ pub fn save_behavior_mode(
         .map_err(|_| "Ian runtime lock poisoned".to_string())?
         .save_behavior_mode(mode)
 }
+
+#[tauri::command]
+pub fn save_reminders_enabled(
+    enabled: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_reminders_enabled(enabled)
+}
+
+#[tauri::command]
+pub fn save_capability_enabled(
+    capability: String,
+    enabled: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_capability_enabled(capability, enabled)
+}

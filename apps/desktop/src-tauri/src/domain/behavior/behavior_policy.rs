@@ -34,4 +34,21 @@ impl BehaviorPolicy {
 
         ("idle", true)
     }
+
+    pub fn should_reduce_disturbance_for_app_category(&self, category: &str) -> bool {
+        matches!(category, "meeting" | "focus" | "presentation")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BehaviorPolicy;
+
+    #[test]
+    fn active_app_category_can_reduce_disturbance_without_window_content() {
+        let policy = BehaviorPolicy::default();
+
+        assert!(policy.should_reduce_disturbance_for_app_category("meeting"));
+        assert!(!policy.should_reduce_disturbance_for_app_category("editor"));
+    }
 }

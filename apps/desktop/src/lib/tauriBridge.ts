@@ -14,6 +14,12 @@ const browserFallbackState: IanState = {
   position: { x: 0, y: 0 },
   active_resource_pack: "ian-alpaca",
   behavior_mode: "normal",
+  reminders_enabled: true,
+  byom_enabled: false,
+  git_metadata_enabled: false,
+  build_test_events_enabled: false,
+  keyboard_rhythm_enabled: false,
+  active_app_presence_enabled: false,
 };
 
 function isTauriRuntime(): boolean {
@@ -88,5 +94,29 @@ export async function saveBehaviorMode(mode: BehaviorMode): Promise<IanState> {
   }
 
   browserFallbackState.behavior_mode = mode;
+  return browserFallbackState;
+}
+
+export async function saveRemindersEnabled(enabled: boolean): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_reminders_enabled", { enabled });
+  }
+
+  browserFallbackState.reminders_enabled = enabled;
+  return browserFallbackState;
+}
+
+export async function saveCapabilityEnabled(
+  capability: string,
+  enabled: boolean,
+): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_capability_enabled", { capability, enabled });
+  }
+
+  const field = `${capability}_enabled` as keyof IanState;
+  if (field in browserFallbackState) {
+    (browserFallbackState[field] as boolean) = enabled;
+  }
   return browserFallbackState;
 }

@@ -9,6 +9,10 @@ use crate::protocol::{BehaviorMode, IanState, Position};
 struct ConfigFile {
     app: AppConfig,
     behavior: BehaviorConfig,
+    #[serde(default)]
+    reminder: ReminderConfig,
+    #[serde(default)]
+    capabilities: CapabilityConfig,
     position: Position,
 }
 
@@ -21,6 +25,26 @@ struct AppConfig {
 #[derive(Debug, Serialize, Deserialize)]
 struct BehaviorConfig {
     mode: BehaviorMode,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ReminderConfig {
+    enabled: bool,
+}
+
+impl Default for ReminderConfig {
+    fn default() -> Self {
+        Self { enabled: true }
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct CapabilityConfig {
+    byom_enabled: bool,
+    git_metadata_enabled: bool,
+    build_test_events_enabled: bool,
+    keyboard_rhythm_enabled: bool,
+    active_app_presence_enabled: bool,
 }
 
 pub fn ian_app_dir() -> io::Result<std::path::PathBuf> {
@@ -102,6 +126,7 @@ mod tests {
         let mut state = IanState::default();
         state.position = Position { x: 44.0, y: 88.0 };
         state.behavior_mode = BehaviorMode::Lively;
+        state.reminders_enabled = false;
 
         persist_state(dir.path(), &state).expect("persist state");
         let loaded = load_state(dir.path()).expect("load state");
@@ -109,6 +134,32 @@ mod tests {
         assert_eq!(loaded.position.x, 44.0);
         assert_eq!(loaded.position.y, 88.0);
         assert!(matches!(loaded.behavior_mode, BehaviorMode::Lively));
+        assert!(!loaded.reminders_enabled);
+    }
+
+    #[test]
+    fn load_state_defaults_reminders_enabled_for_older_config() {
+        let dir = tempdir().expect("temp dir");
+        fs::write(
+            dir.path().join("config.toml"),
+            r#"
+[app]
+active_pet = "ian-alpaca"
+active_resource_pack = "ian-alpaca"
+
+[behavior]
+mode = "normal"
+
+[position]
+x = 12.0
+y = 24.0
+"#,
+        )
+        .expect("write older config");
+
+        let loaded = load_state(dir.path()).expect("load old config");
+
+        assert!(loaded.reminders_enabled);
     }
 }
 
@@ -121,6 +172,16 @@ impl From<IanState> for ConfigFile {
             },
             behavior: BehaviorConfig {
                 mode: state.behavior_mode,
+            },
+            reminder: ReminderConfig {
+                enabled: state.reminders_enabled,
+            },
+            capabilities: CapabilityConfig {
+                byom_enabled: state.byom_enabled,
+                git_metadata_enabled: state.git_metadata_enabled,
+                build_test_events_enabled: state.build_test_events_enabled,
+                keyboard_rhythm_enabled: state.keyboard_rhythm_enabled,
+                active_app_presence_enabled: state.active_app_presence_enabled,
             },
             position: state.position,
         }
@@ -136,6 +197,12 @@ impl From<ConfigFile> for IanState {
             position: config.position,
             active_resource_pack: config.app.active_resource_pack,
             behavior_mode: config.behavior.mode,
+            reminders_enabled: config.reminder.enabled,
+            byom_enabled: config.capabilities.byom_enabled,
+            git_metadata_enabled: config.capabilities.git_metadata_enabled,
+            build_test_events_enabled: config.capabilities.build_test_events_enabled,
+            keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
+            active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
         }
     }
 }
