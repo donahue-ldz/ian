@@ -7,6 +7,7 @@ import {
   viewStateForWindowContent,
 } from "./ianActions";
 import {
+  createMovementSequenceGuard,
   durationForDesktopMovement,
   durationForSpeed,
   planDesktopMovementFrames,
@@ -308,5 +309,31 @@ describe("movement pacing", () => {
 
     expect(longMoveMs).toBeGreaterThan(shortMoveMs * 4);
     expect(longMoveMs).toBeGreaterThanOrEqual(12_000);
+  });
+
+  it("cancels older desktop movement batches only when a newer movement batch starts", () => {
+    const guard = createMovementSequenceGuard();
+    const patrolBatch: IanAction[] = [
+      { type: "movement.move_to", x: 10, y: 10, speed: "slow" },
+      { type: "movement.move_to", x: 100, y: 10, speed: "slow" },
+    ];
+    const nonMovementBatch: IanAction[] = [
+      { type: "animation.play", name: "idle", looped: true },
+    ];
+    const chaseBatch: IanAction[] = [
+      { type: "movement.move_to", x: 40, y: 10, speed: "fast" },
+    ];
+
+    const patrolSequence = guard.startBatch(patrolBatch);
+    const nonMovementSequence = guard.startBatch(nonMovementBatch);
+
+    expect(guard.isCurrent(patrolSequence)).toBe(true);
+    expect(nonMovementSequence).toBe(patrolSequence);
+
+    const chaseSequence = guard.startBatch(chaseBatch);
+
+    expect(chaseSequence).not.toBe(patrolSequence);
+    expect(guard.isCurrent(patrolSequence)).toBe(false);
+    expect(guard.isCurrent(chaseSequence)).toBe(true);
   });
 });

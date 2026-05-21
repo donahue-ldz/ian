@@ -1,0 +1,292 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3456" height="96" viewBox="0 0 3456 96" shape-rendering="crispEdges" data-style="pixel-adventurer-v1" data-style-kind="pixel-sprite" data-line-tone="soft-arcade" data-pixel-grid="4">
+  <defs>
+    <style>
+      .outline{fill:#53606b}
+      .hood{fill:#91a0aa}
+      .hood-hi{fill:#b8c3ca}
+      .body{fill:#718592}
+      .body-hi{fill:#9cafbb}
+      .body-low{fill:#5f707c}
+      .face{fill:#edf2f4}
+      .eye{fill:#3f4b55}
+      .blush{fill:#f5c2c8}
+      .scarf{fill:#62c0b5}
+      .scarf-dark{fill:#3f9f96}
+      .pack{fill:#6f7784}
+      .pack-hi{fill:#a7b0ba}
+      .staff{fill:#f2b91f}
+      .staff-hi{fill:#fff0a5}
+      .glow{fill:#ffe16b;opacity:.7}
+      .shadow{fill:#c9d0d6;opacity:.5}
+      .speed{fill:#f2c23a;opacity:.55}
+      .spark{fill:#fff2a9}
+    </style>
+
+    <g id="shadow">
+      <rect x="28" y="84" width="40" height="4" class="shadow"/>
+      <rect x="36" y="88" width="24" height="4" class="shadow"/>
+    </g>
+
+    <g id="pixel-head">
+      <rect x="24" y="20" width="8" height="8" class="outline"/>
+      <rect x="64" y="20" width="8" height="8" class="outline"/>
+      <rect x="20" y="28" width="56" height="24" class="outline"/>
+      <rect x="24" y="24" width="48" height="32" class="outline"/>
+      <rect x="28" y="24" width="8" height="4" class="hood-hi"/>
+      <rect x="60" y="24" width="8" height="4" class="hood-hi"/>
+      <rect x="28" y="28" width="40" height="24" class="hood"/>
+      <rect x="32" y="24" width="28" height="4" class="hood"/>
+      <rect x="32" y="32" width="32" height="16" class="face"/>
+      <rect x="28" y="48" width="40" height="4" class="body-low"/>
+      <rect x="36" y="36" width="4" height="4" class="eye"/>
+      <rect x="56" y="36" width="4" height="4" class="eye"/>
+      <rect x="44" y="44" width="8" height="4" class="eye"/>
+      <rect x="32" y="44" width="4" height="4" class="blush"/>
+      <rect x="60" y="44" width="4" height="4" class="blush"/>
+      <rect x="36" y="28" width="24" height="4" class="hood-hi"/>
+    </g>
+
+    <g id="pixel-head-blink">
+      <use href="#pixel-head"/>
+      <rect x="36" y="36" width="4" height="4" class="face"/>
+      <rect x="56" y="36" width="4" height="4" class="face"/>
+      <rect x="36" y="40" width="8" height="4" class="eye"/>
+      <rect x="52" y="40" width="8" height="4" class="eye"/>
+    </g>
+
+    <g id="pixel-head-happy">
+      <use href="#pixel-head"/>
+      <rect x="36" y="36" width="4" height="4" class="face"/>
+      <rect x="56" y="36" width="4" height="4" class="face"/>
+      <rect x="36" y="36" width="8" height="4" class="eye"/>
+      <rect x="52" y="36" width="8" height="4" class="eye"/>
+      <rect x="44" y="44" width="4" height="4" class="face"/>
+      <rect x="44" y="48" width="12" height="4" class="eye"/>
+    </g>
+
+    <g id="pixel-head-sleep">
+      <use href="#pixel-head"/>
+      <rect x="36" y="36" width="4" height="4" class="face"/>
+      <rect x="56" y="36" width="4" height="4" class="face"/>
+      <rect x="36" y="40" width="8" height="4" class="eye"/>
+      <rect x="52" y="40" width="8" height="4" class="eye"/>
+      <rect x="44" y="44" width="8" height="4" class="face"/>
+    </g>
+
+    <g id="pixel-cape" data-prop="soft-scarf">
+      <rect x="16" y="56" width="20" height="8" class="scarf-dark"/>
+      <rect x="12" y="64" width="24" height="8" class="scarf"/>
+      <rect x="8" y="72" width="20" height="4" class="scarf-dark"/>
+      <rect x="20" y="60" width="16" height="4" class="scarf"/>
+    </g>
+
+    <g id="pixel-pack" data-prop="small-backpack">
+      <rect x="60" y="56" width="16" height="20" class="outline"/>
+      <rect x="64" y="60" width="8" height="12" class="pack"/>
+      <rect x="64" y="60" width="4" height="4" class="pack-hi"/>
+    </g>
+
+    <g id="pixel-body">
+      <rect x="32" y="52" width="32" height="28" class="outline"/>
+      <rect x="36" y="56" width="24" height="20" class="body"/>
+      <rect x="36" y="56" width="8" height="8" class="body-hi"/>
+      <rect x="36" y="72" width="24" height="4" class="body-low"/>
+      <rect x="36" y="56" width="24" height="4" class="scarf"/>
+      <rect x="44" y="60" width="12" height="4" class="scarf-dark"/>
+    </g>
+
+    <g id="pixel-legs">
+      <rect x="32" y="76" width="12" height="8" class="outline"/>
+      <rect x="52" y="76" width="12" height="8" class="outline"/>
+      <rect x="28" y="84" width="16" height="4" class="outline"/>
+      <rect x="52" y="84" width="16" height="4" class="outline"/>
+      <rect x="36" y="76" width="4" height="8" class="body-hi"/>
+      <rect x="56" y="76" width="4" height="8" class="body-hi"/>
+    </g>
+
+    <g id="pixel-legs-step-a">
+      <rect x="28" y="76" width="12" height="8" class="outline"/>
+      <rect x="56" y="72" width="12" height="8" class="outline"/>
+      <rect x="24" y="84" width="16" height="4" class="outline"/>
+      <rect x="56" y="80" width="16" height="4" class="outline"/>
+    </g>
+
+    <g id="pixel-legs-step-b">
+      <rect x="36" y="72" width="12" height="8" class="outline"/>
+      <rect x="52" y="76" width="12" height="8" class="outline"/>
+      <rect x="32" y="80" width="16" height="4" class="outline"/>
+      <rect x="52" y="84" width="16" height="4" class="outline"/>
+    </g>
+
+    <g id="pixel-arms">
+      <rect x="24" y="60" width="8" height="12" class="outline"/>
+      <rect x="64" y="60" width="8" height="12" class="outline"/>
+      <rect x="28" y="64" width="4" height="8" class="body-hi"/>
+      <rect x="64" y="64" width="4" height="8" class="body-hi"/>
+    </g>
+
+    <g id="pixel-map">
+      <rect x="20" y="60" width="20" height="12" class="face"/>
+      <rect x="20" y="60" width="4" height="12" class="hood-hi"/>
+      <rect x="28" y="64" width="8" height="4" class="scarf"/>
+    </g>
+
+    <g id="pixel-staff" data-prop="glow-staff">
+      <rect x="76" y="16" width="16" height="16" class="glow"/>
+      <rect x="80" y="20" width="8" height="8" class="staff-hi"/>
+      <rect x="72" y="28" width="4" height="8" class="staff"/>
+      <rect x="68" y="36" width="4" height="8" class="staff"/>
+      <rect x="64" y="44" width="4" height="8" class="staff"/>
+      <rect x="60" y="52" width="4" height="8" class="staff"/>
+      <rect x="56" y="60" width="4" height="8" class="staff"/>
+      <rect x="72" y="28" width="4" height="4" class="staff-hi"/>
+      <rect x="64" y="44" width="4" height="4" class="staff-hi"/>
+      <rect x="56" y="60" width="4" height="4" class="staff-hi"/>
+    </g>
+
+    <g id="pixel-staff-forward" data-prop="glow-staff">
+      <rect x="80" y="34" width="16" height="16" class="glow"/>
+      <rect x="84" y="38" width="8" height="8" class="staff-hi"/>
+      <rect x="76" y="48" width="8" height="4" class="staff"/>
+      <rect x="68" y="52" width="8" height="4" class="staff"/>
+      <rect x="60" y="56" width="8" height="4" class="staff"/>
+      <rect x="52" y="60" width="8" height="4" class="staff"/>
+      <rect x="44" y="64" width="8" height="4" class="staff"/>
+      <rect x="68" y="52" width="4" height="4" class="staff-hi"/>
+      <rect x="52" y="60" width="4" height="4" class="staff-hi"/>
+    </g>
+
+    <g id="speed-lines">
+      <rect x="8" y="60" width="16" height="4" class="speed"/>
+      <rect x="4" y="68" width="20" height="4" class="speed"/>
+      <rect x="12" y="76" width="12" height="4" class="speed"/>
+    </g>
+
+    <g id="base-open">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head"/>
+      <use href="#pixel-arms"/>
+      <use href="#pixel-legs"/>
+      <use href="#pixel-staff"/>
+    </g>
+
+    <g id="base-blink">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head-blink"/>
+      <use href="#pixel-arms"/>
+      <use href="#pixel-legs"/>
+      <use href="#pixel-staff"/>
+    </g>
+
+    <g id="base-map">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head"/>
+      <use href="#pixel-map"/>
+      <use href="#pixel-legs"/>
+    </g>
+
+    <g id="base-forward-a">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head"/>
+      <use href="#pixel-arms"/>
+      <use href="#pixel-legs-step-a"/>
+      <use href="#pixel-staff-forward"/>
+    </g>
+
+    <g id="base-forward-b">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head"/>
+      <use href="#pixel-arms"/>
+      <use href="#pixel-legs-step-b"/>
+      <use href="#pixel-staff-forward"/>
+    </g>
+
+    <g id="base-happy">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <use href="#pixel-body"/>
+      <use href="#pixel-head-happy"/>
+      <use href="#pixel-arms"/>
+      <use href="#pixel-legs"/>
+      <use href="#pixel-staff"/>
+      <rect x="76" y="8" width="4" height="4" class="spark"/>
+      <rect x="88" y="12" width="4" height="4" class="spark"/>
+    </g>
+
+    <g id="base-rest">
+      <use href="#pixel-cape"/>
+      <use href="#pixel-pack"/>
+      <g transform="translate(0 6)">
+        <use href="#pixel-body"/>
+        <use href="#pixel-head-blink"/>
+        <use href="#pixel-map"/>
+        <use href="#pixel-legs"/>
+      </g>
+    </g>
+
+    <g id="base-sleep">
+      <g transform="translate(0 10)">
+        <use href="#pixel-cape"/>
+        <use href="#pixel-pack"/>
+        <use href="#pixel-body"/>
+        <use href="#pixel-head-sleep"/>
+        <use href="#pixel-legs"/>
+      </g>
+      <rect x="76" y="22" width="4" height="4" class="spark"/>
+      <rect x="84" y="14" width="4" height="4" class="spark"/>
+    </g>
+  </defs>
+
+  <g transform="translate(0 0)"><use href="#shadow"/><use href="#base-open"/></g>
+  <g transform="translate(96 0)"><use href="#shadow"/><g transform="translate(0 -4)"><use href="#base-open"/></g></g>
+  <g transform="translate(192 0)"><use href="#shadow"/><use href="#base-blink"/></g>
+  <g transform="translate(288 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-open"/></g></g>
+  <g transform="translate(384 0)"><use href="#shadow"/><g transform="translate(-4 0)"><use href="#base-open"/></g></g>
+  <g transform="translate(480 0)"><use href="#shadow"/><g transform="translate(4 0)"><use href="#base-open"/></g></g>
+  <g transform="translate(576 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-map"/></g></g>
+  <g transform="translate(672 0)"><use href="#shadow"/><g transform="translate(0 8)"><use href="#base-map"/></g></g>
+
+  <g transform="translate(768 0)"><use href="#shadow"/><g transform="translate(-4 0)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(864 0)"><use href="#shadow"/><g transform="translate(0 -4)"><use href="#base-forward-b"/></g></g>
+  <g transform="translate(960 0)"><use href="#shadow"/><g transform="translate(4 0)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(1056 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-forward-b"/></g></g>
+  <g transform="translate(1152 0)"><use href="#shadow"/><g transform="translate(-4 -4)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(1248 0)"><use href="#shadow"/><g transform="translate(4 4)"><use href="#base-forward-b"/></g></g>
+
+  <g transform="translate(1344 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -4)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(1440 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(0 4)"><use href="#base-forward-b"/></g></g>
+  <g transform="translate(1536 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -4)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(1632 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(0 4)"><use href="#base-forward-b"/></g></g>
+  <g transform="translate(1728 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -4)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(1824 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(0 4)"><use href="#base-forward-b"/></g></g>
+
+  <g transform="translate(1920 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -8)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2016 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(-4 4)"><use href="#base-forward-b"/></g></g>
+  <g transform="translate(2112 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -8)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2208 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(-4 4)"><use href="#base-forward-a"/></g></g>
+  <g transform="translate(2304 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(8 -8)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2400 0)"><use href="#shadow"/><use href="#speed-lines"/><g transform="translate(0 4)"><use href="#base-forward-b"/></g></g>
+
+  <g transform="translate(2496 0)"><use href="#shadow"/><g transform="translate(0 -4)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2592 0)"><use href="#shadow"/><g transform="translate(0 -12)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2688 0)"><use href="#shadow"/><g transform="translate(0 -4)"><use href="#base-happy"/></g></g>
+  <g transform="translate(2784 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-happy"/></g></g>
+
+  <g transform="translate(2880 0)"><use href="#shadow"/><use href="#base-rest"/></g>
+  <g transform="translate(2976 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-rest"/></g></g>
+  <g transform="translate(3072 0)"><use href="#shadow"/><g transform="translate(0 8)"><use href="#base-rest"/></g></g>
+
+  <g transform="translate(3168 0)"><use href="#shadow"/><use href="#base-sleep"/></g>
+  <g transform="translate(3264 0)"><use href="#shadow"/><g transform="translate(0 4)"><use href="#base-sleep"/></g></g>
+  <g transform="translate(3360 0)"><use href="#shadow"/><g transform="translate(0 0)"><use href="#base-sleep"/></g></g>
+</svg>

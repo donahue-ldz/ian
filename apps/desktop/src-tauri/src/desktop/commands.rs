@@ -57,6 +57,17 @@ pub fn save_behavior_mode(
 }
 
 #[tauri::command]
+pub fn save_active_pet(
+    active_pet_id: String,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_active_pet(active_pet_id)
+}
+
+#[tauri::command]
 pub fn save_quiet_hours(
     quiet_hours: QuietHours,
     runtime: State<'_, Mutex<IanRuntime>>,

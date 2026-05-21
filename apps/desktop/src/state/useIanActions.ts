@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useState, type Dispatch, type SetStateAction } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type Dispatch,
+  type SetStateAction,
+} from "react";
 import type {
   IanAction,
   IanEvent,
@@ -19,9 +26,10 @@ export function useIanActions() {
   const [viewState, setViewState] = useState<IanViewState>(() =>
     createInitialIanViewState(),
   );
+  const movementSequenceGuard = useRef(createMovementSequenceGuard());
 
   const applyActions = useCallback((actions: IanAction[]) => {
-    void applyActionSequence(actions, setViewState);
+    void applyActionSequence(actions, setViewState, movementSequenceGuard.current);
   }, []);
 
   useEffect(() => {
@@ -80,10 +88,17 @@ export function useIanActions() {
 async function applyActionSequence(
   actions: IanAction[],
   setViewState: Dispatch<SetStateAction<IanViewState>>,
+  movementGuard: MovementSequenceGuard,
 ) {
   let movementIndex = 0;
+  const isMovementBatch = actions.some(isMovementAction);
+  const sequenceId = movementGuard.startBatch(actions);
 
   for (const action of actions) {
+    if (isMovementBatch && !movementGuard.isCurrent(sequenceId)) {
+      return;
+    }
+
     setViewState((current) => reduceIanActions(current, [action]));
 
     if (action.type === "movement.move_to") {
@@ -91,6 +106,7 @@ async function applyActionSequence(
         { x: action.x, y: action.y },
         action.speed,
         movementIndex,
+        () => movementGuard.isCurrent(sequenceId),
       );
       movementIndex += 1;
     }
@@ -101,8 +117,13 @@ async function moveDesktopWindowSmoothly(
   target: Position,
   speed: MovementSpeed,
   movementIndex: number,
+  isCurrent = () => true,
 ) {
   const start = await getDesktopWindowPosition();
+  if (!isCurrent()) {
+    return;
+  }
+
   if (!start) {
     await moveDesktopWindow(target);
     return;
@@ -116,9 +137,39 @@ async function moveDesktopWindowSmoothly(
   );
 
   for (const frame of frames) {
+    if (!isCurrent()) {
+      return;
+    }
+
     await moveDesktopWindow(frame);
     await delay(frameDelayMs);
   }
+}
+
+type MovementSequenceGuard = {
+  startBatch: (actions: IanAction[]) => number;
+  isCurrent: (sequenceId: number) => boolean;
+};
+
+export function createMovementSequenceGuard(): MovementSequenceGuard {
+  let currentSequenceId = 0;
+
+  return {
+    startBatch(actions: IanAction[]) {
+      if (actions.some(isMovementAction)) {
+        currentSequenceId += 1;
+      }
+
+      return currentSequenceId;
+    },
+    isCurrent(sequenceId: number) {
+      return sequenceId === currentSequenceId;
+    },
+  };
+}
+
+function isMovementAction(action: IanAction): boolean {
+  return action.type === "movement.move_to";
 }
 
 export function durationForSpeed(

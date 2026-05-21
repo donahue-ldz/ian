@@ -343,6 +343,10 @@ impl BehaviorEngine {
             return Vec::new();
         }
 
+        if is_active_settling_state(now_ms, state) {
+            return Vec::new();
+        }
+
         if state
             .quiet_hours
             .is_active_at_minute(minute_of_day_from_epoch_ms(now_ms))
@@ -416,9 +420,19 @@ impl BehaviorEngine {
         state: &IanState,
     ) -> Option<Vec<IanAction>> {
         const IDLE_THRESHOLD_MS: i64 = 60_000;
-        const PATROL_MARGIN: f64 = 32.0;
-        const WINDOW_SAFE_WIDTH: f64 = 180.0;
-        const WINDOW_SAFE_HEIGHT: f64 = 180.0;
+        const PATROL_MARGIN: f64 = 12.0;
+        const PATROL_SCALE: f64 = 0.45;
+        const DESKTOP_SURFACE_WIDTH: f64 = 220.0;
+        const DESKTOP_SURFACE_HEIGHT: f64 = 220.0;
+        const DESKTOP_SURFACE_OFFSET_X: f64 = 20.0;
+        const DESKTOP_SURFACE_OFFSET_Y: f64 = 108.0;
+        const PATROL_DURATION_MS: i64 = 180_000;
+        const PATROL_VISUAL_WIDTH: f64 = DESKTOP_SURFACE_WIDTH * PATROL_SCALE;
+        const PATROL_VISUAL_HEIGHT: f64 = DESKTOP_SURFACE_HEIGHT * PATROL_SCALE;
+        const PATROL_VISUAL_OFFSET_X: f64 =
+            DESKTOP_SURFACE_OFFSET_X + (DESKTOP_SURFACE_WIDTH - PATROL_VISUAL_WIDTH) / 2.0;
+        const PATROL_VISUAL_OFFSET_Y: f64 =
+            DESKTOP_SURFACE_OFFSET_Y + (DESKTOP_SURFACE_HEIGHT - PATROL_VISUAL_HEIGHT) / 2.0;
 
         if matches!(state.behavior_mode, crate::protocol::BehaviorMode::Quiet)
             || state.day_phase == "night"
@@ -430,7 +444,11 @@ impl BehaviorEngine {
         }
 
         let bounds = state.screen_bounds.as_ref()?;
-        if bounds.width < WINDOW_SAFE_WIDTH || bounds.height < WINDOW_SAFE_HEIGHT {
+        if bounds.width < PATROL_VISUAL_WIDTH || bounds.height < PATROL_VISUAL_HEIGHT {
+            return None;
+        }
+
+        if is_active_settling_state(now_ms, state) {
             return None;
         }
 
@@ -439,10 +457,12 @@ impl BehaviorEngine {
             return None;
         }
 
-        let min_x = bounds.x + PATROL_MARGIN;
-        let min_y = bounds.y + PATROL_MARGIN;
-        let max_x = bounds.x + bounds.width - WINDOW_SAFE_WIDTH;
-        let max_y = bounds.y + bounds.height - WINDOW_SAFE_HEIGHT;
+        let min_x = bounds.x + PATROL_MARGIN - PATROL_VISUAL_OFFSET_X;
+        let min_y = bounds.y + PATROL_MARGIN - PATROL_VISUAL_OFFSET_Y;
+        let max_x = bounds.x + bounds.width - PATROL_MARGIN - PATROL_VISUAL_WIDTH
+            - PATROL_VISUAL_OFFSET_X;
+        let max_y = bounds.y + bounds.height - PATROL_MARGIN - PATROL_VISUAL_HEIGHT
+            - PATROL_VISUAL_OFFSET_Y;
 
         let corners = [
             Position { x: min_x, y: min_y },
@@ -454,12 +474,16 @@ impl BehaviorEngine {
 
         let mut actions = vec![
             IanAction::AppearanceScaleTo {
-                scale: 0.45,
+                scale: PATROL_SCALE,
                 duration_ms: 500,
             },
             IanAction::AnimationPlay {
                 name: "walk".to_string(),
                 looped: true,
+            },
+            IanAction::PlayfulStateSet {
+                state: PlayfulState::Settling,
+                until_ms: Some(now_ms + PATROL_DURATION_MS),
             },
         ];
 
@@ -655,7 +679,10 @@ impl BehaviorEngine {
 
         if matches!(
             state.playful_state,
-            PlayfulState::WarmingUp | PlayfulState::Zooming | PlayfulState::CoolingDown
+            PlayfulState::WarmingUp
+                | PlayfulState::Zooming
+                | PlayfulState::Settling
+                | PlayfulState::CoolingDown
         ) && state
             .playful_state_until_ms
             .map(|until| now_ms < until)
@@ -955,9 +982,19 @@ fn is_user_interaction_active(state: &IanState) -> bool {
     state.is_dragging || state.is_bubble_input_active || state.current_animation == "run"
 }
 
+fn is_active_settling_state(now_ms: i64, state: &IanState) -> bool {
+    matches!(state.playful_state, PlayfulState::Settling)
+        && state
+            .playful_state_until_ms
+            .map(|until| now_ms < until)
+            .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::protocol::{IanAction, IanEvent, IanState, PlayfulEnergy, PlayfulState};
+    use crate::protocol::{
+        IanAction, IanEvent, IanState, PlayfulEnergy, PlayfulState, Position,
+    };
 
     use super::BehaviorEngine;
 
@@ -1255,6 +1292,108 @@ mod tests {
         assert!(targets[2].0 > 1000.0 && targets[2].1 > 600.0);
         assert!(targets[3].0 <= 48.0 && targets[3].1 > 600.0);
         assert!(targets[4].0 <= 48.0 && targets[4].1 <= 48.0);
+    }
+
+    #[test]
+    fn idle_perimeter_patrol_compensates_for_desktop_window_visual_offset() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.position.x = 64.0;
+        state.position.y = 720.0;
+        state.screen_bounds = Some(crate::protocol::ScreenBounds {
+            x: 0.0,
+            y: 0.0,
+            width: 1440.0,
+            height: 900.0,
+        });
+
+        let actions = engine.decide(&IanEvent::TimeTick { now_ms: 61_000 }, &state);
+        let first_target = actions.iter().find_map(|action| match action {
+            IanAction::MovementMoveTo { x, y, .. } => Some((*x, *y)),
+            _ => None,
+        });
+
+        assert!(matches!(first_target, Some((x, y)) if x < 0.0 && y < 0.0));
+    }
+
+    #[test]
+    fn idle_perimeter_patrol_does_not_restart_while_patrol_is_active() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.position.x = 64.0;
+        state.position.y = 720.0;
+        state.playful_state = PlayfulState::Settling;
+        state.playful_state_until_ms = Some(180_000);
+        state.screen_bounds = Some(crate::protocol::ScreenBounds {
+            x: 0.0,
+            y: 0.0,
+            width: 1440.0,
+            height: 900.0,
+        });
+
+        let actions = engine.decide(&IanEvent::TimeTick { now_ms: 75_000 }, &state);
+
+        assert!(!actions
+            .iter()
+            .any(|action| matches!(action, IanAction::MovementMoveTo { .. })));
+        assert!(!actions
+            .iter()
+            .any(|action| matches!(action, IanAction::AppearanceScaleTo { .. })));
+    }
+
+    #[test]
+    fn idle_perimeter_patrol_blocks_autonomous_animation_ticks_while_active() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.current_animation = "walk".to_string();
+        state.playful_state = PlayfulState::Settling;
+        state.playful_state_until_ms = Some(180_000);
+        state.screen_bounds = Some(crate::protocol::ScreenBounds {
+            x: 0.0,
+            y: 0.0,
+            width: 1440.0,
+            height: 900.0,
+        });
+
+        let actions = engine.decide(&IanEvent::TimeTick { now_ms: 90_000 }, &state);
+
+        assert!(
+            !actions
+                .iter()
+                .any(|action| matches!(action, IanAction::AnimationPlay { .. })),
+            "active perimeter patrol should not be interrupted by scheduler animation actions: {actions:?}"
+        );
+    }
+
+    #[test]
+    fn pointer_chase_does_not_interrupt_active_perimeter_patrol() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.position = Position { x: 300.0, y: 300.0 };
+        state.playful_state = PlayfulState::Settling;
+        state.playful_state_until_ms = Some(180_000);
+
+        let actions = engine.decide(
+            &IanEvent::MouseChaseCandidate {
+                x: 420.0,
+                y: 300.0,
+                now_ms: 90_000,
+            },
+            &state,
+        );
+
+        assert!(
+            !actions
+                .iter()
+                .any(|action| matches!(action, IanAction::MovementMoveTo { .. })),
+            "pointer chase should not inject movement while perimeter patrol is active: {actions:?}"
+        );
+        assert!(
+            !actions
+                .iter()
+                .any(|action| matches!(action, IanAction::AnimationPlay { name, .. } if name == "run")),
+            "pointer chase should not switch animation to run while perimeter patrol is active: {actions:?}"
+        );
     }
 
     #[test]

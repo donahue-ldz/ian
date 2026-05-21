@@ -5,6 +5,7 @@ import type {
   PlayfulEnergy,
   QuietHours,
 } from "../protocol/generated";
+import { BUILT_IN_PET_RESOURCE_PACKS } from "../resources/resourceLoader";
 import {
   behaviorModeOptions,
   bubbleFrequencyOptions,
@@ -39,6 +40,7 @@ type SettingsPanelProps = {
   playfulSnoozedUntilMs: number | null;
   surfaceScale: number;
   diagnosticsEnabled: boolean;
+  activePetId: string;
   isOpen: boolean;
   onClose: () => void;
   onModeChange: (mode: BehaviorMode) => void;
@@ -46,6 +48,7 @@ type SettingsPanelProps = {
   onQuietHoursChange: (quietHours: QuietHours) => void;
   onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
   onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
+  onPetChange: (petId: string) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -76,6 +79,7 @@ export function SettingsPanel({
   playfulSnoozedUntilMs,
   surfaceScale,
   diagnosticsEnabled,
+  activePetId,
   isOpen,
   onClose,
   onModeChange,
@@ -83,6 +87,7 @@ export function SettingsPanel({
   onQuietHoursChange,
   onDeveloperWorkspaceChange,
   onDeveloperSnoozeChange,
+  onPetChange,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
 }: SettingsPanelProps) {
@@ -155,6 +160,20 @@ export function SettingsPanel({
       </section>
       <section className="ian-settings-section" aria-labelledby="ian-settings-life">
         <h3 id="ian-settings-life">生活</h3>
+        <label className="ian-settings-select-row">
+          <span>宠物</span>
+          <select
+            aria-label="选择宠物"
+            value={activePetId}
+            onChange={(event) => onPetChange(event.currentTarget.value)}
+          >
+            {BUILT_IN_PET_RESOURCE_PACKS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
         <SettingsSelect
           label="休息"
           value={restBehavior}

@@ -26,6 +26,11 @@ impl CreatureState {
         self.state.behavior_mode = mode;
     }
 
+    pub fn set_active_pet(&mut self, active_pet_id: String) {
+        self.state.active_pet_id = active_pet_id.clone();
+        self.state.active_resource_pack = active_pet_id;
+    }
+
     pub fn set_quiet_hours(&mut self, quiet_hours: QuietHours) {
         self.state.quiet_hours = quiet_hours;
     }

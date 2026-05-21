@@ -1,0 +1,12 @@
+{
+  "id": "ian-adventurer",
+  "name": "Ian Little Adventurer",
+  "version": "0.1.0",
+  "species": "little_adventurer",
+  "defaultPersonality": "curious_playful",
+  "sprite": "sprite.svg",
+  "animations": "animations.json",
+  "expressions": "expressions.json",
+  "sounds": "sounds/",
+  "capabilities": ["idle", "walk", "run", "zoomies", "happy", "rest", "sleep"]
+}

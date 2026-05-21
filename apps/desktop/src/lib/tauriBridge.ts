@@ -380,6 +380,16 @@ export async function saveBehaviorMode(mode: BehaviorMode): Promise<IanState> {
   return browserFallbackState;
 }
 
+export async function saveActivePet(activePetId: string): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_active_pet", { activePetId });
+  }
+
+  browserFallbackState.active_pet_id = activePetId;
+  browserFallbackState.active_resource_pack = activePetId;
+  return browserFallbackState;
+}
+
 export async function saveQuietHours(quietHours: QuietHours): Promise<IanState> {
   if (isTauriRuntime()) {
     return invoke<IanState>("save_quiet_hours", { quietHours });

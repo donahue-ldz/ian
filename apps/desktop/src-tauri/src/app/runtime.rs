@@ -16,6 +16,13 @@ use crate::{
     storage::StorageService,
 };
 
+const BUILT_IN_ACTIVE_PET_IDS: &[&str] = &[
+    "ian-adventurer",
+    "ian-puppy",
+    "ian-kitten",
+    "ian-alpaca",
+];
+
 pub struct IanRuntime {
     event_bus: EventBus,
     state: CreatureState,
@@ -123,6 +130,18 @@ impl IanRuntime {
 
     pub fn save_behavior_mode(&mut self, mode: BehaviorMode) -> Result<IanState, String> {
         self.state.set_behavior_mode(mode);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_active_pet(&mut self, active_pet_id: String) -> Result<IanState, String> {
+        if !BUILT_IN_ACTIVE_PET_IDS.contains(&active_pet_id.as_str()) {
+            return Err("unknown Ian pet resource pack".to_string());
+        }
+
+        self.state.set_active_pet(active_pet_id);
         self.storage
             .persist_state(self.state.snapshot())
             .map_err(|error| error.to_string())?;
@@ -431,6 +450,31 @@ mod tests {
 
         assert!(!first.iter().any(is_reminder_speech));
         assert!(!second.iter().any(is_reminder_speech));
+    }
+
+    #[test]
+    fn save_active_pet_updates_current_pet_and_resource_pack() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let state = runtime
+            .save_active_pet("ian-kitten".to_string())
+            .expect("save pet");
+
+        assert_eq!(state.active_pet_id, "ian-kitten");
+        assert_eq!(state.active_resource_pack, "ian-kitten");
+        assert_eq!(runtime.state().active_pet_id, "ian-kitten");
+        assert_eq!(runtime.state().active_resource_pack, "ian-kitten");
+    }
+
+    #[test]
+    fn save_active_pet_rejects_unknown_resource_pack() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let result = runtime.save_active_pet("../not-a-pack".to_string());
+
+        assert!(result.is_err());
+        assert_eq!(runtime.state().active_pet_id, "ian-puppy");
+        assert_eq!(runtime.state().active_resource_pack, "ian-puppy");
     }
 
     #[test]

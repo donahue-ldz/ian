@@ -9,8 +9,21 @@ import {
   type PetResourcePack,
 } from "./resourceLoader";
 
-const DEFAULT_RESOURCE_PACK_IDS = ["ian-alpaca", "ian-kitten", "ian-puppy"] as const;
-const REQUIRED_ANIMATIONS = ["idle", "walk", "run", "happy", "rest", "sleep"];
+const DEFAULT_RESOURCE_PACK_IDS = [
+  "ian-alpaca",
+  "ian-kitten",
+  "ian-puppy",
+  "ian-adventurer",
+] as const;
+const REQUIRED_ANIMATIONS = [
+  "idle",
+  "walk",
+  "run",
+  "zoomies",
+  "happy",
+  "rest",
+  "sleep",
+];
 
 const pack: PetResourcePack = {
   pet: {
@@ -121,6 +134,23 @@ describe("resourceLoader contract", () => {
           animations.animations.run.frames.join(","),
         );
         expect(sprite).toContain('data-style="rounded-puppy-v2"');
+      }
+
+      if (packId === "ian-adventurer") {
+        expect(pet.species).toBe("little_adventurer");
+        expect(frameCapacity).toBeGreaterThanOrEqual(32);
+        expect(animations.animations.idle.frames.length).toBeGreaterThanOrEqual(5);
+        expect(animations.animations.run.frames.length).toBeGreaterThanOrEqual(4);
+        expect(animations.animations.zoomies.frames.join(",")).not.toBe(
+          animations.animations.run.frames.join(","),
+        );
+        expect(sprite).toContain('data-style="pixel-adventurer-v1"');
+        expect(sprite).toContain('data-style-kind="pixel-sprite"');
+        expect(sprite).toContain('data-line-tone="soft-arcade"');
+        expect(sprite).toContain('data-pixel-grid="4"');
+        expect(sprite).toContain('data-prop="glow-staff"');
+        expect(sprite).toContain('data-prop="soft-scarf"');
+        expect(sprite).toContain('data-prop="small-backpack"');
       }
 
       for (const [animationName, animation] of Object.entries(

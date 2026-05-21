@@ -4,7 +4,9 @@ import {
   sendArmedChaseCandidate,
   sendIanClickAndArmChase,
   sendIanLeaveWithArmedChase,
+  switchPetResourcePack,
 } from "./App";
+import type { PetResourcePack } from "./resources/resourceLoader";
 
 describe("click armed pointer chase", () => {
   it("keeps the normal click event and arms chase for desktop pointer leave", async () => {
@@ -108,3 +110,92 @@ describe("click armed pointer chase", () => {
     expect(isArmed).toBe(false);
   });
 });
+
+describe("pet resource pack switching", () => {
+  it("loads the requested pack before persisting the active pet", async () => {
+    const pack = testPack("ian-kitten");
+    const loadPetResourcePack = vi.fn(async () => pack);
+    const saveActivePet = vi.fn(async () => ({
+      active_pet_id: "ian-kitten",
+      active_resource_pack: "ian-kitten",
+    }));
+    const setResourcePack = vi.fn();
+    const setActivePetId = vi.fn();
+
+    await switchPetResourcePack({
+      nextPetId: "ian-kitten",
+      loadPetResourcePack,
+      saveActivePet,
+      setResourcePack,
+      setActivePetId,
+    });
+
+    expect(loadPetResourcePack).toHaveBeenCalledWith("ian-kitten");
+    expect(saveActivePet).toHaveBeenCalledWith("ian-kitten");
+    expect(setResourcePack).toHaveBeenCalledWith(pack);
+    expect(setActivePetId).toHaveBeenCalledWith("ian-kitten");
+  });
+
+  it("does not persist the active pet when resource loading fails", async () => {
+    const loadPetResourcePack = vi.fn(async () => {
+      throw new Error("missing resource pack");
+    });
+    const saveActivePet = vi.fn();
+
+    await expect(
+      switchPetResourcePack({
+        nextPetId: "ian-missing",
+        loadPetResourcePack,
+        saveActivePet,
+        setResourcePack: vi.fn(),
+        setActivePetId: vi.fn(),
+      }),
+    ).rejects.toThrow("missing resource pack");
+
+    expect(saveActivePet).not.toHaveBeenCalled();
+  });
+});
+
+function testPack(id: string): PetResourcePack {
+  return {
+    pet: {
+      id,
+      name: id,
+      version: "0.1.0",
+      species: "test",
+      defaultPersonality: "calm",
+      sprite: "sprite.svg",
+      animations: "animations.json",
+      expressions: "expressions.json",
+      sounds: "sounds",
+      capabilities: [],
+    },
+    animations: {
+      meta: {
+        frameWidth: 220,
+        frameHeight: 220,
+        scale: 1,
+      },
+      animations: {
+        idle: testAnimation(),
+        rest: testAnimation(),
+        walk: testAnimation(),
+        happy: testAnimation(),
+        run: testAnimation(),
+        zoomies: testAnimation(),
+        sleep: testAnimation(),
+      },
+    },
+    expressions: {
+      expressions: {},
+    },
+  };
+}
+
+function testAnimation() {
+  return {
+    fps: 1,
+    frames: [0],
+    loop: true,
+  };
+}

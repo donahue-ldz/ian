@@ -45,6 +45,16 @@ describe("SettingsPanel information architecture", () => {
     expect(html).toContain(">100%</span>");
   });
 
+  it("renders a pet resource pack selector with built-in pets", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain('aria-label="选择宠物"');
+    expect(html).toContain("小冒险家");
+    expect(html).toContain("小狗");
+    expect(html).toContain("小猫");
+    expect(html).toContain("羊驼");
+  });
+
   it("marks size controls disabled at supported bounds", () => {
     const minHtml = renderToStaticMarkup(
       <SettingsPanel {...baseProps()} isOpen surfaceScale={0.8} />,
@@ -88,6 +98,7 @@ function baseProps(): Parameters<typeof SettingsPanel>[0] {
     isOpen: false,
     keyboardRhythmEnabled: false,
     movementIntensity: "normal",
+    activePetId: "ian-adventurer",
     quietHours: {
       enabled: false,
       start_minute: 22 * 60,
@@ -104,6 +115,7 @@ function baseProps(): Parameters<typeof SettingsPanel>[0] {
     onDeveloperSnoozeChange: vi.fn(),
     onDeveloperWorkspaceChange: vi.fn(),
     onModeChange: vi.fn(),
+    onPetChange: vi.fn(),
     onQuietHoursChange: vi.fn(),
     onRemindersEnabledChange: vi.fn(),
   };

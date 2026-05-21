@@ -12,6 +12,7 @@ import { IanStage } from "./renderer/IanStage";
 import { loadPetResourcePack, type PetResourcePack } from "./resources/resourceLoader";
 import {
   getIanSettings,
+  saveActivePet,
   saveBehaviorMode,
   saveCapabilityEnabled,
   saveCreatureSettings,
@@ -34,7 +35,7 @@ import { viewStateForWindowContent } from "./state/ianActions";
 const TICK_INTERVAL_MS = 15_000;
 const POINTER_CHASE_INTERVAL_MS = 10_000;
 const CLICK_CHASE_FALLBACK_DELAY_MS = 450;
-const DEFAULT_RESOURCE_PACK_ID = "ian-puppy";
+const DEFAULT_RESOURCE_PACK_ID = "ian-adventurer";
 
 type ClickChaseDependencies = {
   point: Position;
@@ -52,6 +53,17 @@ type LeaveChaseDependencies = {
 };
 
 type ArmedChaseDependencies = Omit<LeaveChaseDependencies, "point">;
+
+type SwitchPetResourcePackDependencies = {
+  nextPetId: string;
+  loadPetResourcePack: (id: string) => Promise<PetResourcePack>;
+  saveActivePet: (id: string) => Promise<{
+    active_pet_id: string;
+    active_resource_pack: string;
+  }>;
+  setResourcePack: (pack: PetResourcePack) => void;
+  setActivePetId: (id: string) => void;
+};
 
 export async function sendIanClickAndArmChase({
   point,
@@ -105,8 +117,22 @@ export async function sendArmedChaseCandidate({
   return false;
 }
 
+export async function switchPetResourcePack({
+  nextPetId,
+  loadPetResourcePack,
+  saveActivePet,
+  setResourcePack,
+  setActivePetId,
+}: SwitchPetResourcePackDependencies): Promise<void> {
+  const nextPack = await loadPetResourcePack(nextPetId);
+  const state = await saveActivePet(nextPetId);
+  setResourcePack(nextPack);
+  setActivePetId(state.active_resource_pack);
+}
+
 export default function App() {
   const [resourcePack, setResourcePack] = useState<PetResourcePack | null>(null);
+  const [activePetId, setActivePetId] = useState(DEFAULT_RESOURCE_PACK_ID);
   const [behaviorMode, setBehaviorMode] = useState<BehaviorMode>("normal");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
   const [capabilities, setCapabilities] = useState(createCapabilityState());
@@ -137,8 +163,16 @@ export default function App() {
   const stageViewState = viewStateForWindowContent(viewState, isDesktopWindow);
 
   useEffect(() => {
-    void loadPetResourcePack(DEFAULT_RESOURCE_PACK_ID).then(setResourcePack);
     void getIanSettings().then((state) => {
+      setActivePetId(state.active_resource_pack);
+      void loadPetResourcePack(state.active_resource_pack)
+        .then(setResourcePack)
+        .catch(() =>
+          loadPetResourcePack(DEFAULT_RESOURCE_PACK_ID).then((fallbackPack) => {
+            setResourcePack(fallbackPack);
+            setActivePetId(DEFAULT_RESOURCE_PACK_ID);
+          }),
+        );
       setBehaviorMode(state.behavior_mode);
       setRemindersEnabled(state.reminders_enabled);
       setCapabilities(capabilityStateFromIanState(state));
@@ -203,6 +237,7 @@ export default function App() {
       playfulSnoozedUntilMs={creatureSettings.playfulSnoozedUntilMs}
       surfaceScale={creatureSettings.surfaceScale}
       diagnosticsEnabled={creatureSettings.diagnosticsEnabled}
+      activePetId={activePetId}
       isSettingsOpen={isSettingsOpen}
       isDesktopWindow={isDesktopWindow}
       onIanClick={(point) => {
@@ -298,6 +333,15 @@ export default function App() {
         void saveDeveloperSnooze(snooze).then((state) => {
           setDeveloperSnooze(state.developer_snooze);
         });
+      }}
+      onPetChange={(nextPetId) => {
+        void switchPetResourcePack({
+          nextPetId,
+          loadPetResourcePack,
+          saveActivePet,
+          setResourcePack,
+          setActivePetId,
+        }).catch(() => undefined);
       }}
       onCreatureSettingsChange={(nextSettings) => {
         setCreatureSettings(nextSettings);

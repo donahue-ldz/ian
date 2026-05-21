@@ -32,6 +32,18 @@ export type PetResourcePack = {
   expressions: ExpressionManifest;
 };
 
+export type PetResourcePackOption = {
+  id: string;
+  label: string;
+};
+
+export const BUILT_IN_PET_RESOURCE_PACKS: PetResourcePackOption[] = [
+  { id: "ian-adventurer", label: "小冒险家" },
+  { id: "ian-puppy", label: "小狗" },
+  { id: "ian-kitten", label: "小猫" },
+  { id: "ian-alpaca", label: "羊驼" },
+];
+
 export class ResourcePackError extends Error {
   constructor(message: string) {
     super(message);

@@ -43,6 +43,7 @@ type IanStageProps = {
   playfulSnoozedUntilMs: number | null;
   surfaceScale: number;
   diagnosticsEnabled: boolean;
+  activePetId: string;
   isSettingsOpen: boolean;
   isDesktopWindow: boolean;
   onIanClick: (point: Point) => void;
@@ -59,6 +60,7 @@ type IanStageProps = {
   onQuietHoursChange: (quietHours: QuietHours) => void;
   onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
   onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
+  onPetChange: (petId: string) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -94,6 +96,7 @@ export function IanStage({
   playfulSnoozedUntilMs,
   surfaceScale,
   diagnosticsEnabled,
+  activePetId,
   isSettingsOpen,
   isDesktopWindow,
   onIanClick,
@@ -110,6 +113,7 @@ export function IanStage({
   onQuietHoursChange,
   onDeveloperWorkspaceChange,
   onDeveloperSnoozeChange,
+  onPetChange,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
   onDragStart,
@@ -261,6 +265,7 @@ export function IanStage({
           playfulSnoozedUntilMs={playfulSnoozedUntilMs}
           surfaceScale={surfaceScale}
           diagnosticsEnabled={diagnosticsEnabled}
+          activePetId={activePetId}
           isOpen={isSettingsOpen}
           onClose={onSettingsClose}
           onModeChange={onBehaviorModeChange}
@@ -268,6 +273,7 @@ export function IanStage({
           onQuietHoursChange={onQuietHoursChange}
           onDeveloperWorkspaceChange={onDeveloperWorkspaceChange}
           onDeveloperSnoozeChange={onDeveloperSnoozeChange}
+          onPetChange={onPetChange}
           onCreatureSettingsChange={onCreatureSettingsChange}
           onCapabilityEnabledChange={onCapabilityEnabledChange}
         />
