@@ -1,4 +1,7 @@
-use crate::protocol::{BehaviorMode, CurrentBehavior, IanAction, IanState, Position, QuietHours};
+use crate::protocol::{
+    BehaviorMode, CurrentBehavior, DeveloperSnooze, DeveloperWorkspace, IanAction, IanState,
+    Position, QuietHours,
+};
 
 pub struct CreatureState {
     state: IanState,
@@ -56,6 +59,18 @@ impl CreatureState {
 
     pub fn set_bubble_input_active(&mut self, is_active: bool) {
         self.state.is_bubble_input_active = is_active;
+    }
+
+    pub fn set_developer_workspace(&mut self, workspace: DeveloperWorkspace) {
+        self.state.developer_workspace = workspace;
+    }
+
+    pub fn set_developer_snooze(&mut self, snooze: DeveloperSnooze) {
+        self.state.developer_snooze = snooze;
+    }
+
+    pub fn set_active_app_category(&mut self, category: Option<String>) {
+        self.state.active_app_category = category;
     }
 
     pub fn set_capability_enabled(&mut self, capability: &str, enabled: bool) -> bool {

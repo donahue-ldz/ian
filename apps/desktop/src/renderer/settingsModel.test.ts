@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   behaviorModeOptions,
   bubbleFrequencyOptions,
+  developerCapabilityOptions,
+  developerSnoozeOptions,
   isBehaviorMode,
   movementIntensityOptions,
   restBehaviorOptions,
@@ -45,5 +47,28 @@ describe("settingsModel", () => {
   it("formats quiet hour minutes as time inputs", () => {
     expect(toTimeInputValue(22 * 60 + 5)).toBe("22:05");
     expect(toTimeInputValue(7 * 60)).toBe("07:00");
+  });
+
+  it("describes developer rhythm capabilities with privacy scope", () => {
+    expect(developerCapabilityOptions.map((option) => option.capability)).toEqual([
+      "git_metadata",
+      "build_test_events",
+      "keyboard_rhythm",
+      "active_app_presence",
+    ]);
+    expect(developerCapabilityOptions.find((option) => option.capability === "git_metadata")?.scope)
+      .toContain("不读取代码正文");
+    expect(
+      developerCapabilityOptions.find((option) => option.capability === "keyboard_rhythm")?.scope,
+    ).toContain("不记录按键内容");
+  });
+
+  it("offers compact developer rhythm snooze durations", () => {
+    expect(developerSnoozeOptions.map((option) => option.value)).toEqual([
+      "off",
+      "30m",
+      "2h",
+      "today",
+    ]);
   });
 });

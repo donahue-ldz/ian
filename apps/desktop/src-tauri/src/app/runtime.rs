@@ -7,7 +7,10 @@ use crate::{
         mood::{MoodEngine, MoodSignal},
         reminder::ReminderEngine,
     },
-    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position, QuietHours},
+    protocol::{
+        BehaviorMode, BuildTestStatus, DeveloperSnooze, DeveloperWorkspace, IanAction, IanEvent,
+        IanState, Position, QuietHours,
+    },
     security::permission::PermissionState,
     security::SecurityGate,
     storage::StorageService,
@@ -170,6 +173,46 @@ impl IanRuntime {
         Ok(self.state.snapshot().clone())
     }
 
+    pub fn save_developer_workspace(
+        &mut self,
+        workspace: DeveloperWorkspace,
+    ) -> Result<IanState, String> {
+        self.state.set_developer_workspace(workspace);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_developer_snooze(&mut self, snooze: DeveloperSnooze) -> Result<IanState, String> {
+        self.state.set_developer_snooze(snooze);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn ingest_build_test_summary(
+        &mut self,
+        workspace_id: Option<String>,
+        tool: String,
+        status: BuildTestStatus,
+        duration_ms: u64,
+        tests_total: u32,
+        tests_failed: u32,
+        error_kind: Option<String>,
+    ) -> Result<Vec<IanAction>, String> {
+        self.handle_event(IanEvent::DeveloperBuildTestSummary {
+            workspace_id,
+            tool,
+            status,
+            duration_ms,
+            tests_total,
+            tests_failed,
+            error_kind,
+        })
+    }
+
     fn apply_internal_signals(&mut self, event: &IanEvent) {
         match event {
             IanEvent::MouseClick { .. } | IanEvent::MouseNear { .. } => {
@@ -183,10 +226,12 @@ impl IanRuntime {
             IanEvent::TimeTick { .. } => {
                 self.mood.apply(MoodSignal::TimeTick);
             }
+            IanEvent::ActiveAppPresence { category, .. } => {
+                self.state.set_active_app_category(Some(category.clone()));
+            }
             IanEvent::DeveloperBuildTestSummary { .. }
             | IanEvent::DeveloperGitStatusChanged { .. }
             | IanEvent::KeyboardRhythm { .. }
-            | IanEvent::ActiveAppPresence { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => {}
             IanEvent::MouseDoubleClick { .. }

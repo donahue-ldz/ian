@@ -1,6 +1,9 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
   BehaviorMode,
+  BuildTestStatus,
+  DeveloperSnooze,
+  DeveloperWorkspace,
   IanAction,
   IanEvent,
   IanState,
@@ -31,6 +34,19 @@ const browserFallbackState: IanState = {
   day_phase: "day",
   is_dragging: false,
   is_bubble_input_active: false,
+  developer_workspace: {
+    bound: false,
+    workspace_id: null,
+    display_name: null,
+    root_path: null,
+    enabled: false,
+  },
+  developer_snooze: {
+    enabled: false,
+    until_ms: null,
+    reason: null,
+  },
+  active_app_category: null,
 };
 let browserInteractionCount = 0;
 let browserAttentionAvailableAfterMs = 0;
@@ -55,6 +71,41 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
   if (event.type === "bubble.input_started") {
     browserFallbackState.is_bubble_input_active = true;
     return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (event.type === "active_app.presence") {
+    browserFallbackState.active_app_category = event.category;
+    return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (
+    event.type === "developer.git_status_changed" ||
+    event.type === "developer.build_test_summary" ||
+    event.type === "keyboard.rhythm"
+  ) {
+    if (
+      event.type !== "keyboard.rhythm" &&
+      !browserFallbackState.developer_workspace.bound
+    ) {
+      return [{ type: "state.sync", state: browserFallbackState }];
+    }
+    if (
+      browserFallbackState.developer_snooze.enabled &&
+      (!browserFallbackState.developer_snooze.until_ms ||
+        Date.now() < browserFallbackState.developer_snooze.until_ms)
+    ) {
+      return [{ type: "state.sync", state: browserFallbackState }];
+    }
+    return [
+      { type: "bubble.open" },
+      {
+        type: "speech.show",
+        text: event.type === "developer.build_test_summary" ? "过啦。" : "收好啦。",
+        mood: "calm",
+        duration_ms: 2400,
+      },
+      { type: "animation.play", name: "happy", looped: false },
+    ];
   }
 
   if (event.type === "bubble.input_ended") {
@@ -235,4 +286,57 @@ export async function saveCapabilityEnabled(
     (browserFallbackState[field] as boolean) = enabled;
   }
   return browserFallbackState;
+}
+
+export async function saveDeveloperWorkspace(
+  workspace: DeveloperWorkspace,
+): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_developer_workspace", { workspace });
+  }
+
+  browserFallbackState.developer_workspace = workspace;
+  return browserFallbackState;
+}
+
+export async function saveDeveloperSnooze(snooze: DeveloperSnooze): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_developer_snooze", { snooze });
+  }
+
+  browserFallbackState.developer_snooze = snooze;
+  return browserFallbackState;
+}
+
+export async function ingestBuildTestSummary(summary: {
+  workspace_id?: string | null;
+  tool: string;
+  status: BuildTestStatus;
+  duration_ms: number;
+  tests_total: number;
+  tests_failed: number;
+  error_kind?: string | null;
+}): Promise<IanAction[]> {
+  if (isTauriRuntime()) {
+    return invoke<IanAction[]>("ingest_build_test_summary", {
+      workspaceId: summary.workspace_id,
+      tool: summary.tool,
+      status: summary.status,
+      durationMs: summary.duration_ms,
+      testsTotal: summary.tests_total,
+      testsFailed: summary.tests_failed,
+      errorKind: summary.error_kind ?? null,
+    });
+  }
+
+  return sendIanEvent({
+    type: "developer.build_test_summary",
+    workspace_id: summary.workspace_id,
+    tool: summary.tool,
+    status: summary.status,
+    duration_ms: summary.duration_ms,
+    tests_total: summary.tests_total,
+    tests_failed: summary.tests_failed,
+    error_kind: summary.error_kind,
+  });
 }

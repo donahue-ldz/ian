@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import type { BehaviorMode, QuietHours } from "./protocol/generated";
+import type { BehaviorMode, DeveloperSnooze, DeveloperWorkspace, QuietHours } from "./protocol/generated";
 import { IanStage } from "./renderer/IanStage";
 import { loadPetResourcePack, type PetResourcePack } from "./resources/resourceLoader";
 import {
@@ -7,6 +7,8 @@ import {
   saveBehaviorMode,
   saveCapabilityEnabled,
   saveCreatureSettings,
+  saveDeveloperSnooze,
+  saveDeveloperWorkspace,
   saveQuietHours,
   saveRemindersEnabled,
 } from "./lib/tauriBridge";
@@ -25,6 +27,18 @@ export default function App() {
     start_minute: 22 * 60,
     end_minute: 7 * 60,
   });
+  const [developerWorkspace, setDeveloperWorkspace] = useState<DeveloperWorkspace>({
+    bound: false,
+    workspace_id: null,
+    display_name: null,
+    root_path: null,
+    enabled: false,
+  });
+  const [developerSnooze, setDeveloperSnooze] = useState<DeveloperSnooze>({
+    enabled: false,
+    until_ms: null,
+    reason: null,
+  });
   const [creatureSettings, setCreatureSettings] = useState(createCreatureSettingsState());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const { savePosition, sendEvent, viewState } = useIanActions();
@@ -36,6 +50,8 @@ export default function App() {
       setRemindersEnabled(state.reminders_enabled);
       setCapabilities(capabilityStateFromIanState(state));
       setQuietHours(state.quiet_hours);
+      setDeveloperWorkspace(state.developer_workspace);
+      setDeveloperSnooze(state.developer_snooze);
       setCreatureSettings(creatureSettingsFromIanState(state));
       void moveDesktopWindow(state.position);
     });
@@ -62,6 +78,8 @@ export default function App() {
       keyboardRhythmEnabled={capabilities.keyboardRhythm}
       activeAppPresenceEnabled={capabilities.activeAppPresence}
       quietHours={quietHours}
+      developerWorkspace={developerWorkspace}
+      developerSnooze={developerSnooze}
       movementIntensity={creatureSettings.movementIntensity}
       bubbleFrequency={creatureSettings.bubbleFrequency}
       restBehavior={creatureSettings.restBehavior}
@@ -107,6 +125,18 @@ export default function App() {
         setQuietHours(nextQuietHours);
         void saveQuietHours(nextQuietHours).then((state) => {
           setQuietHours(state.quiet_hours);
+        });
+      }}
+      onDeveloperWorkspaceChange={(workspace) => {
+        setDeveloperWorkspace(workspace);
+        void saveDeveloperWorkspace(workspace).then((state) => {
+          setDeveloperWorkspace(state.developer_workspace);
+        });
+      }}
+      onDeveloperSnoozeChange={(snooze) => {
+        setDeveloperSnooze(snooze);
+        void saveDeveloperSnooze(snooze).then((state) => {
+          setDeveloperSnooze(state.developer_snooze);
         });
       }}
       onCreatureSettingsChange={(nextSettings) => {

@@ -23,7 +23,10 @@ pub fn run() {
             desktop::commands::save_quiet_hours,
             desktop::commands::save_creature_settings,
             desktop::commands::save_reminders_enabled,
-            desktop::commands::save_capability_enabled
+            desktop::commands::save_capability_enabled,
+            desktop::commands::save_developer_workspace,
+            desktop::commands::save_developer_snooze,
+            desktop::commands::ingest_build_test_summary
         ])
         .setup(|app| {
             desktop::window::configure_main_window(app)?;

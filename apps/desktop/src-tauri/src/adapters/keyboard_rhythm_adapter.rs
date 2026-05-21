@@ -59,7 +59,7 @@ impl PerceptionAdapter for KeyboardRhythmAdapter {
 #[cfg(test)]
 mod tests {
     use super::{KeyboardRhythmAdapter, KeyboardRhythmSummary};
-    use crate::adapters::PerceptionAdapter;
+    use crate::{adapters::PerceptionAdapter, protocol::IanEvent};
 
     #[test]
     fn keyboard_rhythm_stops_collecting_after_disable() {
@@ -73,5 +73,27 @@ mod tests {
         });
 
         assert!(adapter.poll().is_empty());
+    }
+
+    #[test]
+    fn keyboard_rhythm_emits_only_window_intensity_and_count() {
+        let mut adapter = KeyboardRhythmAdapter::default();
+        adapter.enable();
+        adapter.push_summary(KeyboardRhythmSummary {
+            window_ms: 60_000,
+            intensity: "active".to_string(),
+            count: 100,
+        });
+
+        let events = adapter.poll();
+
+        assert!(matches!(
+            events.first(),
+            Some(IanEvent::KeyboardRhythm {
+                window_ms: 60_000,
+                intensity,
+                count: 100,
+            }) if intensity == "active"
+        ));
     }
 }

@@ -27,6 +27,36 @@ export const restBehaviorOptions = [
   { label: "少休息", value: "active" },
 ] as const;
 
+export const developerCapabilityOptions = [
+  {
+    capability: "git_metadata",
+    label: "Git 元数据",
+    scope: "分支、dirty 状态、短 hash；不读取代码正文或 diff",
+  },
+  {
+    capability: "build_test_events",
+    label: "构建测试摘要",
+    scope: "状态、耗时、测试数量、错误类别；不读取终端全文",
+  },
+  {
+    capability: "keyboard_rhythm",
+    label: "键盘节奏",
+    scope: "时间窗口、强度、计数；不记录按键内容",
+  },
+  {
+    capability: "active_app_presence",
+    label: "应用类别",
+    scope: "粗粒度类别；不读取窗口标题、URL 或屏幕文字",
+  },
+] as const;
+
+export const developerSnoozeOptions = [
+  { label: "关闭", value: "off", durationMs: 0 },
+  { label: "30 分钟", value: "30m", durationMs: 30 * 60 * 1000 },
+  { label: "2 小时", value: "2h", durationMs: 2 * 60 * 60 * 1000 },
+  { label: "今天", value: "today", durationMs: null },
+] as const;
+
 export function isBehaviorMode(value: string): value is BehaviorMode {
   return value === "quiet" || value === "normal" || value === "lively";
 }

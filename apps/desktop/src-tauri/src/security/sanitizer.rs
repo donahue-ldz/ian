@@ -8,16 +8,26 @@ impl Sanitizer {
         match event {
             IanEvent::DialogueUserMessage { text } => self.inspect_text(text, 256, "dialogue"),
             IanEvent::DeveloperGitStatusChanged {
+                workspace_id,
                 branch,
                 short_commit,
                 ..
             } => {
+                if let Some(workspace_id) = workspace_id {
+                    self.inspect_text(workspace_id, 80, "workspace_id")?;
+                }
                 self.inspect_text(branch, 80, "git_branch")?;
                 self.inspect_short_hash(short_commit)
             }
             IanEvent::DeveloperBuildTestSummary {
-                tool, error_kind, ..
+                workspace_id,
+                tool,
+                error_kind,
+                ..
             } => {
+                if let Some(workspace_id) = workspace_id {
+                    self.inspect_text(workspace_id, 80, "workspace_id")?;
+                }
                 self.inspect_text(tool, 40, "build_tool")?;
                 if let Some(error_kind) = error_kind {
                     self.inspect_text(error_kind, 80, "build_error_kind")?;
@@ -105,6 +115,7 @@ mod tests {
 
         assert!(sanitizer
             .inspect(&IanEvent::DeveloperBuildTestSummary {
+                workspace_id: Some("workspace-1".to_string()),
                 tool: "cargo".to_string(),
                 status: BuildTestStatus::Failure,
                 duration_ms: 10,

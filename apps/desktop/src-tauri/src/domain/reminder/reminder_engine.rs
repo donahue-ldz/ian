@@ -13,7 +13,13 @@ impl ReminderEngine {
     }
 
     pub fn actions_for_tick(&mut self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
-        if !self.policy.enabled || !state.reminders_enabled || state.current_animation == "run" {
+        if !self.policy.enabled
+            || !state.reminders_enabled
+            || state.current_animation == "run"
+            || self
+                .policy
+                .should_reduce_for_app_category(state.active_app_category.as_deref())
+        {
             return Vec::new();
         }
 

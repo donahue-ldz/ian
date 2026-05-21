@@ -1,7 +1,14 @@
-import type { BehaviorMode, QuietHours } from "../protocol/generated";
+import type {
+  BehaviorMode,
+  DeveloperSnooze,
+  DeveloperWorkspace,
+  QuietHours,
+} from "../protocol/generated";
 import {
   behaviorModeOptions,
   bubbleFrequencyOptions,
+  developerCapabilityOptions,
+  developerSnoozeOptions,
   fromTimeInputValue,
   movementIntensityOptions,
   restBehaviorOptions,
@@ -17,6 +24,8 @@ type SettingsPanelProps = {
   keyboardRhythmEnabled: boolean;
   activeAppPresenceEnabled: boolean;
   quietHours: QuietHours;
+  developerWorkspace: DeveloperWorkspace;
+  developerSnooze: DeveloperSnooze;
   movementIntensity: string;
   bubbleFrequency: string;
   restBehavior: string;
@@ -27,6 +36,8 @@ type SettingsPanelProps = {
   onModeChange: (mode: BehaviorMode) => void;
   onRemindersEnabledChange: (enabled: boolean) => void;
   onQuietHoursChange: (quietHours: QuietHours) => void;
+  onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
+  onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -46,6 +57,8 @@ export function SettingsPanel({
   keyboardRhythmEnabled,
   activeAppPresenceEnabled,
   quietHours,
+  developerWorkspace,
+  developerSnooze,
   movementIntensity,
   bubbleFrequency,
   restBehavior,
@@ -56,6 +69,8 @@ export function SettingsPanel({
   onModeChange,
   onRemindersEnabledChange,
   onQuietHoursChange,
+  onDeveloperWorkspaceChange,
+  onDeveloperSnoozeChange,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
 }: SettingsPanelProps) {
@@ -201,32 +216,61 @@ export function SettingsPanel({
         />
       </label>
       <div className="ian-settings-capabilities" aria-label="能力状态">
-        <span>能力</span>
+        <span>开发者节奏</span>
+        <label className="ian-settings-toggle-row">
+          <span>工作区</span>
+          <input
+            aria-label="启用工作区绑定"
+            checked={developerWorkspace.bound && developerWorkspace.enabled}
+            type="checkbox"
+            onChange={(event) =>
+              onDeveloperWorkspaceChange({
+                bound: event.currentTarget.checked,
+                enabled: event.currentTarget.checked,
+                workspace_id: event.currentTarget.checked ? "local-workspace" : null,
+                display_name: event.currentTarget.checked ? "当前项目" : null,
+                root_path: event.currentTarget.checked ? "本地授权路径" : null,
+              })
+            }
+          />
+        </label>
+        <select
+          aria-label="开发者节奏暂停"
+          value={snoozeValue(developerSnooze)}
+          onChange={(event) => {
+            const option = developerSnoozeOptions.find(
+              (candidate) => candidate.value === event.currentTarget.value,
+            );
+            onDeveloperSnoozeChange(
+              optionToSnooze(option?.value ?? "off", Date.now()),
+            );
+          }}
+        >
+          {developerSnoozeOptions.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <CapabilityToggle
           checked={byomEnabled}
           label="BYOM"
           onChange={(enabled) => onCapabilityEnabledChange("byom", enabled)}
         />
-        <CapabilityToggle
-          checked={gitMetadataEnabled}
-          label="Git 元数据"
-          onChange={(enabled) => onCapabilityEnabledChange("git_metadata", enabled)}
-        />
-        <CapabilityToggle
-          checked={buildTestEventsEnabled}
-          label="构建测试摘要"
-          onChange={(enabled) => onCapabilityEnabledChange("build_test_events", enabled)}
-        />
-        <CapabilityToggle
-          checked={keyboardRhythmEnabled}
-          label="键盘节奏"
-          onChange={(enabled) => onCapabilityEnabledChange("keyboard_rhythm", enabled)}
-        />
-        <CapabilityToggle
-          checked={activeAppPresenceEnabled}
-          label="应用类别"
-          onChange={(enabled) => onCapabilityEnabledChange("active_app_presence", enabled)}
-        />
+        {developerCapabilityOptions.map((option) => (
+          <CapabilityToggle
+            checked={capabilityChecked(option.capability, {
+              gitMetadataEnabled,
+              buildTestEventsEnabled,
+              keyboardRhythmEnabled,
+              activeAppPresenceEnabled,
+            })}
+            description={option.scope}
+            key={option.capability}
+            label={option.label}
+            onChange={(enabled) => onCapabilityEnabledChange(option.capability, enabled)}
+          />
+        ))}
       </div>
     </aside>
   );
@@ -260,14 +304,18 @@ function SettingsSelect({ label, value, options, onChange }: SettingsSelectProps
 
 type CapabilityToggleProps = {
   checked: boolean;
+  description?: string;
   label: string;
   onChange: (enabled: boolean) => void;
 };
 
-function CapabilityToggle({ checked, label, onChange }: CapabilityToggleProps) {
+function CapabilityToggle({ checked, description, label, onChange }: CapabilityToggleProps) {
   return (
     <label className="ian-settings-toggle-row">
-      <span>{label}</span>
+      <span>
+        {label}
+        {description ? <small>{description}</small> : null}
+      </span>
       <input
         aria-label={label}
         checked={checked}
@@ -276,4 +324,55 @@ function CapabilityToggle({ checked, label, onChange }: CapabilityToggleProps) {
       />
     </label>
   );
+}
+
+function capabilityChecked(
+  capability: string,
+  state: {
+    gitMetadataEnabled: boolean;
+    buildTestEventsEnabled: boolean;
+    keyboardRhythmEnabled: boolean;
+    activeAppPresenceEnabled: boolean;
+  },
+): boolean {
+  switch (capability) {
+    case "git_metadata":
+      return state.gitMetadataEnabled;
+    case "build_test_events":
+      return state.buildTestEventsEnabled;
+    case "keyboard_rhythm":
+      return state.keyboardRhythmEnabled;
+    case "active_app_presence":
+      return state.activeAppPresenceEnabled;
+    default:
+      return false;
+  }
+}
+
+function snoozeValue(snooze: DeveloperSnooze): string {
+  if (!snooze.enabled) {
+    return "off";
+  }
+
+  return snooze.reason ?? "30m";
+}
+
+function optionToSnooze(value: string, nowMs: number): DeveloperSnooze {
+  if (value === "off") {
+    return { enabled: false, until_ms: null, reason: null };
+  }
+
+  const option = developerSnoozeOptions.find((candidate) => candidate.value === value);
+  const untilMs =
+    option?.durationMs === null
+      ? endOfLocalDayMs(nowMs)
+      : nowMs + (option?.durationMs ?? 30 * 60 * 1000);
+
+  return { enabled: true, until_ms: untilMs, reason: value };
+}
+
+function endOfLocalDayMs(nowMs: number): number {
+  const date = new Date(nowMs);
+  date.setHours(23, 59, 59, 999);
+  return date.getTime();
 }

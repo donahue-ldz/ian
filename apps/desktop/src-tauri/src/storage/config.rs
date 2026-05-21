@@ -3,7 +3,9 @@ use std::{fs, io, path::Path};
 use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
 
-use crate::protocol::{BehaviorMode, IanState, Position, QuietHours};
+use crate::protocol::{
+    BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, Position, QuietHours,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 struct ConfigFile {
@@ -20,6 +22,10 @@ struct ConfigFile {
     quiet_hours: QuietHours,
     #[serde(default)]
     creature: CreatureConfig,
+    #[serde(default)]
+    developer_workspace: DeveloperWorkspace,
+    #[serde(default)]
+    developer_snooze: DeveloperSnooze,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -131,7 +137,7 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{load_state, persist_state};
-    use crate::protocol::{BehaviorMode, IanState, Position};
+    use crate::protocol::{BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, Position};
 
     #[test]
     fn load_state_recovers_corrupt_config_to_default() {
@@ -163,6 +169,22 @@ mod tests {
         state.rest_behavior = "restful".to_string();
         state.surface_scale = 1.2;
         state.diagnostics_enabled = false;
+        state.git_metadata_enabled = true;
+        state.build_test_events_enabled = true;
+        state.keyboard_rhythm_enabled = false;
+        state.active_app_presence_enabled = true;
+        state.developer_workspace = DeveloperWorkspace {
+            bound: true,
+            workspace_id: Some("workspace-1".to_string()),
+            display_name: Some("Ian".to_string()),
+            root_path: Some("~/Git/ian".to_string()),
+            enabled: true,
+        };
+        state.developer_snooze = DeveloperSnooze {
+            enabled: true,
+            until_ms: Some(2_000),
+            reason: Some("manual".to_string()),
+        };
 
         persist_state(dir.path(), &state).expect("persist state");
         let loaded = load_state(dir.path()).expect("load state");
@@ -181,6 +203,26 @@ mod tests {
         assert_eq!(loaded.rest_behavior, "restful");
         assert_eq!(loaded.surface_scale, 1.2);
         assert!(!loaded.diagnostics_enabled);
+        assert!(loaded.git_metadata_enabled);
+        assert!(loaded.build_test_events_enabled);
+        assert!(!loaded.keyboard_rhythm_enabled);
+        assert!(loaded.active_app_presence_enabled);
+        assert!(loaded.developer_workspace.bound);
+        assert_eq!(
+            loaded.developer_workspace.workspace_id.as_deref(),
+            Some("workspace-1")
+        );
+        assert_eq!(
+            loaded.developer_workspace.display_name.as_deref(),
+            Some("Ian")
+        );
+        assert_eq!(
+            loaded.developer_workspace.root_path.as_deref(),
+            Some("~/Git/ian")
+        );
+        assert!(loaded.developer_workspace.enabled);
+        assert!(loaded.developer_snooze.enabled);
+        assert_eq!(loaded.developer_snooze.until_ms, Some(2_000));
     }
 
     #[test]
@@ -223,6 +265,12 @@ y = 24.0
         assert!(loaded.reminders_enabled);
         assert_eq!(loaded.home_anchor.x, 12.0);
         assert_eq!(loaded.home_anchor.y, 24.0);
+        assert!(!loaded.git_metadata_enabled);
+        assert!(!loaded.build_test_events_enabled);
+        assert!(!loaded.keyboard_rhythm_enabled);
+        assert!(!loaded.active_app_presence_enabled);
+        assert!(!loaded.developer_workspace.bound);
+        assert!(!loaded.developer_snooze.enabled);
     }
 }
 
@@ -256,6 +304,8 @@ impl From<IanState> for ConfigFile {
                 surface_scale: state.surface_scale,
                 diagnostics_enabled: state.diagnostics_enabled,
             },
+            developer_workspace: state.developer_workspace,
+            developer_snooze: state.developer_snooze,
         }
     }
 }
@@ -285,6 +335,9 @@ impl From<ConfigFile> for IanState {
             day_phase: "day".to_string(),
             is_dragging: false,
             is_bubble_input_active: false,
+            developer_workspace: config.developer_workspace,
+            developer_snooze: config.developer_snooze,
+            active_app_category: None,
         }
     }
 }

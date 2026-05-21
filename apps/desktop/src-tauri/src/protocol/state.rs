@@ -88,6 +88,62 @@ impl QuietHours {
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
+pub struct DeveloperWorkspace {
+    pub bound: bool,
+    pub workspace_id: Option<String>,
+    pub display_name: Option<String>,
+    pub root_path: Option<String>,
+    pub enabled: bool,
+}
+
+impl Default for DeveloperWorkspace {
+    fn default() -> Self {
+        Self {
+            bound: false,
+            workspace_id: None,
+            display_name: None,
+            root_path: None,
+            enabled: false,
+        }
+    }
+}
+
+impl DeveloperWorkspace {
+    pub fn is_active(&self) -> bool {
+        self.bound && self.enabled && self.workspace_id.is_some()
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct DeveloperSnooze {
+    pub enabled: bool,
+    pub until_ms: Option<i64>,
+    pub reason: Option<String>,
+}
+
+impl Default for DeveloperSnooze {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            until_ms: None,
+            reason: None,
+        }
+    }
+}
+
+impl DeveloperSnooze {
+    pub fn is_active_at(&self, now_ms: i64) -> bool {
+        if !self.enabled {
+            return false;
+        }
+
+        self.until_ms.map(|until| now_ms < until).unwrap_or(true)
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
 pub struct IanState {
     pub active_pet_id: String,
     pub current_behavior: CurrentBehavior,
@@ -111,6 +167,9 @@ pub struct IanState {
     pub day_phase: String,
     pub is_dragging: bool,
     pub is_bubble_input_active: bool,
+    pub developer_workspace: DeveloperWorkspace,
+    pub developer_snooze: DeveloperSnooze,
+    pub active_app_category: Option<String>,
 }
 
 impl Default for IanState {
@@ -138,6 +197,9 @@ impl Default for IanState {
             day_phase: "day".to_string(),
             is_dragging: false,
             is_bubble_input_active: false,
+            developer_workspace: DeveloperWorkspace::default(),
+            developer_snooze: DeveloperSnooze::default(),
+            active_app_category: None,
         }
     }
 }

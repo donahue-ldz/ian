@@ -18,6 +18,20 @@ export type QuietHours = {
   end_minute: number;
 };
 
+export type DeveloperWorkspace = {
+  bound: boolean;
+  workspace_id?: string | null;
+  display_name?: string | null;
+  root_path?: string | null;
+  enabled: boolean;
+};
+
+export type DeveloperSnooze = {
+  enabled: boolean;
+  until_ms?: number | null;
+  reason?: string | null;
+};
+
 export type IanState = {
   active_pet_id: string;
   current_behavior: CurrentBehavior;
@@ -41,6 +55,9 @@ export type IanState = {
   day_phase: string;
   is_dragging: boolean;
   is_bubble_input_active: boolean;
+  developer_workspace: DeveloperWorkspace;
+  developer_snooze: DeveloperSnooze;
+  active_app_category?: string | null;
 };
 
 export type IanEvent =
@@ -57,12 +74,14 @@ export type IanEvent =
   | { type: "bubble.input_ended" }
   | {
       type: "developer.git_status_changed";
+      workspace_id?: string | null;
       branch: string;
       dirty: boolean;
       short_commit: string;
     }
   | {
       type: "developer.build_test_summary";
+      workspace_id?: string | null;
       tool: string;
       status: BuildTestStatus;
       duration_ms: number;

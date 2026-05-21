@@ -1,7 +1,12 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { IanViewState } from "../state/ianActions";
 import type { PetResourcePack } from "../resources/resourceLoader";
-import type { BehaviorMode, QuietHours } from "../protocol/generated";
+import type {
+  BehaviorMode,
+  DeveloperSnooze,
+  DeveloperWorkspace,
+  QuietHours,
+} from "../protocol/generated";
 import { Bubble } from "./Bubble";
 import { getDragOffset, shouldStartDrag } from "./dragGesture";
 import { IanSprite } from "./IanSprite";
@@ -24,6 +29,8 @@ type IanStageProps = {
   keyboardRhythmEnabled: boolean;
   activeAppPresenceEnabled: boolean;
   quietHours: QuietHours;
+  developerWorkspace: DeveloperWorkspace;
+  developerSnooze: DeveloperSnooze;
   movementIntensity: string;
   bubbleFrequency: string;
   restBehavior: string;
@@ -42,6 +49,8 @@ type IanStageProps = {
   onBehaviorModeChange: (mode: BehaviorMode) => void;
   onRemindersEnabledChange: (enabled: boolean) => void;
   onQuietHoursChange: (quietHours: QuietHours) => void;
+  onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
+  onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -65,6 +74,8 @@ export function IanStage({
   keyboardRhythmEnabled,
   activeAppPresenceEnabled,
   quietHours,
+  developerWorkspace,
+  developerSnooze,
   movementIntensity,
   bubbleFrequency,
   restBehavior,
@@ -83,6 +94,8 @@ export function IanStage({
   onBehaviorModeChange,
   onRemindersEnabledChange,
   onQuietHoursChange,
+  onDeveloperWorkspaceChange,
+  onDeveloperSnoozeChange,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
   onDragStart,
@@ -186,6 +199,8 @@ export function IanStage({
           keyboardRhythmEnabled={keyboardRhythmEnabled}
           activeAppPresenceEnabled={activeAppPresenceEnabled}
           quietHours={quietHours}
+          developerWorkspace={developerWorkspace}
+          developerSnooze={developerSnooze}
           movementIntensity={movementIntensity}
           bubbleFrequency={bubbleFrequency}
           restBehavior={restBehavior}
@@ -196,6 +211,8 @@ export function IanStage({
           onModeChange={onBehaviorModeChange}
           onRemindersEnabledChange={onRemindersEnabledChange}
           onQuietHoursChange={onQuietHoursChange}
+          onDeveloperWorkspaceChange={onDeveloperWorkspaceChange}
+          onDeveloperSnoozeChange={onDeveloperSnoozeChange}
           onCreatureSettingsChange={onCreatureSettingsChange}
           onCapabilityEnabledChange={onCapabilityEnabledChange}
         />

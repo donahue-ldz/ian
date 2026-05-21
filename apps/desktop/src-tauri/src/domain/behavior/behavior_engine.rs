@@ -60,7 +60,9 @@ impl BehaviorEngine {
             | IanEvent::DeveloperGitStatusChanged { .. } => self
                 .developer_rhythm
                 .lock()
-                .map(|mut policy| policy.actions_for_event(event, 0))
+                .map(|mut policy| {
+                    policy.actions_for_event(event, chrono::Utc::now().timestamp_millis(), state)
+                })
                 .unwrap_or_default(),
             IanEvent::KeyboardRhythm { .. } | IanEvent::ActiveAppPresence { .. } => vec![],
             IanEvent::MouseDragStart { .. }
@@ -204,6 +206,14 @@ impl BehaviorEngine {
         if state
             .quiet_hours
             .is_active_at_minute(minute_of_day_from_epoch_ms(now_ms))
+            || state
+                .active_app_category
+                .as_deref()
+                .map(|category| {
+                    self.policy
+                        .should_reduce_disturbance_for_app_category(category)
+                })
+                .unwrap_or(false)
         {
             return vec![IanAction::AnimationPlay {
                 name: "idle".to_string(),

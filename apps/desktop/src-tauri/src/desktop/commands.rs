@@ -4,7 +4,10 @@ use tauri::State;
 
 use crate::{
     app::IanRuntime,
-    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position, QuietHours},
+    protocol::{
+        BehaviorMode, BuildTestStatus, DeveloperSnooze, DeveloperWorkspace, IanAction, IanEvent,
+        IanState, Position, QuietHours,
+    },
 };
 
 #[tauri::command]
@@ -106,4 +109,51 @@ pub fn save_capability_enabled(
         .lock()
         .map_err(|_| "Ian runtime lock poisoned".to_string())?
         .save_capability_enabled(capability, enabled)
+}
+
+#[tauri::command]
+pub fn save_developer_workspace(
+    workspace: DeveloperWorkspace,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_developer_workspace(workspace)
+}
+
+#[tauri::command]
+pub fn save_developer_snooze(
+    snooze: DeveloperSnooze,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_developer_snooze(snooze)
+}
+
+#[tauri::command]
+pub fn ingest_build_test_summary(
+    workspace_id: Option<String>,
+    tool: String,
+    status: BuildTestStatus,
+    duration_ms: u64,
+    tests_total: u32,
+    tests_failed: u32,
+    error_kind: Option<String>,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<IanAction>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .ingest_build_test_summary(
+            workspace_id,
+            tool,
+            status,
+            duration_ms,
+            tests_total,
+            tests_failed,
+            error_kind,
+        )
 }
