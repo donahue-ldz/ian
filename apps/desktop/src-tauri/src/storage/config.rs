@@ -14,6 +14,8 @@ struct ConfigFile {
     #[serde(default)]
     capabilities: CapabilityConfig,
     position: Position,
+    #[serde(default)]
+    home_anchor: Option<Position>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -125,6 +127,7 @@ mod tests {
         let dir = tempdir().expect("temp dir");
         let mut state = IanState::default();
         state.position = Position { x: 44.0, y: 88.0 };
+        state.home_anchor = Position { x: 40.0, y: 80.0 };
         state.behavior_mode = BehaviorMode::Lively;
         state.reminders_enabled = false;
 
@@ -133,6 +136,8 @@ mod tests {
 
         assert_eq!(loaded.position.x, 44.0);
         assert_eq!(loaded.position.y, 88.0);
+        assert_eq!(loaded.home_anchor.x, 40.0);
+        assert_eq!(loaded.home_anchor.y, 80.0);
         assert!(matches!(loaded.behavior_mode, BehaviorMode::Lively));
         assert!(!loaded.reminders_enabled);
     }
@@ -160,6 +165,8 @@ y = 24.0
         let loaded = load_state(dir.path()).expect("load old config");
 
         assert!(loaded.reminders_enabled);
+        assert_eq!(loaded.home_anchor.x, 12.0);
+        assert_eq!(loaded.home_anchor.y, 24.0);
     }
 }
 
@@ -184,6 +191,7 @@ impl From<IanState> for ConfigFile {
                 active_app_presence_enabled: state.active_app_presence_enabled,
             },
             position: state.position,
+            home_anchor: Some(state.home_anchor),
         }
     }
 }
@@ -194,7 +202,7 @@ impl From<ConfigFile> for IanState {
             active_pet_id: config.app.active_pet,
             current_behavior: Default::default(),
             current_animation: "idle".to_string(),
-            position: config.position,
+            position: config.position.clone(),
             active_resource_pack: config.app.active_resource_pack,
             behavior_mode: config.behavior.mode,
             reminders_enabled: config.reminder.enabled,
@@ -203,6 +211,7 @@ impl From<ConfigFile> for IanState {
             build_test_events_enabled: config.capabilities.build_test_events_enabled,
             keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
             active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
+            home_anchor: config.home_anchor.unwrap_or(config.position),
         }
     }
 }

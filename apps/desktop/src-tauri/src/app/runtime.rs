@@ -153,7 +153,8 @@ impl IanRuntime {
             | IanEvent::ActiveAppPresence { .. } => {}
             IanEvent::MouseDoubleClick { .. }
             | IanEvent::MouseDragEnd { .. }
-            | IanEvent::MouseDragStart { .. } => {
+            | IanEvent::MouseDragStart { .. }
+            | IanEvent::MouseLeave { .. } => {
                 self.bond.apply(BondSignal::UserInteraction);
             }
             IanEvent::AppStarted => {}

@@ -14,7 +14,8 @@ impl CreatureState {
     }
 
     pub fn set_position(&mut self, position: Position) {
-        self.state.position = position;
+        self.state.position = position.clone();
+        self.state.home_anchor = position;
     }
 
     pub fn set_behavior_mode(&mut self, mode: BehaviorMode) {
@@ -42,6 +43,13 @@ impl CreatureState {
             match action {
                 IanAction::AnimationPlay { name, .. } => {
                     self.state.current_animation = name.clone();
+                    self.state.current_behavior = match name.as_str() {
+                        "walk" => CurrentBehavior::Walking,
+                        "happy" => CurrentBehavior::Happy,
+                        "run" => CurrentBehavior::Running,
+                        "sleep" => CurrentBehavior::Sleeping,
+                        _ => CurrentBehavior::Idle,
+                    };
                 }
                 IanAction::BehaviorRunAround { .. } => {
                     self.state.current_animation = "run".to_string();

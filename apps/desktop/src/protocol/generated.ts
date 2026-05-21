@@ -25,6 +25,7 @@ export type IanState = {
   build_test_events_enabled: boolean;
   keyboard_rhythm_enabled: boolean;
   active_app_presence_enabled: boolean;
+  home_anchor: Position;
 };
 
 export type IanEvent =
@@ -33,6 +34,7 @@ export type IanEvent =
   | { type: "mouse.click"; x: number; y: number }
   | { type: "mouse.double_click"; x: number; y: number }
   | { type: "mouse.near"; x: number; y: number }
+  | { type: "mouse.leave"; x: number; y: number }
   | { type: "mouse.drag_start"; x: number; y: number }
   | { type: "mouse.drag_end"; x: number; y: number }
   | { type: "dialogue.user_message"; text: string }

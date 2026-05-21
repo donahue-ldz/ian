@@ -106,3 +106,13 @@ export function resolveAnimationWithFallback(
 
   return "idle";
 }
+
+export function resolveExpressionWithFallback(
+  pack: PetResourcePack,
+  requested: string,
+): { overlay: string | null } {
+  return (
+    pack.expressions.expressions[requested] ??
+    pack.expressions.expressions.idle ?? { overlay: null }
+  );
+}

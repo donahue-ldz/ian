@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getResourcePackVersion,
+  resolveExpressionWithFallback,
   resolveAnimationWithFallback,
   validatePetResourcePack,
   type PetResourcePack,
@@ -29,7 +30,12 @@ const pack: PetResourcePack = {
       sleep: { frames: [4], fps: 1, loop: true },
     },
   },
-  expressions: { expressions: {} },
+  expressions: {
+    expressions: {
+      idle: { overlay: null },
+      happy: { overlay: "blush" },
+    },
+  },
 };
 
 describe("resourceLoader contract", () => {
@@ -55,5 +61,14 @@ describe("resourceLoader contract", () => {
   it("falls back unknown animations to idle", () => {
     expect(resolveAnimationWithFallback(pack, "jump")).toBe("idle");
     expect(resolveAnimationWithFallback(pack, "run")).toBe("run");
+  });
+
+  it("resolves expressions with an idle fallback", () => {
+    expect(resolveExpressionWithFallback(pack, "happy")).toEqual({
+      overlay: "blush",
+    });
+    expect(resolveExpressionWithFallback(pack, "curious")).toEqual({
+      overlay: null,
+    });
   });
 });

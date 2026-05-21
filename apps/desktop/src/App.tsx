@@ -61,6 +61,9 @@ export default function App() {
       onIanNear={(point) => {
         void sendEvent({ type: "mouse.near", ...point });
       }}
+      onIanLeave={(point) => {
+        void sendEvent({ type: "mouse.leave", ...point });
+      }}
       onSubmitMessage={(text) => {
         void sendEvent({ type: "dialogue.user_message", text });
       }}

@@ -40,6 +40,12 @@ pub struct Position {
     pub y: f64,
 }
 
+impl Default for Position {
+    fn default() -> Self {
+        Self { x: 0.0, y: 0.0 }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[ts(export)]
 pub struct IanState {
@@ -55,6 +61,7 @@ pub struct IanState {
     pub build_test_events_enabled: bool,
     pub keyboard_rhythm_enabled: bool,
     pub active_app_presence_enabled: bool,
+    pub home_anchor: Position,
 }
 
 impl Default for IanState {
@@ -72,6 +79,7 @@ impl Default for IanState {
             build_test_events_enabled: false,
             keyboard_rhythm_enabled: false,
             active_app_presence_enabled: false,
+            home_anchor: Position { x: 0.0, y: 0.0 },
         }
     }
 }

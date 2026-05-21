@@ -1,4 +1,4 @@
-import type { IanAction } from "../protocol/generated";
+import type { IanAction, MovementSpeed, Position } from "../protocol/generated";
 
 export type IanViewState = {
   animation: {
@@ -11,6 +11,9 @@ export type IanViewState = {
     text: string | null;
     mood: string | null;
   };
+  position: Position;
+  movementTarget: (Position & { speed: MovementSpeed }) | null;
+  lastMovementAt: number;
   runAroundUntil: number;
 };
 
@@ -26,6 +29,9 @@ export function createInitialIanViewState(): IanViewState {
       text: null,
       mood: null,
     },
+    position: { x: 0, y: 0 },
+    movementTarget: null,
+    lastMovementAt: 0,
     runAroundUntil: 0,
   };
 }
@@ -44,6 +50,7 @@ export function reduceIanActions(
             name: action.name,
             loop: action.looped,
           },
+          behavior: behaviorForAnimation(next.behavior, action.name),
         };
       case "speech.show":
         return {
@@ -88,9 +95,22 @@ export function reduceIanActions(
             loop: true,
           },
           behavior: action.state.current_behavior,
+          position: action.state.position,
         };
       case "movement.move_to":
-        return next;
+        return {
+          ...next,
+          position: {
+            x: action.x,
+            y: action.y,
+          },
+          movementTarget: {
+            x: action.x,
+            y: action.y,
+            speed: action.speed,
+          },
+          lastMovementAt: now,
+        };
     }
   }, state);
 }
@@ -116,4 +136,19 @@ export function expireRunAroundIfNeeded(
     behavior: "idle",
     runAroundUntil: 0,
   };
+}
+
+function behaviorForAnimation(current: string, animation: string): string {
+  switch (animation) {
+    case "idle":
+      return "idle";
+    case "walk":
+      return "walking";
+    case "happy":
+      return "happy";
+    case "sleep":
+      return "sleeping";
+    default:
+      return current;
+  }
 }

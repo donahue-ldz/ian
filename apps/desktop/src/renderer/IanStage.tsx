@@ -27,6 +27,7 @@ type IanStageProps = {
   onIanClick: (point: Point) => void;
   onIanDoubleClick: (point: Point) => void;
   onIanNear: (point: Point) => void;
+  onIanLeave: (point: Point) => void;
   onSubmitMessage: (text: string) => void;
   onSettingsToggle: () => void;
   onSettingsClose: () => void;
@@ -50,6 +51,7 @@ export function IanStage({
   onIanClick,
   onIanDoubleClick,
   onIanNear,
+  onIanLeave,
   onSubmitMessage,
   onSettingsToggle,
   onSettingsClose,
@@ -83,7 +85,9 @@ export function IanStage({
       <section
         className="ian-creature-surface"
         style={{
-          transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
+          transform: `translate(${viewState.position.x + dragOffset.x}px, ${
+            viewState.position.y + dragOffset.y
+          }px)`,
         }}
         onPointerDown={(event) => {
           if (!(event.target as HTMLElement).closest(".ian-click-target")) {
@@ -157,6 +161,7 @@ export function IanStage({
           className="ian-click-target"
           aria-label="Ian"
           onPointerEnter={(event) => onIanNear(pointFromPointer(event))}
+          onPointerLeave={(event) => onIanLeave(pointFromPointer(event))}
           onClick={(event) => {
             if (suppressNextClick.current) {
               suppressNextClick.current = false;

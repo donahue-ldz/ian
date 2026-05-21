@@ -23,6 +23,8 @@ pub enum IanEvent {
     MouseDoubleClick { x: f64, y: f64 },
     #[serde(rename = "mouse.near")]
     MouseNear { x: f64, y: f64 },
+    #[serde(rename = "mouse.leave")]
+    MouseLeave { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_start")]
     MouseDragStart { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_end")]
@@ -66,6 +68,7 @@ impl IanEvent {
             Self::MouseClick { .. } => "mouse.click",
             Self::MouseDoubleClick { .. } => "mouse.double_click",
             Self::MouseNear { .. } => "mouse.near",
+            Self::MouseLeave { .. } => "mouse.leave",
             Self::MouseDragStart { .. } => "mouse.drag_start",
             Self::MouseDragEnd { .. } => "mouse.drag_end",
             Self::DialogueUserMessage { .. } => "dialogue.user_message",

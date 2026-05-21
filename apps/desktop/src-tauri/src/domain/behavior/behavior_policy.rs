@@ -21,6 +21,14 @@ impl BehaviorPolicy {
         self.run_around_duration_ms
     }
 
+    pub fn affectionate_phrase(&self, interaction_count: u32) -> &'static str {
+        if interaction_count >= 2 {
+            "再摸摸也可以。"
+        } else {
+            self.click_phrase()
+        }
+    }
+
     pub fn tick_animation(&self, now_ms: i64) -> (&'static str, bool) {
         let second = now_ms.div_euclid(1000);
 
