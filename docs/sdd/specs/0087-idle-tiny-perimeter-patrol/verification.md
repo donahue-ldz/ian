@@ -6,7 +6,7 @@
 
 ## Verification Summary
 
-已完成 RED/GREEN 验证。Rust 测试先因缺少 `ScreenBounds` / `AppearanceScaleTo` 失败，前端 reducer 测试先因缺少 `appearanceScale` 失败；实现协议、行为和前端执行后，完整 Rust 测试、相关前端测试和类型检查通过。
+已完成 RED/GREEN 验证。Rust 测试先因缺少 `ScreenBounds` / `AppearanceScaleTo` 失败，前端 reducer 测试先因缺少 `appearanceScale` 失败；实现协议、行为和前端执行后，完整 Rust 测试、相关前端测试和类型检查通过。实机反馈后补充验证发现两个桌面体验缺陷：巡游只发一个角点、远距离移动仍固定时长；新增失败测试覆盖后已修复。
 
 ## Checks
 
@@ -16,7 +16,10 @@
 | Frontend RED reducer | `npm run desktop:test -- ianActions.test.ts` | Failed as expected | 1 failed / 13 passed；`appearanceScale` 尚未实现。 |
 | Rust behavior | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml behavior` | Passed | 51 behavior-related tests passed。 |
 | Full Rust tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` | Passed | 110 tests passed。 |
-| Frontend reducer | `npm run desktop:test -- ianActions.test.ts` | Passed | 1 file / 14 tests passed。 |
+| RED full patrol loop | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml idle_perimeter_patrol` | Failed as expected | 失败显示只输出 `[(32.0, 32.0)]`，没有完整边缘路径。 |
+| RED distance-based movement duration | `npm run desktop:test -- ianActions.test.ts` | Failed as expected | 失败原因是 `durationForDesktopMovement is not a function`。 |
+| Rust behavior after patrol fix | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml behavior` | Passed | 52 behavior-related tests passed。 |
+| Frontend reducer | `npm run desktop:test -- ianActions.test.ts` | Passed | 1 file / 15 tests passed。 |
 | Frontend typecheck | `npm run desktop:typecheck` | Passed | `tsc --noEmit` 退出码为 0。 |
 | IanStage regression | `npm run desktop:test -- IanStage.test.tsx` | Passed | 1 file / 13 tests passed。 |
 
