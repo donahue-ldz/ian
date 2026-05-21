@@ -15,6 +15,8 @@ type IanStageProps = {
   viewState: IanViewState;
   onIanClick: (point: Point) => void;
   onIanDoubleClick: (point: Point) => void;
+  onIanNear: (point: Point) => void;
+  onSubmitMessage: (text: string) => void;
   onDragEnd: (point: Point) => void;
 };
 
@@ -23,6 +25,8 @@ export function IanStage({
   viewState,
   onIanClick,
   onIanDoubleClick,
+  onIanNear,
+  onSubmitMessage,
   onDragEnd,
 }: IanStageProps) {
   const dragOrigin = useRef<Point | null>(null);
@@ -72,10 +76,11 @@ export function IanStage({
           event.currentTarget.releasePointerCapture(event.pointerId);
         }}
       >
-        <Bubble bubble={viewState.bubble} />
+        <Bubble bubble={viewState.bubble} onSubmitMessage={onSubmitMessage} />
         <button
           className="ian-click-target"
           aria-label="Ian"
+          onPointerEnter={(event) => onIanNear(pointFromPointer(event))}
           onClick={(event) => onIanClick(pointFromMouse(event))}
           onDoubleClick={(event) => onIanDoubleClick(pointFromMouse(event))}
         >

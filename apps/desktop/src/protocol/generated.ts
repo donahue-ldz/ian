@@ -25,6 +25,7 @@ export type IanEvent =
   | { type: "time.tick"; now_ms: number }
   | { type: "mouse.click"; x: number; y: number }
   | { type: "mouse.double_click"; x: number; y: number }
+  | { type: "mouse.near"; x: number; y: number }
   | { type: "mouse.drag_start"; x: number; y: number }
   | { type: "mouse.drag_end"; x: number; y: number }
   | { type: "dialogue.user_message"; text: string };

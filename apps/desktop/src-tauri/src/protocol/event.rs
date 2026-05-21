@@ -13,6 +13,8 @@ pub enum IanEvent {
     MouseClick { x: f64, y: f64 },
     #[serde(rename = "mouse.double_click")]
     MouseDoubleClick { x: f64, y: f64 },
+    #[serde(rename = "mouse.near")]
+    MouseNear { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_start")]
     MouseDragStart { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_end")]

@@ -1,8 +1,10 @@
 #[derive(Default)]
 pub struct DemoDialogueProvider;
 
-impl DemoDialogueProvider {
-    pub fn reply(&self, text: &str) -> String {
+use super::{DialogueContext, DialogueProvider};
+
+impl DialogueProvider for DemoDialogueProvider {
+    fn reply(&self, text: &str, _context: &DialogueContext) -> String {
         let lowered = text.to_lowercase();
 
         if lowered.contains("water") || text.contains('水') {

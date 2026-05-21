@@ -20,4 +20,18 @@ impl BehaviorPolicy {
     pub fn run_around_duration_ms(&self) -> u64 {
         self.run_around_duration_ms
     }
+
+    pub fn tick_animation(&self, now_ms: i64) -> (&'static str, bool) {
+        let second = now_ms.div_euclid(1000);
+
+        if second > 0 && second % 90 == 0 {
+            return ("sleep", true);
+        }
+
+        if second > 0 && second % 45 == 0 {
+            return ("walk", false);
+        }
+
+        ("idle", true)
+    }
 }

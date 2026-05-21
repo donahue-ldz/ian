@@ -10,6 +10,7 @@ impl PermissionGate {
             | IanEvent::TimeTick { .. }
             | IanEvent::MouseClick { .. }
             | IanEvent::MouseDoubleClick { .. }
+            | IanEvent::MouseNear { .. }
             | IanEvent::MouseDragStart { .. }
             | IanEvent::MouseDragEnd { .. }
             | IanEvent::DialogueUserMessage { .. } => Ok(()),

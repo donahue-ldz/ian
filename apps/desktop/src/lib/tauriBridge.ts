@@ -19,6 +19,10 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     return invoke<IanAction[]>("handle_ian_event", { event });
   }
 
+  if (event.type === "mouse.near") {
+    return [{ type: "animation.play", name: "happy", looped: false }];
+  }
+
   if (event.type === "mouse.double_click") {
     return [{ type: "behavior.run_around", duration_ms: 1800 }];
   }
@@ -27,6 +31,19 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     return [
       { type: "bubble.open" },
       { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 2400 },
+      { type: "animation.play", name: "happy", looped: false },
+    ];
+  }
+
+  if (event.type === "dialogue.user_message") {
+    const text =
+      event.text.toLowerCase().includes("water") || event.text.includes("水")
+        ? "喝水水。"
+        : "我在这儿。";
+
+    return [
+      { type: "bubble.open" },
+      { type: "speech.show", text, mood: "calm", duration_ms: 2600 },
       { type: "animation.play", name: "happy", looped: false },
     ];
   }

@@ -1,6 +1,9 @@
 use crate::{
     core::{ActionDispatcher, CreatureState, EventBus},
-    domain::{behavior::BehaviorEngine, dialogue::DialogueEngine},
+    domain::{
+        behavior::BehaviorEngine,
+        dialogue::{providers::DialogueSource, DialogueEngine},
+    },
     protocol::{IanAction, IanEvent, IanState, Position},
     security::SecurityGate,
     storage::StorageService,
@@ -39,7 +42,10 @@ impl IanRuntime {
         self.event_bus.record(event.clone());
 
         let mut actions = match event {
-            IanEvent::DialogueUserMessage { text } => self.dialogue.reply_to(text),
+            IanEvent::DialogueUserMessage { text } => {
+                self.dialogue
+                    .reply_to(text, self.state.snapshot(), DialogueSource::UserBubble)
+            }
             other => self.behavior.decide(&other, self.state.snapshot()),
         };
 
