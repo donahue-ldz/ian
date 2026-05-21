@@ -29,3 +29,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml scheduler
 ## 风险和回滚
 
 自发触发太弱会看不到效果，太强会打扰。回滚方式是先只保留用户触发，再逐步放开自发触发。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

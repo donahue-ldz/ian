@@ -1,4 +1,4 @@
-import type { BehaviorMode } from "../protocol/generated";
+import type { BehaviorMode, PlayfulEnergy } from "../protocol/generated";
 
 export const behaviorModeOptions: Array<{
   label: string;
@@ -27,26 +27,56 @@ export const restBehaviorOptions = [
   { label: "少休息", value: "active" },
 ] as const;
 
+export const playfulEnergyOptions: Array<{
+  label: string;
+  value: PlayfulEnergy;
+}> = [
+  { label: "关闭", value: "off" },
+  { label: "低", value: "low" },
+  { label: "正常", value: "normal" },
+  { label: "高", value: "high" },
+];
+
+export const settingsGroups = [
+  { id: "personality", label: "性格" },
+  { id: "life", label: "生活" },
+  { id: "disturbance", label: "打扰" },
+  { id: "privacy", label: "隐私" },
+  { id: "advanced", label: "高级" },
+] as const;
+
 export const developerCapabilityOptions = [
   {
     capability: "git_metadata",
-    label: "Git 元数据",
+    label: "项目状态",
     scope: "分支、dirty 状态、短 hash；不读取代码正文或 diff",
+    reads: "分支名、是否有未提交改动、短 commit hash。",
+    doesNotRead: "不读取代码正文、diff、commit message 全文或远程凭据。",
+    canDisable: "可随时关闭",
   },
   {
     capability: "build_test_events",
-    label: "构建测试摘要",
+    label: "构建测试",
     scope: "状态、耗时、测试数量、错误类别；不读取终端全文",
+    reads: "构建/测试状态、耗时、测试数量和短错误类别。",
+    doesNotRead: "不读取 stdout/stderr 全文、终端历史或源码内容。",
+    canDisable: "可随时关闭",
   },
   {
     capability: "keyboard_rhythm",
     label: "键盘节奏",
     scope: "时间窗口、强度、计数；不记录按键内容",
+    reads: "时间窗口内的输入强度和次数摘要。",
+    doesNotRead: "不记录按键内容、文本、快捷键或密码。",
+    canDisable: "可随时关闭",
   },
   {
     capability: "active_app_presence",
-    label: "应用类别",
+    label: "当前应用",
     scope: "粗粒度类别；不读取窗口标题、URL 或屏幕文字",
+    reads: "粗粒度应用类别，例如编辑器、会议或演示。",
+    doesNotRead: "不读取窗口标题、URL、文档名、屏幕文字或 OCR。",
+    canDisable: "可随时关闭",
   },
 ] as const;
 

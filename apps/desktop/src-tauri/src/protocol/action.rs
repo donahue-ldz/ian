@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use ts_rs::TS;
 
-use super::state::IanState;
+use super::state::{IanState, PlayfulDiagnostic, PlayfulState};
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(rename_all = "snake_case")]
@@ -36,6 +36,41 @@ pub enum IanAction {
     BubbleClose,
     #[serde(rename = "behavior.run_around")]
     BehaviorRunAround { duration_ms: u64 },
+    #[serde(rename = "behavior.zoomies")]
+    BehaviorZoomies { duration_ms: u64, reason: String },
+    #[serde(rename = "effect.play")]
+    EffectPlay {
+        name: String,
+        intensity: String,
+        duration_ms: u64,
+    },
+    #[serde(rename = "appearance.scale_to")]
+    AppearanceScaleTo { scale: f64, duration_ms: u64 },
+    #[serde(rename = "playful.state")]
+    PlayfulStateSet {
+        state: PlayfulState,
+        until_ms: Option<i64>,
+    },
+    #[serde(rename = "playful.diagnostic")]
+    PlayfulDiagnostic {
+        timestamp_ms: i64,
+        reason: String,
+        result: String,
+        cooldown_key: Option<String>,
+        chosen_reaction_key: Option<String>,
+    },
     #[serde(rename = "state.sync")]
     StateSync { state: IanState },
+}
+
+impl From<PlayfulDiagnostic> for IanAction {
+    fn from(diagnostic: PlayfulDiagnostic) -> Self {
+        Self::PlayfulDiagnostic {
+            timestamp_ms: diagnostic.timestamp_ms,
+            reason: diagnostic.reason,
+            result: diagnostic.result,
+            cooldown_key: diagnostic.cooldown_key,
+            chosen_reaction_key: diagnostic.chosen_reaction_key,
+        }
+    }
 }

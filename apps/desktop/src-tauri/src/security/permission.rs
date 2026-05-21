@@ -57,6 +57,8 @@ impl PermissionGate {
             | IanEvent::MouseLeave { .. }
             | IanEvent::MouseDragStart { .. }
             | IanEvent::MouseDragEnd { .. }
+            | IanEvent::MouseChaseCandidate { .. }
+            | IanEvent::ScreenBounds { .. }
             | IanEvent::DialogueUserMessage { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => Ok(()),
@@ -178,5 +180,18 @@ mod tests {
 
         assert!(gate.allow(&git_event).is_ok());
         assert!(gate.allow(&build_event).is_ok());
+    }
+
+    #[test]
+    fn pointer_chase_coordinates_are_allowed_as_local_mouse_input() {
+        let gate = PermissionGate::default();
+
+        assert!(gate
+            .allow(&IanEvent::MouseChaseCandidate {
+                x: 640.0,
+                y: 420.0,
+                now_ms: 300_000,
+            })
+            .is_ok());
     }
 }

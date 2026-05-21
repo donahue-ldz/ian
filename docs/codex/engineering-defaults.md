@@ -98,6 +98,7 @@ Use risk-based verification.
 - New features should cover the main path, key edge cases, and likely failure paths.
 - Use existing test tools and style.
 - For frontend or desktop-visible behavior changes, run a Playwright-based local verification pass when practical. Cover the main visible path, key interaction state changes, and browser console errors, then record the result in the relevant `verification.md`.
+- For Ian desktop-visible capabilities, always verify the real Tauri desktop shell before accepting the change. Browser preview checks can supplement desktop verification, but cannot replace it for window behavior, animation, movement, bubble display, mouse interaction, Tauri APIs, or system integration.
 - Run the smallest relevant verification command before claiming completion.
 - If verification cannot run, explain why, what was checked instead, and the remaining risk.
 

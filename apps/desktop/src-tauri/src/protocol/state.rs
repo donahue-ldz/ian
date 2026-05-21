@@ -6,9 +6,11 @@ use ts_rs::TS;
 #[ts(export)]
 pub enum CurrentBehavior {
     Idle,
+    Resting,
     Walking,
     Happy,
     Running,
+    Zooming,
     Sleeping,
 }
 
@@ -25,6 +27,49 @@ pub enum BehaviorMode {
     Quiet,
     Normal,
     Lively,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum PlayfulEnergy {
+    Off,
+    Low,
+    Normal,
+    High,
+}
+
+impl Default for PlayfulEnergy {
+    fn default() -> Self {
+        Self::Normal
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum PlayfulState {
+    Idle,
+    WarmingUp,
+    Zooming,
+    Settling,
+    CoolingDown,
+}
+
+impl Default for PlayfulState {
+    fn default() -> Self {
+        Self::Idle
+    }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, TS)]
+#[ts(export)]
+pub struct PlayfulDiagnostic {
+    pub timestamp_ms: i64,
+    pub reason: String,
+    pub result: String,
+    pub cooldown_key: Option<String>,
+    pub chosen_reaction_key: Option<String>,
 }
 
 impl Default for BehaviorMode {
@@ -44,6 +89,15 @@ impl Default for Position {
     fn default() -> Self {
         Self { x: 0.0, y: 0.0 }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, TS)]
+#[ts(export)]
+pub struct ScreenBounds {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
@@ -158,10 +212,17 @@ pub struct IanState {
     pub keyboard_rhythm_enabled: bool,
     pub active_app_presence_enabled: bool,
     pub home_anchor: Position,
+    pub screen_bounds: Option<ScreenBounds>,
+    pub last_user_interaction_ms: i64,
     pub quiet_hours: QuietHours,
     pub movement_intensity: String,
     pub bubble_frequency: String,
     pub rest_behavior: String,
+    pub playful_energy: PlayfulEnergy,
+    pub playful_state: PlayfulState,
+    pub playful_state_until_ms: Option<i64>,
+    pub playful_snoozed_until_ms: Option<i64>,
+    pub last_playful_diagnostic: Option<PlayfulDiagnostic>,
     pub surface_scale: f64,
     pub diagnostics_enabled: bool,
     pub day_phase: String,
@@ -175,11 +236,11 @@ pub struct IanState {
 impl Default for IanState {
     fn default() -> Self {
         Self {
-            active_pet_id: "ian-alpaca".to_string(),
+            active_pet_id: "ian-puppy".to_string(),
             current_behavior: CurrentBehavior::Idle,
             current_animation: "idle".to_string(),
             position: Position { x: 0.0, y: 0.0 },
-            active_resource_pack: "ian-alpaca".to_string(),
+            active_resource_pack: "ian-puppy".to_string(),
             behavior_mode: BehaviorMode::Normal,
             reminders_enabled: true,
             byom_enabled: false,
@@ -188,10 +249,17 @@ impl Default for IanState {
             keyboard_rhythm_enabled: false,
             active_app_presence_enabled: false,
             home_anchor: Position { x: 0.0, y: 0.0 },
+            screen_bounds: None,
+            last_user_interaction_ms: 0,
             quiet_hours: QuietHours::default(),
             movement_intensity: "normal".to_string(),
             bubble_frequency: "normal".to_string(),
             rest_behavior: "normal".to_string(),
+            playful_energy: PlayfulEnergy::Normal,
+            playful_state: PlayfulState::Idle,
+            playful_state_until_ms: None,
+            playful_snoozed_until_ms: None,
+            last_playful_diagnostic: None,
             surface_scale: 1.0,
             diagnostics_enabled: true,
             day_phase: "day".to_string(),

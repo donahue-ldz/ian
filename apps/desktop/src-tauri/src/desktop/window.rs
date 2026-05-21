@@ -14,12 +14,21 @@ pub fn configure_main_window(app: &mut App) -> tauri::Result<()> {
             let origin = monitor.position();
             let size = monitor.size();
             let window_size = window.outer_size()?;
-            window.set_position(resolve_initial_window_position(
+            let resolved_position = resolve_initial_window_position(
                 saved_position,
                 *origin,
                 *size,
                 window_size,
-            ))?;
+            );
+            window.set_position(resolved_position)?;
+            if let Some(runtime) = app.try_state::<Mutex<IanRuntime>>() {
+                if let Ok(mut runtime) = runtime.lock() {
+                    let _ = runtime.save_position(Position {
+                        x: f64::from(resolved_position.x),
+                        y: f64::from(resolved_position.y),
+                    });
+                }
+            }
         }
         window.show()?;
         window.set_focus()?;
@@ -34,13 +43,35 @@ fn resolve_initial_window_position(
     monitor_size: PhysicalSize<u32>,
     window_size: PhysicalSize<u32>,
 ) -> PhysicalPosition<i32> {
-    if let Some(position) = saved_position.and_then(restorable_position) {
-        return position;
-    }
+    let position = saved_position
+        .and_then(restorable_position)
+        .unwrap_or_else(|| default_bottom_right_position(monitor_origin, monitor_size, window_size));
 
+    clamp_window_position(position, monitor_origin, monitor_size, window_size)
+}
+
+fn default_bottom_right_position(
+    monitor_origin: PhysicalPosition<i32>,
+    monitor_size: PhysicalSize<u32>,
+    window_size: PhysicalSize<u32>,
+) -> PhysicalPosition<i32> {
     let x = monitor_origin.x + monitor_size.width.saturating_sub(window_size.width + 48) as i32;
     let y = monitor_origin.y + monitor_size.height.saturating_sub(window_size.height + 72) as i32;
     PhysicalPosition::new(x, y)
+}
+
+fn clamp_window_position(
+    position: PhysicalPosition<i32>,
+    monitor_origin: PhysicalPosition<i32>,
+    monitor_size: PhysicalSize<u32>,
+    window_size: PhysicalSize<u32>,
+) -> PhysicalPosition<i32> {
+    let min_x = monitor_origin.x;
+    let min_y = monitor_origin.y;
+    let max_x = monitor_origin.x + monitor_size.width.saturating_sub(window_size.width) as i32;
+    let max_y = monitor_origin.y + monitor_size.height.saturating_sub(window_size.height) as i32;
+
+    PhysicalPosition::new(position.x.clamp(min_x, max_x), position.y.clamp(min_y, max_y))
 }
 
 fn restorable_position(position: Position) -> Option<PhysicalPosition<i32>> {
@@ -87,5 +118,30 @@ mod tests {
         );
 
         assert_eq!(position, PhysicalPosition::new(1420, 785));
+    }
+
+    #[test]
+    fn saved_position_is_clamped_to_visible_monitor_bounds() {
+        let negative = resolve_initial_window_position(
+            Some(Position {
+                x: -120.0,
+                y: -80.0,
+            }),
+            PhysicalPosition::new(0, 0),
+            PhysicalSize::new(1728, 1117),
+            PhysicalSize::new(260, 260),
+        );
+        let too_far = resolve_initial_window_position(
+            Some(Position {
+                x: 4000.0,
+                y: 3000.0,
+            }),
+            PhysicalPosition::new(0, 0),
+            PhysicalSize::new(1728, 1117),
+            PhysicalSize::new(260, 260),
+        );
+
+        assert_eq!(negative, PhysicalPosition::new(0, 0));
+        assert_eq!(too_far, PhysicalPosition::new(1468, 857));
     }
 }

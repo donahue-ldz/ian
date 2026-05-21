@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
-import type { BehaviorMode, DeveloperSnooze, DeveloperWorkspace, QuietHours } from "./protocol/generated";
+import { useEffect, useRef, useState } from "react";
+import type {
+  BehaviorMode,
+  DeveloperSnooze,
+  DeveloperWorkspace,
+  IanEvent,
+  PlayfulEnergy,
+  Position,
+  QuietHours,
+} from "./protocol/generated";
 import { IanStage } from "./renderer/IanStage";
 import { loadPetResourcePack, type PetResourcePack } from "./resources/resourceLoader";
 import {
@@ -12,10 +20,90 @@ import {
   saveQuietHours,
   saveRemindersEnabled,
 } from "./lib/tauriBridge";
-import { moveDesktopWindow } from "./lib/position";
+import {
+  getDesktopCursorPosition,
+  getDesktopScreenBounds,
+  getDesktopWindowPosition,
+  moveDesktopWindow,
+  resolveSavedDragPosition,
+  startDesktopWindowDrag,
+} from "./lib/position";
 import { useIanActions } from "./state/useIanActions";
+import { viewStateForWindowContent } from "./state/ianActions";
 
 const TICK_INTERVAL_MS = 15_000;
+const POINTER_CHASE_INTERVAL_MS = 10_000;
+const CLICK_CHASE_FALLBACK_DELAY_MS = 450;
+const DEFAULT_RESOURCE_PACK_ID = "ian-puppy";
+
+type ClickChaseDependencies = {
+  point: Position;
+  isDesktopWindow: boolean;
+  sendEvent: (event: IanEvent) => Promise<void> | void;
+};
+
+type LeaveChaseDependencies = {
+  point: Position;
+  isDesktopWindow: boolean;
+  isChaseArmed: boolean;
+  now: () => number;
+  getCursorPosition: () => Promise<Position | null>;
+  sendEvent: (event: IanEvent) => Promise<void> | void;
+};
+
+type ArmedChaseDependencies = Omit<LeaveChaseDependencies, "point">;
+
+export async function sendIanClickAndArmChase({
+  point,
+  isDesktopWindow,
+  sendEvent,
+}: ClickChaseDependencies): Promise<boolean> {
+  await sendEvent({ type: "mouse.click", ...point });
+  return isDesktopWindow;
+}
+
+export async function sendIanLeaveWithArmedChase({
+  point,
+  isDesktopWindow,
+  isChaseArmed,
+  now,
+  getCursorPosition,
+  sendEvent,
+}: LeaveChaseDependencies): Promise<boolean> {
+  await sendEvent({ type: "mouse.leave", ...point });
+
+  return sendArmedChaseCandidate({
+    isDesktopWindow,
+    isChaseArmed,
+    now,
+    getCursorPosition,
+    sendEvent,
+  });
+}
+
+export async function sendArmedChaseCandidate({
+  isDesktopWindow,
+  isChaseArmed,
+  now,
+  getCursorPosition,
+  sendEvent,
+}: ArmedChaseDependencies): Promise<boolean> {
+  if (!isDesktopWindow || !isChaseArmed) {
+    return false;
+  }
+
+  const cursorPosition = await getCursorPosition();
+  if (!cursorPosition) {
+    return false;
+  }
+
+  await sendEvent({
+    type: "mouse.chase_candidate",
+    ...cursorPosition,
+    now_ms: now(),
+  });
+  return false;
+}
 
 export default function App() {
   const [resourcePack, setResourcePack] = useState<PetResourcePack | null>(null);
@@ -41,10 +129,15 @@ export default function App() {
   });
   const [creatureSettings, setCreatureSettings] = useState(createCreatureSettingsState());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const desktopDragOrigin = useRef<{ x: number; y: number } | null>(null);
+  const pointerLeaveChaseArmed = useRef(false);
+  const pointerChaseFallbackTimeout = useRef<number | null>(null);
   const { savePosition, sendEvent, viewState } = useIanActions();
+  const isDesktopWindow = "__TAURI_INTERNALS__" in window;
+  const stageViewState = viewStateForWindowContent(viewState, isDesktopWindow);
 
   useEffect(() => {
-    void loadPetResourcePack("ian-alpaca").then(setResourcePack);
+    void loadPetResourcePack(DEFAULT_RESOURCE_PACK_ID).then(setResourcePack);
     void getIanSettings().then((state) => {
       setBehaviorMode(state.behavior_mode);
       setRemindersEnabled(state.reminders_enabled);
@@ -53,23 +146,46 @@ export default function App() {
       setDeveloperWorkspace(state.developer_workspace);
       setDeveloperSnooze(state.developer_snooze);
       setCreatureSettings(creatureSettingsFromIanState(state));
-      void moveDesktopWindow(state.position);
     });
     void sendEvent({ type: "app.started" });
+    void sendDesktopScreenBounds(sendEvent);
   }, [sendEvent]);
 
   useEffect(() => {
     const interval = window.setInterval(() => {
+      void sendDesktopScreenBounds(sendEvent);
       void sendEvent({ type: "time.tick", now_ms: Date.now() });
     }, TICK_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
   }, [sendEvent]);
 
+  useEffect(() => {
+    if (!isDesktopWindow) {
+      return;
+    }
+
+    const interval = window.setInterval(() => {
+      void getDesktopCursorPosition().then((position) => {
+        if (!position) {
+          return;
+        }
+
+        void sendEvent({
+          type: "mouse.chase_candidate",
+          ...position,
+          now_ms: Date.now(),
+        });
+      });
+    }, POINTER_CHASE_INTERVAL_MS);
+
+    return () => window.clearInterval(interval);
+  }, [isDesktopWindow, sendEvent]);
+
   return (
     <IanStage
       resourcePack={resourcePack}
-      viewState={viewState}
+      viewState={stageViewState}
       behaviorMode={behaviorMode}
       remindersEnabled={remindersEnabled}
       byomEnabled={capabilities.byom}
@@ -83,11 +199,41 @@ export default function App() {
       movementIntensity={creatureSettings.movementIntensity}
       bubbleFrequency={creatureSettings.bubbleFrequency}
       restBehavior={creatureSettings.restBehavior}
+      playfulEnergy={creatureSettings.playfulEnergy}
+      playfulSnoozedUntilMs={creatureSettings.playfulSnoozedUntilMs}
       surfaceScale={creatureSettings.surfaceScale}
       diagnosticsEnabled={creatureSettings.diagnosticsEnabled}
       isSettingsOpen={isSettingsOpen}
+      isDesktopWindow={isDesktopWindow}
       onIanClick={(point) => {
-        void sendEvent({ type: "mouse.click", ...point });
+        if (pointerChaseFallbackTimeout.current !== null) {
+          window.clearTimeout(pointerChaseFallbackTimeout.current);
+          pointerChaseFallbackTimeout.current = null;
+        }
+
+        void sendIanClickAndArmChase({
+          point,
+          isDesktopWindow,
+          sendEvent,
+        }).then((isArmed) => {
+          pointerLeaveChaseArmed.current = isArmed;
+          if (!isArmed) {
+            return;
+          }
+
+          pointerChaseFallbackTimeout.current = window.setTimeout(() => {
+            void sendArmedChaseCandidate({
+              isDesktopWindow,
+              isChaseArmed: pointerLeaveChaseArmed.current,
+              now: Date.now,
+              getCursorPosition: getDesktopCursorPosition,
+              sendEvent,
+            }).then((nextArmed) => {
+              pointerLeaveChaseArmed.current = nextArmed;
+              pointerChaseFallbackTimeout.current = null;
+            });
+          }, CLICK_CHASE_FALLBACK_DELAY_MS);
+        });
       }}
       onIanDoubleClick={(point) => {
         void sendEvent({ type: "mouse.double_click", ...point });
@@ -96,7 +242,21 @@ export default function App() {
         void sendEvent({ type: "mouse.near", ...point, now_ms: Date.now() });
       }}
       onIanLeave={(point) => {
-        void sendEvent({ type: "mouse.leave", ...point });
+        if (pointerChaseFallbackTimeout.current !== null) {
+          window.clearTimeout(pointerChaseFallbackTimeout.current);
+          pointerChaseFallbackTimeout.current = null;
+        }
+
+        void sendIanLeaveWithArmedChase({
+          point,
+          isDesktopWindow,
+          isChaseArmed: pointerLeaveChaseArmed.current,
+          now: Date.now,
+          getCursorPosition: getDesktopCursorPosition,
+          sendEvent,
+        }).then((isArmed) => {
+          pointerLeaveChaseArmed.current = isArmed;
+        });
       }}
       onSubmitMessage={(text) => {
         void sendEvent({ type: "dialogue.user_message", text });
@@ -145,6 +305,8 @@ export default function App() {
           movement_intensity: nextSettings.movementIntensity,
           bubble_frequency: nextSettings.bubbleFrequency,
           rest_behavior: nextSettings.restBehavior,
+          playful_energy: nextSettings.playfulEnergy,
+          playful_snoozed_until_ms: nextSettings.playfulSnoozedUntilMs,
           surface_scale: nextSettings.surfaceScale,
           diagnostics_enabled: nextSettings.diagnosticsEnabled,
         }).then((state) => {
@@ -161,11 +323,37 @@ export default function App() {
         });
       }}
       onDragEnd={(point) => {
-        void sendEvent({ type: "mouse.drag_end", ...point });
-        void savePosition(point);
+        void (async () => {
+          const desktopPosition = isDesktopWindow
+            ? await getDesktopWindowPosition()
+            : null;
+          const dragEndPosition = resolveSavedDragPosition(point, desktopPosition);
+          await sendEvent({ type: "mouse.drag_end", ...dragEndPosition });
+          await savePosition(dragEndPosition);
+        })();
+        desktopDragOrigin.current = null;
+      }}
+      onDragMove={(offset) => {
+        if (!isDesktopWindow || !desktopDragOrigin.current) {
+          return;
+        }
+
+        void moveDesktopWindow({
+          x: desktopDragOrigin.current.x + offset.x,
+          y: desktopDragOrigin.current.y + offset.y,
+        });
       }}
       onDragStart={(point) => {
         void sendEvent({ type: "mouse.drag_start", ...point });
+        desktopDragOrigin.current = viewState.position;
+        if (isDesktopWindow) {
+          void startDesktopWindowDrag().catch(() => undefined);
+          void getDesktopWindowPosition().then((desktopPosition) => {
+            if (desktopPosition) {
+              desktopDragOrigin.current = desktopPosition;
+            }
+          });
+        }
       }}
     />
   );
@@ -186,6 +374,8 @@ function createCreatureSettingsState() {
     movementIntensity: "normal",
     bubbleFrequency: "normal",
     restBehavior: "normal",
+    playfulEnergy: "normal" as PlayfulEnergy,
+    playfulSnoozedUntilMs: null as number | null,
     surfaceScale: 1,
     diagnosticsEnabled: true,
   };
@@ -206,9 +396,22 @@ function creatureSettingsFromIanState(state: Awaited<ReturnType<typeof getIanSet
     movementIntensity: state.movement_intensity,
     bubbleFrequency: state.bubble_frequency,
     restBehavior: state.rest_behavior,
+    playfulEnergy: state.playful_energy,
+    playfulSnoozedUntilMs: state.playful_snoozed_until_ms ?? null,
     surfaceScale: state.surface_scale,
     diagnosticsEnabled: state.diagnostics_enabled,
   };
+}
+
+async function sendDesktopScreenBounds(
+  sendEvent: (event: IanEvent) => Promise<void> | void,
+) {
+  const bounds = await getDesktopScreenBounds();
+  if (!bounds) {
+    return;
+  }
+
+  await sendEvent({ type: "screen.bounds", ...bounds });
 }
 
 function capabilityToStateKey(capability: string): keyof ReturnType<typeof createCapabilityState> {

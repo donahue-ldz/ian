@@ -1,0 +1,12 @@
+{
+  "id": "ian-puppy",
+  "name": "Ian Puppy",
+  "version": "0.1.0",
+  "species": "puppy",
+  "defaultPersonality": "gentle_playful",
+  "sprite": "sprite.svg",
+  "animations": "animations.json",
+  "expressions": "expressions.json",
+  "sounds": "sounds/",
+  "capabilities": ["idle", "rest", "walk", "sleep", "run", "zoomies", "happy"]
+}

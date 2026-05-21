@@ -29,3 +29,7 @@ cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml behavior
 ## 风险和回滚
 
 诊断过多会增加噪音。回滚方式是默认只记录最近 N 条 playful 摘要，并放在开发诊断入口。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

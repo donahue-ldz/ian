@@ -1,10 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
   createInitialIanViewState,
+  expireBubbleIfNeeded,
   expireRunAroundIfNeeded,
   reduceIanActions,
+  viewStateForWindowContent,
 } from "./ianActions";
-import type { IanAction } from "../protocol/generated";
+import {
+  durationForDesktopMovement,
+  durationForSpeed,
+  planDesktopMovementFrames,
+} from "./useIanActions";
+import type { IanAction, IanState } from "../protocol/generated";
 
 describe("reduceIanActions", () => {
   it("opens a speech bubble from Rust Core actions", () => {
@@ -18,11 +25,143 @@ describe("reduceIanActions", () => {
       },
     ];
 
-    const next = reduceIanActions(createInitialIanViewState(), actions);
+    const next = reduceIanActions(createInitialIanViewState(), actions, 1000);
 
     expect(next.bubble.isOpen).toBe(true);
     expect(next.bubble.text).toBe("我在这儿。");
     expect(next.bubble.mood).toBe("calm");
+    expect(next.bubble.visibleUntil).toBe(3400);
+  });
+
+  it("does not replace visible text while bubble input is active", () => {
+    const inputActive = {
+      ...createInitialIanViewState(),
+      isBubbleInputActive: true,
+      bubble: {
+        isOpen: true,
+        text: "我听着。",
+        mood: "calm",
+        visibleUntil: null,
+      },
+    };
+
+    const next = reduceIanActions(
+      inputActive,
+      [
+        {
+          type: "speech.show",
+          text: "新的主动气泡",
+          mood: "happy",
+          duration_ms: 2400,
+        },
+        {
+          type: "state.sync",
+          state: testIanState({ is_bubble_input_active: true }),
+        },
+      ],
+      1000,
+    );
+
+    expect(next.bubble.text).toBe("我听着。");
+    expect(next.bubble.mood).toBe("calm");
+  });
+
+  it("allows the user submitted reply to replace input text after core ends input", () => {
+    const inputActive = {
+      ...createInitialIanViewState(),
+      isBubbleInputActive: true,
+      bubble: {
+        isOpen: true,
+        text: "我听着。",
+        mood: "calm",
+        visibleUntil: null,
+      },
+    };
+
+    const next = reduceIanActions(
+      inputActive,
+      [
+        {
+          type: "speech.show",
+          text: "喝水水。",
+          mood: "calm",
+          duration_ms: 2400,
+        },
+        {
+          type: "state.sync",
+          state: testIanState({ is_bubble_input_active: false }),
+        },
+      ],
+      1000,
+    );
+
+    expect(next.bubble.text).toBe("喝水水。");
+    expect(next.isBubbleInputActive).toBe(false);
+  });
+
+  function testIanState(overrides: Partial<IanState> = {}): IanState {
+    return {
+      active_pet_id: "ian-alpaca",
+      current_behavior: "idle" as const,
+      current_animation: "idle" as const,
+      position: { x: 0, y: 0 },
+      active_resource_pack: "ian-alpaca",
+      behavior_mode: "normal" as const,
+      reminders_enabled: true,
+      byom_enabled: false,
+      git_metadata_enabled: false,
+      build_test_events_enabled: false,
+      keyboard_rhythm_enabled: false,
+      active_app_presence_enabled: false,
+      home_anchor: { x: 0, y: 0 },
+      screen_bounds: null,
+      last_user_interaction_ms: 0,
+      quiet_hours: { enabled: false, start_minute: 1320, end_minute: 420 },
+      movement_intensity: "normal",
+      bubble_frequency: "normal",
+      rest_behavior: "normal",
+      playful_energy: "normal",
+      playful_state: "idle",
+      playful_state_until_ms: null,
+      playful_snoozed_until_ms: null,
+      last_playful_diagnostic: null,
+      surface_scale: 1,
+      diagnostics_enabled: true,
+      day_phase: "day",
+      is_dragging: false,
+      is_bubble_input_active: false,
+      developer_workspace: {
+        bound: false,
+        enabled: false,
+        workspace_id: null,
+        display_name: null,
+        root_path: null,
+      },
+      developer_snooze: { enabled: false, until_ms: null, reason: null },
+      active_app_category: null,
+      ...overrides,
+    };
+  }
+
+
+  it("closes feedback bubbles after their visible duration", () => {
+    const visible = reduceIanActions(
+      createInitialIanViewState(),
+      [
+        {
+          type: "speech.show",
+          text: "我在这儿。",
+          mood: "calm",
+          duration_ms: 1200,
+        },
+      ],
+      1000,
+    );
+
+    const next = expireBubbleIfNeeded(visible, 2200);
+
+    expect(next.bubble.isOpen).toBe(false);
+    expect(next.bubble.text).toBeNull();
   });
 
   it("plays run animation when Rust Core emits run-around behavior", () => {
@@ -37,6 +176,24 @@ describe("reduceIanActions", () => {
     expect(next.runAroundUntil).toBe(2800);
   });
 
+  it("plays zoomies and visual effects from Rust Core actions", () => {
+    const actions: IanAction[] = [
+      { type: "behavior.zoomies", duration_ms: 3200, reason: "idle_surprise" },
+      {
+        type: "effect.play",
+        name: "speed_lines",
+        intensity: "high",
+        duration_ms: 900,
+      },
+    ];
+
+    const next = reduceIanActions(createInitialIanViewState(), actions, 1000);
+
+    expect(next.animation.name).toBe("zoomies");
+    expect(next.behavior).toBe("zooming");
+    expect(next.visualEffect?.name).toBe("speed_lines");
+  });
+
   it("records the latest movement target from Rust Core movement actions", () => {
     const actions: IanAction[] = [
       { type: "movement.move_to", x: 24, y: 36, speed: "normal" },
@@ -47,6 +204,47 @@ describe("reduceIanActions", () => {
     expect(next.position).toEqual({ x: 24, y: 36 });
     expect(next.movementTarget).toEqual({ x: 24, y: 36, speed: "normal" });
     expect(next.lastMovementAt).toBe(1000);
+  });
+
+  it("applies transient appearance scale without changing persisted surface scale", () => {
+    const scaled = reduceIanActions(
+      createInitialIanViewState(),
+      [{ type: "appearance.scale_to", scale: 0.45, duration_ms: 0 }],
+      1000,
+    );
+    const synced = reduceIanActions(
+      scaled,
+      [{ type: "state.sync", state: testIanState({ surface_scale: 1.2 }) }],
+      1200,
+    );
+
+    expect(scaled.appearanceScale).toBe(0.45);
+    expect(synced.appearanceScale).toBe(0.45);
+  });
+
+  it("keeps desktop window content anchored inside the transparent window", () => {
+    const state = {
+      ...createInitialIanViewState(),
+      position: { x: 2840, y: 1570 },
+      movementTarget: { x: 2840, y: 1570, speed: "normal" as const },
+    };
+
+    const next = viewStateForWindowContent(state, true);
+
+    expect(next.position).toEqual({ x: 0, y: 0 });
+    expect(next.movementTarget).toEqual({ x: 0, y: 0, speed: "normal" });
+  });
+
+  it("keeps browser preview positions unchanged", () => {
+    const state = {
+      ...createInitialIanViewState(),
+      position: { x: 24, y: 36 },
+    };
+
+    expect(viewStateForWindowContent(state, false).position).toEqual({
+      x: 24,
+      y: 36,
+    });
   });
 
   it("returns to idle after run-around duration expires", () => {
@@ -62,5 +260,53 @@ describe("reduceIanActions", () => {
     expect(next.animation.loop).toBe(true);
     expect(next.behavior).toBe("idle");
     expect(next.runAroundUntil).toBe(0);
+  });
+});
+
+describe("movement pacing", () => {
+  it("keeps desktop moves readable instead of snapping between points", () => {
+    expect(durationForSpeed("fast")).toBeGreaterThanOrEqual(340);
+    expect(durationForSpeed("normal")).toBeGreaterThanOrEqual(460);
+    expect(durationForSpeed("slow")).toBeGreaterThanOrEqual(680);
+  });
+
+  it("adds small deterministic variation across chained moves", () => {
+    expect(durationForSpeed("fast", 0)).not.toBe(durationForSpeed("fast", 1));
+    expect(durationForSpeed("normal", 1)).toBeGreaterThan(
+      durationForSpeed("fast", 1),
+    );
+    expect(durationForSpeed("slow", 2)).toBeGreaterThan(
+      durationForSpeed("normal", 2),
+    );
+  });
+
+  it("plans smooth desktop movement with intermediate frames", () => {
+    const frames = planDesktopMovementFrames(
+      { x: 10, y: 20 },
+      { x: 110, y: 70 },
+      "normal",
+    );
+
+    expect(frames.length).toBeGreaterThan(8);
+    expect(frames[0]).not.toEqual({ x: 110, y: 70 });
+    expect(frames.at(-1)).toEqual({ x: 110, y: 70 });
+    expect(frames.some((frame) => frame.x > 10 && frame.x < 110)).toBe(true);
+    expect(frames.some((frame) => frame.y > 20 && frame.y < 70)).toBe(true);
+  });
+
+  it("scales desktop movement duration by travel distance", () => {
+    const shortMoveMs = durationForDesktopMovement(
+      { x: 10, y: 20 },
+      { x: 110, y: 20 },
+      "slow",
+    );
+    const longMoveMs = durationForDesktopMovement(
+      { x: 10, y: 20 },
+      { x: 10, y: 820 },
+      "slow",
+    );
+
+    expect(longMoveMs).toBeGreaterThan(shortMoveMs * 4);
+    expect(longMoveMs).toBeGreaterThanOrEqual(12_000);
   });
 });

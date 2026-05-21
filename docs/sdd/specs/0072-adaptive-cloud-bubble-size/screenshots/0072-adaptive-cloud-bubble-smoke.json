@@ -1,0 +1,13 @@
+{
+  "url": "http://127.0.0.1:1420/?v=0072",
+  "smoke": {
+    "cloudSize": "short",
+    "hasBubble": true,
+    "hasTailLarge": true,
+    "hasTailSmall": true,
+    "maxWidth": "112px",
+    "text": "我在这儿。",
+    "width": 108
+  },
+  "screenshot": "0072-adaptive-cloud-bubble.png"
+}

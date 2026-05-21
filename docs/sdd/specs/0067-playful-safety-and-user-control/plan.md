@@ -31,3 +31,7 @@ npm run desktop:typecheck
 ## 风险和回滚
 
 取消逻辑可能影响普通 run-around。回滚方式是先只取消 zoomies，不改变 0022 的短 run-around。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

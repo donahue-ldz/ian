@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeBubbleMessage } from "./bubbleModel";
+import { formatBubbleText, normalizeBubbleMessage } from "./bubbleModel";
 
 describe("Bubble", () => {
   it("normalizes a single short message before submit", () => {
@@ -8,5 +8,11 @@ describe("Bubble", () => {
 
   it("does not submit empty bubble messages", () => {
     expect(normalizeBubbleMessage("   ")).toBeNull();
+  });
+
+  it("keeps default feedback bubble text short", () => {
+    expect(
+      formatBubbleText("  我在这里陪你，不用急，慢慢来，先把手上的事情做好就可以。  "),
+    ).toBe("我在这里陪你，不用急，慢慢来，先把手上的事情做好…");
   });
 });

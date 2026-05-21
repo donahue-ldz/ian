@@ -1,0 +1,12 @@
+{
+  "borderWidth": "1.5px",
+  "bottom": "152px",
+  "bubbleRole": "pet-status",
+  "bubbleShape": "thought-cloud",
+  "bubbleWidth": 94,
+  "cloudSize": "short",
+  "lineClamp": "",
+  "text": "我在这儿。",
+  "textAlign": "center",
+  "textWidth": 65
+}

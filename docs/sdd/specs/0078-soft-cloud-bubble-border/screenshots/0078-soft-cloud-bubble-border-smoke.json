@@ -1,0 +1,16 @@
+{
+  "url": "http://127.0.0.1:1420/?v=0078",
+  "smoke": {
+    "backgroundColor": "rgb(255, 255, 255)",
+    "borderColor": "rgba(17, 17, 17, 0.64)",
+    "borderWidth": "3px",
+    "cloudSize": "short",
+    "hasBubble": true,
+    "hasReplyButton": true,
+    "hasTailLarge": true,
+    "hasTailSmall": true,
+    "text": "我在这儿。",
+    "width": 106
+  },
+  "screenshot": "0078-soft-cloud-bubble-border.png"
+}

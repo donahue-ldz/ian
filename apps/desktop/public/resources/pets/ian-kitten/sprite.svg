@@ -1,20 +1,21 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="96" viewBox="0 0 1344 96" role="img" aria-label="Ian kitten sprite sheet">
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="96" viewBox="0 0 1536 96" role="img" aria-label="Ian kitten sprite sheet">
   <defs>
     <style>
       .shadow { fill: #26312d; opacity: 0.16; }
-      .fur { fill: #6c7072; stroke: #2f3535; stroke-width: 2.8; stroke-linejoin: round; }
-      .chest { fill: #f7f7f0; stroke: #2f3535; stroke-width: 2.4; stroke-linejoin: round; }
-      .inner { fill: #45484a; }
-      .eye { fill: #f6d84f; stroke: #2f3535; stroke-width: 2; }
+      .fur { fill: #8a8f91; stroke: #273030; stroke-width: 2.8; stroke-linejoin: round; }
+      .chest { fill: #fffdf5; stroke: #273030; stroke-width: 2.4; stroke-linejoin: round; }
+      .muzzle { fill: #fffdf5; stroke: #273030; stroke-width: 2; stroke-linejoin: round; }
+      .inner { fill: #575b5d; }
+      .eye { fill: #ffdf35; stroke: #273030; stroke-width: 2; }
       .pupil { fill: #25302c; }
       .shine { fill: #fff8ce; }
-      .nose { fill: #2f3535; }
-      .mouth { fill: none; stroke: #2f3535; stroke-width: 1.8; stroke-linecap: round; }
-      .tongue { fill: #f09aa8; stroke: #2f3535; stroke-width: 1.4; }
-      .whisker { stroke: #2f3535; stroke-width: 1.4; stroke-linecap: round; }
+      .nose { fill: #273030; }
+      .mouth { fill: none; stroke: #273030; stroke-width: 1.8; stroke-linecap: round; }
+      .tongue { fill: #f09aa8; stroke: #273030; stroke-width: 1.4; }
+      .whisker { stroke: #273030; stroke-width: 1.4; stroke-linecap: round; }
       .cheek { fill: #f0a6aa; opacity: 0.42; }
-      .paw { fill: #f7f7f0; stroke: #2f3535; stroke-width: 2.2; }
-      .tail { fill: #5b5f61; stroke: #2f3535; stroke-width: 2.6; stroke-linecap: round; }
+      .paw { fill: #fffdf5; stroke: #273030; stroke-width: 2.2; }
+      .tail { fill: #787d7f; stroke: #273030; stroke-width: 2.6; stroke-linecap: round; }
     </style>
     <g id="tail-neutral">
       <path class="tail" d="M67 64c19-1 27-10 25-23c-1-8-8-13-14-10c-5 3-2 10 3 12c5 3 3 9-2 12c-4 3-9 4-15 4z"/>
@@ -47,6 +48,7 @@
       <path class="fur" d="M20 17l17 9c7-4 17-4 24 0l17-9l-4 22c4 6 5 14 3 21c-3 12-14 18-29 18s-26-6-29-18c-2-8-1-16 4-22z"/>
       <path class="inner" d="M27 25l9 5c-3 2-6 5-9 8z"/>
       <path class="inner" d="M69 25l-9 5c3 2 6 5 9 8z"/>
+      <path class="muzzle" d="M26 55c3 15 12 23 22 23s19-8 22-23c-5 6-13 9-22 9s-17-3-22-9z"/>
     </g>
     <g id="eyes-open">
       <ellipse class="eye" cx="37" cy="48" rx="8" ry="10"/>
@@ -229,6 +231,27 @@
       <use href="#head"/>
       <use href="#eyes-happy"/>
       <use href="#face-smile"/>
+    </g>
+  </g>
+
+  <g transform="translate(1344 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="30" ry="6"/>
+    <g transform="translate(0 2)">
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-blink"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+  <g transform="translate(1440 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+    <g transform="translate(0 3) rotate(-2 48 58)">
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-blink"/>
+      <use href="#face-calm"/>
     </g>
   </g>
 </svg>

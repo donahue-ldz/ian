@@ -9,7 +9,7 @@ use crate::{
     },
     protocol::{
         BehaviorMode, BuildTestStatus, DeveloperSnooze, DeveloperWorkspace, IanAction, IanEvent,
-        IanState, Position, QuietHours,
+        IanState, PlayfulEnergy, Position, QuietHours,
     },
     security::permission::PermissionState,
     security::SecurityGate,
@@ -85,6 +85,16 @@ impl IanRuntime {
             other => self.behavior.decide(other, self.state.snapshot()),
         };
 
+        if is_user_interaction_event(&event) {
+            actions.insert(
+                0,
+                IanAction::AppearanceScaleTo {
+                    scale: 1.0,
+                    duration_ms: 260,
+                },
+            );
+        }
+
         self.record_life_events(&event, &actions);
         self.state.apply_actions(&actions);
         actions.push(IanAction::StateSync {
@@ -132,6 +142,8 @@ impl IanRuntime {
         movement_intensity: String,
         bubble_frequency: String,
         rest_behavior: String,
+        playful_energy: PlayfulEnergy,
+        playful_snoozed_until_ms: Option<i64>,
         surface_scale: f64,
         diagnostics_enabled: bool,
     ) -> Result<IanState, String> {
@@ -139,6 +151,8 @@ impl IanRuntime {
             movement_intensity,
             bubble_frequency,
             rest_behavior,
+            playful_energy,
+            playful_snoozed_until_ms,
             surface_scale,
             diagnostics_enabled,
         );
@@ -229,9 +243,23 @@ impl IanRuntime {
             IanEvent::ActiveAppPresence { category, .. } => {
                 self.state.set_active_app_category(Some(category.clone()));
             }
+            IanEvent::ScreenBounds {
+                x,
+                y,
+                width,
+                height,
+            } => {
+                self.state.set_screen_bounds(crate::protocol::ScreenBounds {
+                    x: *x,
+                    y: *y,
+                    width: *width,
+                    height: *height,
+                });
+            }
             IanEvent::DeveloperBuildTestSummary { .. }
             | IanEvent::DeveloperGitStatusChanged { .. }
             | IanEvent::KeyboardRhythm { .. }
+            | IanEvent::MouseChaseCandidate { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => {}
             IanEvent::MouseDoubleClick { .. }
@@ -245,6 +273,11 @@ impl IanRuntime {
     }
 
     fn apply_interaction_lifecycle(&mut self, event: &IanEvent) {
+        if is_user_interaction_event(event) {
+            self.state
+                .record_user_interaction(chrono::Utc::now().timestamp_millis());
+        }
+
         match event {
             IanEvent::MouseDragStart { .. } => self.state.set_dragging(true),
             IanEvent::MouseDragEnd { .. } => self.state.set_dragging(false),
@@ -318,13 +351,33 @@ fn action_type(action: &IanAction) -> &'static str {
         IanAction::BubbleOpen => "bubble.open",
         IanAction::BubbleClose => "bubble.close",
         IanAction::BehaviorRunAround { .. } => "behavior.run_around",
+        IanAction::BehaviorZoomies { .. } => "behavior.zoomies",
+        IanAction::EffectPlay { .. } => "effect.play",
+        IanAction::AppearanceScaleTo { .. } => "appearance.scale_to",
+        IanAction::PlayfulStateSet { .. } => "playful.state",
+        IanAction::PlayfulDiagnostic { .. } => "playful.diagnostic",
         IanAction::StateSync { .. } => "state.sync",
     }
+}
+
+fn is_user_interaction_event(event: &IanEvent) -> bool {
+    matches!(
+        event,
+        IanEvent::MouseClick { .. }
+            | IanEvent::MouseDoubleClick { .. }
+            | IanEvent::MouseNear { .. }
+            | IanEvent::MouseDragStart { .. }
+            | IanEvent::MouseDragEnd { .. }
+            | IanEvent::DialogueUserMessage { .. }
+            | IanEvent::BubbleInputStarted
+            | IanEvent::BubbleInputEnded
+    )
 }
 
 fn life_event_type_for_action(action: &IanAction) -> Option<&'static str> {
     match action {
         IanAction::MovementMoveTo { .. } => Some("movement.move"),
+        IanAction::BehaviorZoomies { .. } => Some("playful.zoomies"),
         IanAction::AnimationPlay { name, .. } if name == "sleep" => Some("rest.sleep"),
         IanAction::AnimationPlay { name, .. } if name == "idle" => Some("rest.wake"),
         _ => None,

@@ -55,6 +55,26 @@ impl Sanitizer {
                 }
                 Ok(())
             }
+            IanEvent::ScreenBounds {
+                x,
+                y,
+                width,
+                height,
+            } => {
+                if !x.is_finite()
+                    || !y.is_finite()
+                    || !width.is_finite()
+                    || !height.is_finite()
+                    || *width <= 0.0
+                    || *height <= 0.0
+                {
+                    return Err(IanError::new(
+                        "screen_bounds_payload_rejected",
+                        "Screen bounds must be finite and positive.",
+                    ));
+                }
+                Ok(())
+            }
             _ => Ok(()),
         }
     }

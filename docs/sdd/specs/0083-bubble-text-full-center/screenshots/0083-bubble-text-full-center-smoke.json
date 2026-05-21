@@ -1,0 +1,19 @@
+{
+  "borderWidth": "1.5px",
+  "bubbleHeight": 50,
+  "bubbleWidth": 94,
+  "centerOffset": {
+    "x": 0,
+    "y": 0.5
+  },
+  "display": "grid",
+  "placeItems": "center",
+  "replyPosition": "absolute",
+  "text": "我在这儿。",
+  "textAlign": "center",
+  "textAlignSelf": "center",
+  "textHeight": 17.546875,
+  "textJustifySelf": "center",
+  "textMarginBottom": "0px",
+  "textWidth": 65
+}

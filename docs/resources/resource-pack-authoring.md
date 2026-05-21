@@ -15,6 +15,11 @@ public/resources/pets/<pack-id>/
   sounds/
 ```
 
+Bundled examples currently include `ian-alpaca`, `ian-kitten`, and `ian-puppy`.
+`ian-puppy` is the preferred example for high-liveliness packs because its idle
+sequence contains multiple frames for breathing, blinking, and tail motion while
+still using the same semantic animation contract.
+
 ## `pet.json`
 
 必填字段：
@@ -47,8 +52,12 @@ public/resources/pets/<pack-id>/
 - `animations.happy`
 - `animations.run`
 - `animations.sleep`
+- `animations.rest`
+- `animations.zoomies`
 
 未知动画名会 fallback 到 `idle`。缺失 `idle` 是硬错误，因为渲染层需要稳定默认状态。
+
+微动作可以优先复用现有语义动画和 `effect.play`，不要为了每个小动作新增协议名。旧资源包缺少更细帧时应 fallback 到 `idle`、`happy` 或 `run`。
 
 ## `expressions.json`
 

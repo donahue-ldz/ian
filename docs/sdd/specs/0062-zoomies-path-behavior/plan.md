@@ -31,3 +31,7 @@ npm run desktop:typecheck
 ## 风险和回滚
 
 多 waypoint 执行可能和窗口移动节奏冲突。回滚方式是保留 zoomies 触发，但把 waypoint 数量降到 3-4 个。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

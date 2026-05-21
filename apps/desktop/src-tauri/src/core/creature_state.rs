@@ -1,6 +1,6 @@
 use crate::protocol::{
     BehaviorMode, CurrentBehavior, DeveloperSnooze, DeveloperWorkspace, IanAction, IanState,
-    Position, QuietHours,
+    PlayfulDiagnostic, PlayfulEnergy, PlayfulState, Position, QuietHours, ScreenBounds,
 };
 
 pub struct CreatureState {
@@ -34,17 +34,29 @@ impl CreatureState {
         self.state.day_phase = day_phase;
     }
 
+    pub fn set_screen_bounds(&mut self, bounds: ScreenBounds) {
+        self.state.screen_bounds = Some(bounds);
+    }
+
+    pub fn record_user_interaction(&mut self, now_ms: i64) {
+        self.state.last_user_interaction_ms = now_ms;
+    }
+
     pub fn set_creature_settings(
         &mut self,
         movement_intensity: String,
         bubble_frequency: String,
         rest_behavior: String,
+        playful_energy: PlayfulEnergy,
+        playful_snoozed_until_ms: Option<i64>,
         surface_scale: f64,
         diagnostics_enabled: bool,
     ) {
         self.state.movement_intensity = movement_intensity;
         self.state.bubble_frequency = bubble_frequency;
         self.state.rest_behavior = rest_behavior;
+        self.state.playful_energy = playful_energy;
+        self.state.playful_snoozed_until_ms = playful_snoozed_until_ms;
         self.state.surface_scale = surface_scale.clamp(0.8, 1.4);
         self.state.diagnostics_enabled = diagnostics_enabled;
     }
@@ -91,9 +103,11 @@ impl CreatureState {
                 IanAction::AnimationPlay { name, .. } => {
                     self.state.current_animation = name.clone();
                     self.state.current_behavior = match name.as_str() {
+                        "rest" => CurrentBehavior::Resting,
                         "walk" => CurrentBehavior::Walking,
                         "happy" => CurrentBehavior::Happy,
                         "run" => CurrentBehavior::Running,
+                        "zoomies" => CurrentBehavior::Zooming,
                         "sleep" => CurrentBehavior::Sleeping,
                         _ => CurrentBehavior::Idle,
                     };
@@ -102,13 +116,42 @@ impl CreatureState {
                     self.state.current_animation = "run".to_string();
                     self.state.current_behavior = CurrentBehavior::Running;
                 }
+                IanAction::BehaviorZoomies { duration_ms, .. } => {
+                    self.state.current_animation = "zoomies".to_string();
+                    self.state.current_behavior = CurrentBehavior::Zooming;
+                    self.state.playful_state = PlayfulState::Zooming;
+                    self.state.playful_state_until_ms = Some(*duration_ms as i64);
+                }
+                IanAction::PlayfulStateSet { state, until_ms } => {
+                    self.state.playful_state = state.clone();
+                    self.state.playful_state_until_ms = *until_ms;
+                }
+                IanAction::PlayfulDiagnostic {
+                    timestamp_ms,
+                    reason,
+                    result,
+                    cooldown_key,
+                    chosen_reaction_key,
+                } => {
+                    self.state.last_playful_diagnostic = Some(PlayfulDiagnostic {
+                        timestamp_ms: *timestamp_ms,
+                        reason: reason.clone(),
+                        result: result.clone(),
+                        cooldown_key: cooldown_key.clone(),
+                        chosen_reaction_key: chosen_reaction_key.clone(),
+                    });
+                }
                 IanAction::MovementMoveTo { x, y, .. } => {
                     self.state.position = Position { x: *x, y: *y };
                 }
+                IanAction::AppearanceScaleTo { .. } => {}
                 IanAction::StateSync { state } => {
                     self.state = state.clone();
                 }
-                IanAction::SpeechShow { .. } | IanAction::BubbleOpen | IanAction::BubbleClose => {}
+                IanAction::SpeechShow { .. }
+                | IanAction::BubbleOpen
+                | IanAction::BubbleClose
+                | IanAction::EffectPlay { .. } => {}
             }
         }
     }

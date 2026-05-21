@@ -1,15 +1,24 @@
 // Generated from Rust protocol types by ts-rs.
 // P0 keeps this checked in so the frontend can typecheck before a Rust toolchain is available.
 
-export type AnimationName = "idle" | "walk" | "happy" | "run" | "sleep";
+export type AnimationName = "idle" | "rest" | "walk" | "happy" | "run" | "zoomies" | "sleep";
 export type MovementSpeed = "slow" | "normal" | "fast";
-export type CurrentBehavior = "idle" | "walking" | "happy" | "running" | "sleeping";
+export type CurrentBehavior = "idle" | "resting" | "walking" | "happy" | "running" | "zooming" | "sleeping";
 export type BehaviorMode = "quiet" | "normal" | "lively";
 export type BuildTestStatus = "success" | "failure";
+export type PlayfulEnergy = "off" | "low" | "normal" | "high";
+export type PlayfulState = "idle" | "warming_up" | "zooming" | "settling" | "cooling_down";
 
 export type Position = {
   x: number;
   y: number;
+};
+
+export type ScreenBounds = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
 };
 
 export type QuietHours = {
@@ -32,6 +41,14 @@ export type DeveloperSnooze = {
   reason?: string | null;
 };
 
+export type PlayfulDiagnostic = {
+  timestamp_ms: number;
+  reason: string;
+  result: string;
+  cooldown_key?: string | null;
+  chosen_reaction_key?: string | null;
+};
+
 export type IanState = {
   active_pet_id: string;
   current_behavior: CurrentBehavior;
@@ -46,10 +63,17 @@ export type IanState = {
   keyboard_rhythm_enabled: boolean;
   active_app_presence_enabled: boolean;
   home_anchor: Position;
+  screen_bounds?: ScreenBounds | null;
+  last_user_interaction_ms: number;
   quiet_hours: QuietHours;
   movement_intensity: string;
   bubble_frequency: string;
   rest_behavior: string;
+  playful_energy: PlayfulEnergy;
+  playful_state: PlayfulState;
+  playful_state_until_ms?: number | null;
+  playful_snoozed_until_ms?: number | null;
+  last_playful_diagnostic?: PlayfulDiagnostic | null;
   surface_scale: number;
   diagnostics_enabled: boolean;
   day_phase: string;
@@ -69,6 +93,8 @@ export type IanEvent =
   | { type: "mouse.leave"; x: number; y: number }
   | { type: "mouse.drag_start"; x: number; y: number }
   | { type: "mouse.drag_end"; x: number; y: number }
+  | { type: "mouse.chase_candidate"; x: number; y: number; now_ms: number }
+  | { type: "screen.bounds"; x: number; y: number; width: number; height: number }
   | { type: "dialogue.user_message"; text: string }
   | { type: "bubble.input_started" }
   | { type: "bubble.input_ended" }
@@ -109,4 +135,16 @@ export type IanAction =
   | { type: "bubble.open" }
   | { type: "bubble.close" }
   | { type: "behavior.run_around"; duration_ms: number }
+  | { type: "behavior.zoomies"; duration_ms: number; reason: string }
+  | { type: "effect.play"; name: string; intensity: string; duration_ms: number }
+  | { type: "appearance.scale_to"; scale: number; duration_ms: number }
+  | { type: "playful.state"; state: PlayfulState; until_ms?: number | null }
+  | {
+      type: "playful.diagnostic";
+      timestamp_ms: number;
+      reason: string;
+      result: string;
+      cooldown_key?: string | null;
+      chosen_reaction_key?: string | null;
+    }
   | { type: "state.sync"; state: IanState };

@@ -1,6 +1,6 @@
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 import type { IanViewState } from "../state/ianActions";
-import { normalizeBubbleMessage } from "./bubbleModel";
+import { formatBubbleText, normalizeBubbleMessage } from "./bubbleModel";
 
 type BubbleProps = {
   bubble: IanViewState["bubble"];
@@ -16,13 +16,17 @@ export function Bubble({
   onInputStarted,
 }: BubbleProps) {
   const [draft, setDraft] = useState("");
+  const [isInputVisible, setIsInputVisible] = useState(false);
 
   if (!bubble.isOpen || !bubble.text) {
     return null;
   }
 
-  function submitDraft() {
-    const message = normalizeBubbleMessage(draft);
+  const formattedText = formatBubbleText(bubble.text);
+  const cloudSize = cloudSizeForText(formattedText);
+
+  function submitDraft(rawText = draft) {
+    const message = normalizeBubbleMessage(rawText);
 
     if (!message) {
       return;
@@ -30,11 +34,14 @@ export function Bubble({
 
     onSubmitMessage(message);
     setDraft("");
+    setIsInputVisible(false);
+    onInputEnded?.();
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    submitDraft();
+    const input = event.currentTarget.elements.namedItem("bubble-message");
+    submitDraft(input instanceof HTMLInputElement ? input.value : draft);
   }
 
   function handleInputKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -43,29 +50,85 @@ export function Bubble({
     }
 
     event.preventDefault();
-    submitDraft();
+    submitDraft(event.currentTarget.value);
+  }
+
+  function openInput() {
+    if (!isInputVisible) {
+      setIsInputVisible(true);
+      onInputStarted?.();
+    }
+  }
+
+  function handleInputBlur() {
+    if (!draft.trim()) {
+      setIsInputVisible(false);
+    }
+    onInputEnded?.();
   }
 
   return (
     <div
       className="ian-bubble"
+      data-bubble-role="pet-status"
+      data-bubble-shape="thought-cloud"
+      data-cloud-size={isInputVisible ? "input" : cloudSize}
       data-mood={bubble.mood ?? "calm"}
       onPointerDown={(event) => event.stopPropagation()}
     >
-      <div className="ian-bubble-text">{bubble.text}</div>
-      <form className="ian-bubble-form" onSubmit={handleSubmit}>
-        <input
-          aria-label="对 Ian 说一句话"
-          className="ian-bubble-input"
-          maxLength={80}
-          placeholder="说一句..."
-          value={draft}
-          onChange={(event) => setDraft(event.currentTarget.value)}
-          onBlur={onInputEnded}
-          onFocus={onInputStarted}
-          onKeyDown={handleInputKeyDown}
-        />
-      </form>
+      <span
+        aria-hidden="true"
+        className="ian-bubble-tail-dot"
+        data-cloud-part="tail-large"
+      />
+      <span
+        aria-hidden="true"
+        className="ian-bubble-tail-dot"
+        data-cloud-part="tail-small"
+      />
+      <div className="ian-bubble-text">{formattedText}</div>
+      {isInputVisible ? (
+        <form className="ian-bubble-form" onSubmit={handleSubmit}>
+          <input
+            aria-label="对 Ian 说一句话"
+            autoFocus
+            className="ian-bubble-input"
+            maxLength={80}
+            name="bubble-message"
+            placeholder="说一句..."
+            value={draft}
+            onChange={(event) => setDraft(event.currentTarget.value)}
+            onBlur={handleInputBlur}
+            onFocus={openInput}
+            onKeyDown={handleInputKeyDown}
+          />
+        </form>
+      ) : (
+        <button
+          aria-label="打开气泡输入"
+          className="ian-bubble-reply"
+          data-control-treatment="low-interruption"
+          title="对 Ian 说一句话"
+          type="button"
+          onClick={openInput}
+        >
+          <span aria-hidden="true">+</span>
+        </button>
+      )}
     </div>
   );
+}
+
+function cloudSizeForText(text: string): "short" | "medium" | "long" {
+  const length = Array.from(text).length;
+
+  if (length <= 8) {
+    return "short";
+  }
+
+  if (length <= 20) {
+    return "medium";
+  }
+
+  return "long";
 }

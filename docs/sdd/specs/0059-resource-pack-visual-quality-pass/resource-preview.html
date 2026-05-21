@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ian Resource Pack Preview 0059</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family:
+          Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+          "Segoe UI", sans-serif;
+      }
+
+      body {
+        margin: 0;
+        background: #eef3f0;
+        color: #1f2a25;
+      }
+
+      main {
+        display: grid;
+        gap: 0;
+        min-height: 100vh;
+      }
+
+      section {
+        display: grid;
+        align-content: center;
+        min-height: 50vh;
+        padding: 24px;
+      }
+
+      .light {
+        background: #f4f7f2;
+      }
+
+      .dark {
+        background: #26322c;
+        color: #f4f1e8;
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 14px;
+        font-size: 16px;
+        line-height: 1.2;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(6, 192px);
+        gap: 16px;
+        align-items: end;
+      }
+
+      figure {
+        display: grid;
+        gap: 8px;
+        margin: 0;
+        justify-items: center;
+      }
+
+      figcaption {
+        font-size: 12px;
+        line-height: 1.2;
+      }
+
+      .frame {
+        width: 192px;
+        height: 192px;
+        background-image: url("../../../../apps/desktop/public/resources/pets/ian-alpaca/sprite.svg");
+        background-repeat: no-repeat;
+        background-size: 3072px 192px;
+        filter: drop-shadow(0 10px 16px rgba(28, 34, 30, 0.16));
+      }
+
+      .idle {
+        background-position: 0 0;
+      }
+
+      .walk {
+        background-position: -384px 0;
+      }
+
+      .run {
+        background-position: -1536px 0;
+      }
+
+      .happy {
+        background-position: -2304px 0;
+      }
+
+      .rest {
+        background-position: -2688px 0;
+      }
+
+      .sleep {
+        background-position: -1152px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="light" aria-label="Light background preview">
+        <h1>Ian Alpaca Resource Pack</h1>
+        <div class="grid">
+          <figure><span class="frame idle"></span><figcaption>idle</figcaption></figure>
+          <figure><span class="frame walk"></span><figcaption>walk</figcaption></figure>
+          <figure><span class="frame run"></span><figcaption>run</figcaption></figure>
+          <figure><span class="frame happy"></span><figcaption>happy</figcaption></figure>
+          <figure><span class="frame rest"></span><figcaption>rest</figcaption></figure>
+          <figure><span class="frame sleep"></span><figcaption>sleep</figcaption></figure>
+        </div>
+      </section>
+      <section class="dark" aria-label="Dark background preview">
+        <h2>Dark Background Check</h2>
+        <div class="grid">
+          <figure><span class="frame idle"></span><figcaption>idle</figcaption></figure>
+          <figure><span class="frame walk"></span><figcaption>walk</figcaption></figure>
+          <figure><span class="frame run"></span><figcaption>run</figcaption></figure>
+          <figure><span class="frame happy"></span><figcaption>happy</figcaption></figure>
+          <figure><span class="frame rest"></span><figcaption>rest</figcaption></figure>
+          <figure><span class="frame sleep"></span><figcaption>sleep</figcaption></figure>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

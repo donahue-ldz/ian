@@ -8,13 +8,22 @@
   user-select: none;
 }
 
+.ian-stage[data-window-context="desktop"] {
+  align-items: end;
+}
+
 .ian-creature-surface {
   position: relative;
   width: 220px;
   height: 220px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
+  background: transparent;
+  filter: drop-shadow(0 10px 16px rgba(28, 34, 30, 0.16));
   transition: transform 120ms ease;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] {
+  filter: drop-shadow(0 7px 12px rgba(28, 34, 30, 0.11));
 }
 
 .ian-click-target {
@@ -30,12 +39,20 @@
   border: 0;
   background: transparent;
   border-radius: 8px;
-  outline: 1px solid rgba(90, 107, 96, 0.16);
   cursor: grab;
   -webkit-app-region: no-drag;
 }
 
 .ian-click-target:active {
+  cursor: grabbing;
+}
+
+.ian-creature-surface[data-dragging="true"] {
+  filter: drop-shadow(0 16px 20px rgba(28, 34, 30, 0.16));
+  transition: none;
+}
+
+.ian-creature-surface[data-dragging="true"] .ian-click-target {
   cursor: grabbing;
 }
 
@@ -61,22 +78,42 @@
 }
 
 .ian-settings-toggle {
-  top: 8px;
-  right: 8px;
-  width: 46px;
+  top: 12px;
+  right: 12px;
+  width: 28px;
   height: 28px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 6px 16px rgba(28, 34, 30, 0.14);
-  font-size: 12px;
+  background: rgba(255, 255, 255, 0.52);
+  box-shadow: 0 5px 14px rgba(28, 34, 30, 0.1);
+  font-size: 14px;
   line-height: 1;
+  opacity: 0.36;
+  transition:
+    background 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+}
+
+.ian-settings-toggle:hover,
+.ian-settings-toggle:focus-visible,
+.ian-settings-toggle[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 20px rgba(28, 34, 30, 0.14);
+  opacity: 1;
+}
+
+.ian-settings-toggle:focus-visible {
+  outline: 2px solid rgba(90, 107, 96, 0.32);
+  outline-offset: 2px;
 }
 
 .ian-settings {
   position: absolute;
-  top: 42px;
-  right: 8px;
+  top: 18px;
+  left: calc(100% + 10px);
   z-index: 4;
   width: 196px;
+  max-height: min(560px, calc(100vh - 36px));
+  overflow: auto;
   padding: 10px;
   border: 1px solid rgba(69, 86, 76, 0.18);
   border-radius: 8px;
@@ -85,6 +122,15 @@
   font-size: 12px;
   box-shadow: 0 10px 28px rgba(28, 34, 30, 0.14);
   -webkit-app-region: no-drag;
+}
+
+.ian-stage[data-window-context="desktop"] .ian-settings {
+  top: calc(244px - 100vh);
+  left: auto;
+  right: 44px;
+  box-sizing: border-box;
+  width: 196px;
+  max-height: calc(100vh - 24px);
 }
 
 .ian-settings-header,
@@ -103,6 +149,45 @@
 
 .ian-settings-row {
   margin-top: 10px;
+}
+
+.ian-settings-section {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(90, 107, 96, 0.12);
+}
+
+.ian-settings-section h3,
+.ian-settings-advanced summary {
+  margin: 0;
+  color: #26322c;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ian-settings-advanced summary {
+  cursor: pointer;
+}
+
+.ian-settings-developer {
+  display: grid;
+  gap: 8px;
+}
+
+.ian-settings-developer summary {
+  color: #26322c;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.ian-settings-note {
+  margin: 0;
+  color: #65736a;
+  font-size: 10px;
+  line-height: 1.35;
 }
 
 .ian-settings-toggle-row {
@@ -131,6 +216,54 @@
   background: rgba(255, 255, 255, 0.78);
   color: #26322c;
   font: inherit;
+}
+
+.ian-settings-size-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ian-size-control {
+  display: grid;
+  grid-template-columns: 20px minmax(42px, 1fr) 20px 34px;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.ian-size-button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid rgba(69, 86, 76, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #4b5f54;
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ian-size-button:disabled {
+  color: rgba(75, 95, 84, 0.34);
+  cursor: default;
+}
+
+.ian-size-range {
+  min-width: 0;
+  width: 100%;
+  accent-color: #5a6b60;
+}
+
+.ian-size-value {
+  color: #65736a;
+  font-size: 10px;
+  text-align: right;
 }
 
 .ian-settings-toggle-row input {
@@ -198,62 +331,229 @@
 }
 
 .ian-bubble {
+  --ian-cloud-bubble-fill: #fff;
+  --ian-cloud-bubble-ink: rgba(17, 17, 17, 0.64);
+  --ian-pet-bubble-anchor-bottom: 152px;
   position: absolute;
   right: 18px;
-  bottom: 168px;
+  bottom: var(--ian-pet-bubble-anchor-bottom);
+  isolation: isolate;
   z-index: 2;
-  width: 172px;
-  max-width: 172px;
-  padding: 8px 10px;
-  border: 1px solid rgba(69, 86, 76, 0.18);
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #26322c;
+  display: grid;
+  place-items: center;
+  width: max-content;
+  min-width: 64px;
+  max-width: 168px;
+  min-height: 30px;
+  padding: 10px 13px 9px;
+  border: 1.5px solid var(--ian-cloud-bubble-ink);
+  border-radius: 46px 42px 44px 40px / 34px 38px 32px 36px;
+  background: var(--ian-cloud-bubble-fill);
+  color: #111;
   font-size: 13px;
   line-height: 1.35;
-  box-shadow: 0 10px 28px rgba(28, 34, 30, 0.14);
+  box-shadow: 0 8px 14px rgba(28, 34, 30, 0.08);
   animation: bubble-in 160ms ease-out;
   pointer-events: auto;
 }
 
+.ian-bubble[data-cloud-size="short"] {
+  max-width: 108px;
+  padding: 9px 13px 8px;
+}
+
+.ian-bubble[data-cloud-size="medium"] {
+  max-width: 142px;
+}
+
+.ian-bubble[data-cloud-size="long"],
+.ian-bubble[data-cloud-size="input"] {
+  max-width: 176px;
+}
+
+.ian-bubble[data-cloud-size="input"] {
+  width: 176px;
+  place-items: stretch;
+}
+
+.ian-bubble::before {
+  position: absolute;
+  top: -14px;
+  left: 10px;
+  z-index: -1;
+  width: 30px;
+  height: 30px;
+  border: 1.5px solid var(--ian-cloud-bubble-ink);
+  border-radius: 999px;
+  background: var(--ian-cloud-bubble-fill);
+  box-shadow:
+    24px -10px 0 0 var(--ian-cloud-bubble-fill),
+    24px -10px 0 1.5px var(--ian-cloud-bubble-ink),
+    54px -5px 0 1px var(--ian-cloud-bubble-fill),
+    54px -5px 0 2.5px var(--ian-cloud-bubble-ink),
+    84px 2px 0 -1px var(--ian-cloud-bubble-fill),
+    84px 2px 0 1px var(--ian-cloud-bubble-ink),
+    -5px 26px 0 -1px var(--ian-cloud-bubble-fill),
+    -5px 26px 0 1px var(--ian-cloud-bubble-ink),
+    28px 38px 0 -4px var(--ian-cloud-bubble-fill),
+    28px 38px 0 -2.5px var(--ian-cloud-bubble-ink);
+  content: "";
+  pointer-events: none;
+}
+
+.ian-bubble[data-cloud-size="medium"]::before {
+  box-shadow:
+    25px -12px 0 1px var(--ian-cloud-bubble-fill),
+    25px -12px 0 2.5px var(--ian-cloud-bubble-ink),
+    58px -7px 0 2px var(--ian-cloud-bubble-fill),
+    58px -7px 0 3.5px var(--ian-cloud-bubble-ink),
+    94px 2px 0 0 var(--ian-cloud-bubble-fill),
+    94px 2px 0 1.5px var(--ian-cloud-bubble-ink),
+    -6px 29px 0 0 var(--ian-cloud-bubble-fill),
+    -6px 29px 0 1.5px var(--ian-cloud-bubble-ink),
+    31px 44px 0 -2px var(--ian-cloud-bubble-fill),
+    31px 44px 0 -0.5px var(--ian-cloud-bubble-ink),
+    72px 44px 0 -4px var(--ian-cloud-bubble-fill),
+    72px 44px 0 -2.5px var(--ian-cloud-bubble-ink);
+}
+
+.ian-bubble[data-cloud-size="long"]::before,
+.ian-bubble[data-cloud-size="input"]::before {
+  top: -18px;
+  left: 14px;
+  width: 42px;
+  height: 42px;
+  box-shadow:
+    32px -14px 0 1px var(--ian-cloud-bubble-fill),
+    32px -14px 0 2.5px var(--ian-cloud-bubble-ink),
+    68px -8px 0 3px var(--ian-cloud-bubble-fill),
+    68px -8px 0 4.5px var(--ian-cloud-bubble-ink),
+    102px 0 0 1px var(--ian-cloud-bubble-fill),
+    102px 0 0 2.5px var(--ian-cloud-bubble-ink),
+    128px 28px 0 -1px var(--ian-cloud-bubble-fill),
+    128px 28px 0 0.5px var(--ian-cloud-bubble-ink),
+    -8px 34px 0 0 var(--ian-cloud-bubble-fill),
+    -8px 34px 0 1.5px var(--ian-cloud-bubble-ink),
+    24px 56px 0 -2px var(--ian-cloud-bubble-fill),
+    24px 56px 0 -0.5px var(--ian-cloud-bubble-ink),
+    72px 58px 0 0 var(--ian-cloud-bubble-fill),
+    72px 58px 0 1.5px var(--ian-cloud-bubble-ink);
+}
+
 .ian-bubble::after {
   position: absolute;
-  right: 28px;
-  bottom: -6px;
-  width: 10px;
-  height: 10px;
-  border-right: 1px solid rgba(69, 86, 76, 0.18);
-  border-bottom: 1px solid rgba(69, 86, 76, 0.18);
-  background: rgba(255, 255, 255, 0.92);
+  inset: 8px 10px;
+  z-index: -1;
+  border-radius: 40px;
+  background: var(--ian-cloud-bubble-fill);
   content: "";
-  transform: rotate(45deg);
+  pointer-events: none;
+}
+
+.ian-bubble-tail-dot {
+  position: absolute;
+  z-index: -1;
+  display: block;
+  border: 1.5px solid var(--ian-cloud-bubble-ink);
+  border-radius: 999px;
+  background: var(--ian-cloud-bubble-fill);
+  pointer-events: none;
+}
+
+.ian-bubble-tail-dot[data-cloud-part="tail-large"] {
+  right: -1px;
+  bottom: -22px;
+  width: 20px;
+  height: 15px;
+  transform: rotate(10deg);
+}
+
+.ian-bubble-tail-dot[data-cloud-part="tail-small"] {
+  right: -21px;
+  bottom: -37px;
+  width: 14px;
+  height: 11px;
+  transform: rotate(12deg);
+}
+
+.ian-bubble::before,
+.ian-bubble-tail-dot {
+  animation: ian-cloud-lobes 2200ms ease-in-out infinite;
 }
 
 .ian-bubble-text {
-  margin-bottom: 6px;
+  position: relative;
+  z-index: 1;
+  display: -webkit-box;
+  align-self: center;
+  justify-self: center;
+  max-height: 36px;
+  margin: 0;
+  overflow: hidden;
+  text-align: center;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.ian-bubble[data-cloud-size="input"] .ian-bubble-text {
+  margin-bottom: 8px;
 }
 
 .ian-bubble-form {
+  position: relative;
+  z-index: 1;
   margin: 0;
+}
+
+.ian-bubble-reply {
+  position: absolute;
+  right: 9px;
+  bottom: 7px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1.5px solid var(--ian-cloud-bubble-ink);
+  border-radius: 999px;
+  background: var(--ian-cloud-bubble-fill);
+  color: var(--ian-cloud-bubble-ink);
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    opacity 120ms ease,
+    background 120ms ease;
+}
+
+.ian-bubble-reply[data-control-treatment="low-interruption"] {
+  opacity: 0.52;
+}
+
+.ian-bubble-reply:hover,
+.ian-bubble-reply:focus-visible {
+  background: #f7f7f7;
+  outline: 2px solid rgba(17, 17, 17, 0.16);
+  outline-offset: 2px;
+  opacity: 1;
 }
 
 .ian-bubble-input {
   box-sizing: border-box;
   width: 100%;
-  height: 26px;
-  padding: 4px 7px;
-  border: 1px solid rgba(69, 86, 76, 0.2);
-  border-radius: 7px;
-  background: rgba(255, 255, 255, 0.78);
-  color: #26322c;
+  height: 28px;
+  padding: 5px 9px;
+  border: 1.5px solid var(--ian-cloud-bubble-ink);
+  border-radius: 999px;
+  background: var(--ian-cloud-bubble-fill);
+  color: var(--ian-cloud-bubble-ink);
   font: inherit;
   line-height: 1.2;
   outline: none;
 }
 
 .ian-bubble-input:focus {
-  border-color: rgba(90, 107, 96, 0.42);
-  box-shadow: 0 0 0 2px rgba(90, 107, 96, 0.08);
+  border-color: var(--ian-cloud-bubble-ink);
+  box-shadow: 0 0 0 2px rgba(17, 17, 17, 0.1);
 }
 
 .ian-sprite {
@@ -261,7 +561,7 @@
   display: block;
   width: 116px;
   height: 112px;
-  animation: ian-idle 1600ms ease-in-out infinite;
+  animation: ian-idle-breathe 1800ms ease-in-out infinite;
   transform-origin: 50% 85%;
 }
 
@@ -347,6 +647,7 @@
   height: 5px;
   border-radius: 999px;
   background: #314138;
+  animation: ian-blink 5200ms ease-in-out infinite;
 }
 
 .ian-eye-left {
@@ -386,17 +687,208 @@
   animation: ian-happy 700ms ease-in-out infinite;
 }
 
+.ian-sprite[data-animation="rest"] {
+  animation: ian-rest-breathe 2800ms ease-in-out infinite;
+}
+
+.ian-sprite[data-animation="rest"] .ian-eye {
+  height: 4px;
+  animation-duration: 7600ms;
+}
+
+.ian-sprite[data-animation="rest"] .ian-mouth {
+  width: 8px;
+  border-bottom-width: 1px;
+}
+
 .ian-sprite[data-animation="walk"] {
   animation: ian-walk 520ms ease-in-out infinite;
 }
 
 .ian-sprite[data-animation="run"] {
-  animation: ian-run 260ms ease-in-out infinite;
+  animation: ian-run 460ms ease-in-out infinite;
+}
+
+.ian-sprite[data-animation="zoomies"] {
+  animation: ian-zoomies 360ms ease-in-out infinite;
+}
+
+.ian-visual-effect {
+  position: absolute;
+  inset: 34px 18px 18px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.ian-visual-effect[data-effect="speed_lines"]::before,
+.ian-visual-effect[data-effect="speed_lines"]::after {
+  position: absolute;
+  width: 34px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(90, 107, 96, 0.28);
+  content: "";
+  animation: ian-speed-line 420ms ease-in-out infinite;
+}
+
+.ian-visual-effect[data-effect="speed_lines"]::before {
+  top: 38px;
+  left: 18px;
+}
+
+.ian-visual-effect[data-effect="speed_lines"]::after {
+  right: 16px;
+  bottom: 48px;
+  animation-delay: 120ms;
+}
+
+.ian-visual-effect[data-effect="heart_pop"]::before,
+.ian-visual-effect[data-effect="heart_pop"]::after,
+.ian-visual-effect[data-effect="sparkle_pop"]::before,
+.ian-visual-effect[data-effect="sparkle_pop"]::after,
+.ian-visual-effect[data-effect="blush_puff"]::before,
+.ian-visual-effect[data-effect="blush_puff"]::after,
+.ian-visual-effect[data-effect="tail_wag"]::before,
+.ian-visual-effect[data-effect="tail_wag"]::after {
+  position: absolute;
+  content: "";
+  animation-duration: 820ms;
+  animation-timing-function: ease-out;
+  animation-iteration-count: infinite;
+}
+
+.ian-visual-effect[data-effect="heart_pop"]::before,
+.ian-visual-effect[data-effect="heart_pop"]::after {
+  width: 8px;
+  height: 8px;
+  border-radius: 8px 8px 2px;
+  background: rgba(214, 95, 116, 0.42);
+  transform: rotate(-45deg);
+  animation-name: ian-heart-pop;
+}
+
+.ian-visual-effect[data-effect="heart_pop"]::before {
+  top: 22px;
+  right: 24px;
+}
+
+.ian-visual-effect[data-effect="heart_pop"]::after {
+  right: 38px;
+  bottom: 28px;
+  animation-delay: 140ms;
+}
+
+.ian-visual-effect[data-effect="sparkle_pop"]::before,
+.ian-visual-effect[data-effect="sparkle_pop"]::after {
+  width: 10px;
+  height: 10px;
+  background: rgba(229, 176, 85, 0.44);
+  clip-path: polygon(50% 0, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0 50%, 38% 38%);
+  animation-name: ian-sparkle-pop;
+}
+
+.ian-visual-effect[data-effect="sparkle_pop"]::before {
+  top: 18px;
+  left: 22px;
+}
+
+.ian-visual-effect[data-effect="sparkle_pop"]::after {
+  right: 26px;
+  bottom: 24px;
+  animation-delay: 120ms;
+}
+
+.ian-visual-effect[data-effect="blush_puff"]::before,
+.ian-visual-effect[data-effect="blush_puff"]::after {
+  width: 16px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(211, 113, 124, 0.22);
+  animation-name: ian-blush-puff;
+}
+
+.ian-visual-effect[data-effect="blush_puff"]::before {
+  left: 20px;
+  bottom: 34px;
+}
+
+.ian-visual-effect[data-effect="blush_puff"]::after {
+  right: 22px;
+  bottom: 36px;
+  animation-delay: 110ms;
+}
+
+.ian-visual-effect[data-effect="tail_wag"]::before,
+.ian-visual-effect[data-effect="tail_wag"]::after {
+  right: 18px;
+  width: 18px;
+  height: 12px;
+  border-top: 3px solid rgba(229, 176, 85, 0.44);
+  border-radius: 999px;
+  animation-name: ian-tail-wag;
+  transform-origin: left center;
+}
+
+.ian-visual-effect[data-effect="tail_wag"]::before {
+  bottom: 54px;
+}
+
+.ian-visual-effect[data-effect="tail_wag"]::after {
+  right: 12px;
+  bottom: 62px;
+  width: 12px;
+  height: 8px;
+  border-top-color: rgba(90, 107, 96, 0.24);
+  animation-delay: 120ms;
+}
+
+.ian-sprite[data-animation="sleep"] {
+  animation: ian-sleep-breathe 3400ms ease-in-out infinite;
 }
 
 .ian-sprite[data-animation="sleep"] .ian-eye {
   height: 2px;
   border-radius: 0;
+  animation: none;
+}
+
+.ian-sprite[data-animation="sleep"] .ian-ear-left {
+  transform: rotate(-26deg);
+}
+
+.ian-sprite[data-animation="sleep"] .ian-ear-right {
+  transform: rotate(22deg);
+}
+
+.ian-sprite[data-animation="sleep"] .ian-mouth {
+  width: 7px;
+  border-bottom-width: 1px;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] .ian-sprite {
+  animation-duration: 3200ms;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] .ian-eye {
+  animation-duration: 8200ms;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] .ian-sprite[data-animation="happy"] {
+  animation-name: ian-rest-breathe;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] .ian-sprite[data-animation="run"] {
+  animation-duration: 760ms;
+}
+
+.ian-creature-surface[data-behavior-mode="quiet"] .ian-sprite[data-animation="zoomies"] {
+  animation-name: ian-run;
+  animation-duration: 760ms;
+}
+
+.ian-creature-surface[data-dragging="true"] .ian-sprite {
+  animation: ian-carry-wiggle 360ms ease-in-out infinite;
+  transform-origin: 50% 18%;
 }
 
 @keyframes bubble-in {
@@ -410,13 +902,54 @@
   }
 }
 
-@keyframes ian-idle {
+@keyframes ian-cloud-lobes {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes ian-idle-breathe {
   0%,
   100% {
     transform: translateY(0);
   }
   50% {
     transform: translateY(-3px);
+  }
+}
+
+@keyframes ian-rest-breathe {
+  0%,
+  100% {
+    transform: translateY(1px) scaleY(0.99);
+  }
+  50% {
+    transform: translateY(-1px) scaleY(1.01);
+  }
+}
+
+@keyframes ian-sleep-breathe {
+  0%,
+  100% {
+    transform: translateY(2px) scaleY(0.98);
+  }
+  50% {
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+@keyframes ian-blink {
+  0%,
+  92%,
+  100% {
+    transform: scaleY(1);
+  }
+  95% {
+    transform: scaleY(0.18);
   }
 }
 
@@ -443,9 +976,121 @@
 @keyframes ian-run {
   0%,
   100% {
-    transform: translateX(-7px) rotate(-2deg);
+    transform: translateX(-5px) rotate(-1.5deg);
   }
   50% {
-    transform: translateX(7px) rotate(2deg);
+    transform: translateX(5px) rotate(1.5deg);
+  }
+}
+
+@keyframes ian-zoomies {
+  0%,
+  100% {
+    transform: translateX(-6px) rotate(-3deg) scaleY(0.98);
+  }
+  50% {
+    transform: translateX(6px) rotate(3deg) scaleY(1.02);
+  }
+}
+
+@keyframes ian-carry-wiggle {
+  0%,
+  100% {
+    transform: rotate(-2deg) translateY(-4px);
+  }
+  50% {
+    transform: rotate(3deg) translateY(-7px);
+  }
+}
+
+@keyframes ian-speed-line {
+  0%,
+  100% {
+    opacity: 0.1;
+    transform: translateX(10px);
+  }
+  50% {
+    opacity: 0.8;
+    transform: translateX(-8px);
+  }
+}
+
+@keyframes ian-heart-pop {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(4px) rotate(-45deg) scale(0.82);
+  }
+  45% {
+    opacity: 0.8;
+    transform: translateY(-5px) rotate(-45deg) scale(1);
+  }
+}
+
+@keyframes ian-sparkle-pop {
+  0%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7) rotate(0deg);
+  }
+  45% {
+    opacity: 0.72;
+    transform: scale(1) rotate(18deg);
+  }
+}
+
+@keyframes ian-blush-puff {
+  0%,
+  100% {
+    opacity: 0;
+    transform: translateY(2px) scaleX(0.82);
+  }
+  45% {
+    opacity: 0.75;
+    transform: translateY(-1px) scaleX(1);
+  }
+}
+
+@keyframes ian-tail-wag {
+  0%,
+  100% {
+    opacity: 0.22;
+    transform: rotate(-14deg) translateX(0);
+  }
+  50% {
+    opacity: 0.72;
+    transform: rotate(16deg) translateX(3px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ian-creature-surface {
+    transition: none;
+  }
+
+  .ian-bubble {
+    animation: none;
+  }
+
+  .ian-sprite,
+  .ian-sprite[data-animation="happy"],
+  .ian-sprite[data-animation="rest"],
+  .ian-sprite[data-animation="walk"],
+  .ian-sprite[data-animation="run"],
+  .ian-sprite[data-animation="zoomies"],
+  .ian-sprite[data-animation="sleep"] {
+    animation: ian-rest-breathe 4200ms ease-in-out infinite;
+  }
+
+  .ian-visual-effect {
+    display: none;
+  }
+
+  .ian-eye {
+    animation: none;
+  }
+
+  .ian-sprite[data-animation="sleep"] .ian-eye {
+    height: 2px;
   }
 }

@@ -2,7 +2,7 @@
 
 ## 状态
 
-草稿，待确认。
+已实现，待用户验收。
 
 ## 问题 / 目标
 
@@ -43,12 +43,12 @@
 
 ## 验收标准
 
-- [ ] zoomies 能在安全边界内跑过多个区域，并在时限内结束。
-- [ ] cute reaction 至少覆盖多种短句和动作，不连续重复刷屏。
-- [ ] off / quiet / active interaction 能阻止高能行为。
-- [ ] 随机测试可复现，真实 smoke 不机械重复。
-- [ ] reduced motion 和 fallback 资源通过检查。
-- [ ] 验收记录命令、截图和人工结论。
+- [x] zoomies 能在安全边界内跑过多个区域，并在时限内结束。
+- [x] cute reaction 至少覆盖多种短句和动作，不连续重复刷屏。
+- [x] off / quiet / active interaction 能阻止高能行为。
+- [x] 随机测试可复现，真实 smoke 不机械重复。
+- [x] reduced motion 和 fallback 资源通过检查。
+- [x] 验收记录命令、截图和人工结论。
 
 ## 验证方式
 

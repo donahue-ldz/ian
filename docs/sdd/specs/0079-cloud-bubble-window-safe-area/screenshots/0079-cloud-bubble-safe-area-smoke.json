@@ -1,0 +1,16 @@
+{
+  "borderColor": "rgba(17, 17, 17, 0.64)",
+  "borderWidth": "3px",
+  "bubbleHeight": 72.546875,
+  "bubbleTop": 372.953125,
+  "cloudSize": "short",
+  "stageContext": "preview",
+  "surfaceBottomGap": 389.5,
+  "surfaceTop": 389.5,
+  "tailSmallBottom": 508.6213073730469,
+  "text": "我在这儿。+",
+  "viewport": {
+    "height": 999,
+    "width": 1075
+  }
+}

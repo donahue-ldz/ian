@@ -2,7 +2,7 @@
 
 ## 状态
 
-草稿，待确认。
+已实现，待用户验收。
 
 ## 问题 / 目标
 
@@ -46,11 +46,11 @@ Product Feel 体验优化。
 
 ## 验收标准
 
-- [ ] idle、walk、run、happy、rest、sleep 关键状态可区分。
-- [ ] 状态切换时没有明显尺寸跳变或锚点漂移。
-- [ ] 缺失资源有可用 fallback。
-- [ ] 资源包 manifest 可通过校验或 smoke 检查。
-- [ ] 截图覆盖主要状态和浅深背景。
+- [x] idle、walk、run、happy、rest、sleep 关键状态可区分。
+- [x] 状态切换时没有明显尺寸跳变或锚点漂移。
+- [x] 缺失资源有可用 fallback。
+- [x] 资源包 manifest 可通过校验或 smoke 检查。
+- [x] 截图覆盖主要状态和浅深背景。
 
 ## 验证方式
 

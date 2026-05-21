@@ -1,0 +1,15 @@
+{
+  "borderColor": "rgba(17, 17, 17, 0.64)",
+  "borderWidth": "3px",
+  "bottom": "152px",
+  "boxShadow": "rgba(28, 34, 30, 0.08) 0px 8px 14px 0px",
+  "bubbleRole": "pet-status",
+  "bubbleShape": "thought-cloud",
+  "cloudSize": "short",
+  "controlTreatment": "low-interruption",
+  "height": 68.546875,
+  "replyOpacity": "0.52",
+  "tailLargeVisible": true,
+  "text": "我在这儿。+",
+  "width": 97
+}

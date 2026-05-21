@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1728" height="96" viewBox="0 0 1728 96" data-style="rounded-puppy-v2">
+  <defs>
+    <style>
+      .line{stroke:#2b1a2c;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}
+      .fur{fill:#df8331}
+      .fur2{fill:#ef9a42}
+      .cream{fill:#fff0d2}
+      .inner{fill:#f7bd82}
+      .pink{fill:#ee7f8d}
+      .ink{fill:#2b1a2c}
+      .soft{fill:#ffffff;opacity:.42}
+      .shade{fill:#2b1a2c;opacity:.12}
+      .speed{stroke:#e9b95e;stroke-width:3.2;stroke-linecap:round;opacity:.64}
+    </style>
+
+    <g id="tail-neutral">
+      <path class="fur2 line" d="M69 58c13-9 23 4 17 16-4 8-15 10-22 4 9 0 14-9 9-16-1-2-3-3-4-4z"/>
+    </g>
+    <g id="tail-low">
+      <path class="fur2 line" d="M68 63c12-6 22 5 15 15-5 8-15 8-21 1 8 1 14-6 10-12-1-2-2-3-4-4z"/>
+    </g>
+    <g id="tail-high">
+      <path class="fur2 line" d="M68 54c13-13 27 0 21 14-4 9-16 12-24 6 10-1 16-12 9-18-2-1-4-2-6-2z"/>
+    </g>
+
+    <g id="puppy-core">
+      <ellipse cx="48" cy="84" rx="29" ry="5.5" class="shade"/>
+      <ellipse cx="48" cy="59" rx="25" ry="27" class="fur line"/>
+      <path class="cream" d="M29 61c4 16 12 23 19 23s15-7 19-23c-5 5-11 7-19 7s-14-2-19-7z"/>
+      <path class="cream" d="M36 77c2 4 6 6 12 6s10-2 12-6c-3 2-7 3-12 3s-9-1-12-3z"/>
+
+      <path class="fur2 line" d="M23 33c-2-14 9-20 18-8-6 1-12 5-17 11z"/>
+      <path class="inner" d="M28 30c0-5 5-7 9-2-4 1-7 3-9 6z"/>
+      <path class="fur2 line" d="M73 33c2-14-9-20-18-8 6 1 12 5 17 11z"/>
+      <path class="inner" d="M68 30c0-5-5-7-9-2 4 1 7 3 9 6z"/>
+
+      <ellipse cx="48" cy="43" rx="29" ry="25" class="fur2 line"/>
+      <path class="cream" d="M23 45c3-14 15-22 25-22s22 8 25 22c1 15-9 25-25 25S22 60 23 45z"/>
+      <path class="fur" d="M29 42c5-12 13-18 19-18s15 6 19 18c-7-4-31-4-38 0z"/>
+      <path class="cream" d="M42 26h12l-6 15z"/>
+      <ellipse cx="38" cy="55" rx="8" ry="6" fill="#ffe2bf" opacity=".55"/>
+      <ellipse cx="58" cy="55" rx="8" ry="6" fill="#ffe2bf" opacity=".55"/>
+
+      <path class="fur line" d="M34 79v-12"/>
+      <path class="fur line" d="M62 79v-12"/>
+      <ellipse cx="34" cy="80" rx="5" ry="3" class="cream"/>
+      <ellipse cx="62" cy="80" rx="5" ry="3" class="cream"/>
+    </g>
+
+    <g id="face-smile">
+      <circle cx="38" cy="46" r="2.5" class="ink"/>
+      <circle cx="58" cy="46" r="2.5" class="ink"/>
+      <path class="ink" d="M45 51c1-2 5-2 6 0-1 2-5 2-6 0z"/>
+      <path class="line" fill="none" d="M43 56c3 4 7 5 10 0"/>
+      <path class="pink" d="M48 58c2 3 6 2 7-1 0 5-6 7-7 1z"/>
+    </g>
+    <g id="face-blink">
+      <path class="line" fill="none" d="M35 46h6M55 46h6"/>
+      <path class="ink" d="M45 51c1-2 5-2 6 0-1 2-5 2-6 0z"/>
+      <path class="line" fill="none" d="M43 56c3 4 7 5 10 0"/>
+    </g>
+    <g id="face-calm">
+      <circle cx="38" cy="46" r="2.2" class="ink"/>
+      <circle cx="58" cy="46" r="2.2" class="ink"/>
+      <path class="ink" d="M45 51c1-2 5-2 6 0-1 2-5 2-6 0z"/>
+      <path class="line" fill="none" d="M44 56c3 2 6 2 9 0"/>
+    </g>
+    <g id="face-happy">
+      <path class="line" fill="none" d="M35 45c2 3 5 3 7 0M54 45c2 3 5 3 7 0"/>
+      <path class="ink" d="M45 51c1-2 5-2 6 0-1 2-5 2-6 0z"/>
+      <path class="line" fill="none" d="M41 56c4 5 11 5 15 0"/>
+      <path class="pink" d="M47 58c3 5 8 4 10-1 0 7-10 9-10 1z"/>
+    </g>
+    <g id="face-sleep">
+      <path class="line" fill="none" d="M35 47h8M53 47h8"/>
+      <path class="line" fill="none" d="M45 55c2 2 5 2 7 0"/>
+      <circle cx="65" cy="35" r="1.8" class="soft"/>
+    </g>
+
+    <g id="sparkles">
+      <circle cx="25" cy="28" r="1.8" class="soft"/>
+      <circle cx="72" cy="30" r="2.1" class="soft"/>
+      <circle cx="69" cy="63" r="1.5" class="soft"/>
+    </g>
+  </defs>
+
+  <g transform="translate(0 0)"><use href="#tail-neutral"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(96 0)"><use href="#tail-low"/><use href="#puppy-core"/><use href="#face-blink"/></g>
+  <g transform="translate(192 -1)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(288 0)"><use href="#tail-neutral"/><use href="#puppy-core"/><use href="#face-calm"/></g>
+
+  <g transform="translate(384 1) rotate(-1 48 58)"><use href="#tail-neutral"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(480 -1) rotate(1.5 48 58)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(576 1) rotate(-1 48 58)"><use href="#tail-low"/><use href="#puppy-core"/><use href="#face-calm"/></g>
+
+  <g transform="translate(672 5)">
+    <use href="#tail-low"/>
+    <g transform="translate(0 4) scale(1 0.92)"><use href="#puppy-core"/><use href="#face-sleep"/></g>
+  </g>
+  <g transform="translate(768 6)">
+    <use href="#tail-low"/>
+    <g transform="translate(0 5) scale(1 0.9)"><use href="#puppy-core"/><use href="#face-sleep"/></g>
+    <path class="line" fill="none" d="M73 31h6m-4-4v8"/>
+  </g>
+
+  <g transform="translate(864 -2) rotate(-4 48 58)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(960 0) rotate(4 48 58)"><use href="#tail-neutral"/><use href="#puppy-core"/><use href="#face-smile"/></g>
+  <g transform="translate(1056 -2) rotate(-3 48 58)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-calm"/><path class="speed" d="M9 36h14M7 48h17M10 60h12"/></g>
+
+  <g transform="translate(1152 -2)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-happy"/><use href="#sparkles"/></g>
+  <g transform="translate(1248 -5)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-happy"/><circle cx="74" cy="30" r="2.2" class="soft"/><circle cx="24" cy="33" r="1.8" class="soft"/></g>
+
+  <g transform="translate(1344 4)">
+    <use href="#tail-low"/>
+    <g transform="translate(0 3) scale(1 0.96)"><use href="#puppy-core"/><use href="#face-calm"/></g>
+  </g>
+  <g transform="translate(1440 5)">
+    <use href="#tail-low"/>
+    <g transform="translate(0 4) scale(1 0.94)"><use href="#puppy-core"/><use href="#face-blink"/></g>
+  </g>
+
+  <g transform="translate(1536 -3) rotate(-5 48 58)"><use href="#tail-high"/><use href="#puppy-core"/><use href="#face-happy"/><path class="speed" d="M9 33h16M6 46h20M12 61h14"/></g>
+  <g transform="translate(1632 -1) rotate(5 48 58)"><use href="#tail-neutral"/><use href="#puppy-core"/><use href="#face-happy"/><path class="speed" d="M8 35h15M5 49h19M11 63h13"/><circle cx="74" cy="31" r="1.8" class="soft"/></g>
+</svg>

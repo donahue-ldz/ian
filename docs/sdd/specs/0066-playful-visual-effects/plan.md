@@ -31,3 +31,7 @@ npm run desktop:dev
 ## 风险和回滚
 
 视觉效果过强会降低桌面舒适度。回滚方式是默认只启用轻效果，把强效果挂到 high playful energy。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

@@ -2,7 +2,7 @@
 
 ## 状态
 
-草稿，待确认。
+已实现，待用户验收。
 
 ## 问题 / 目标
 
@@ -42,11 +42,11 @@
 
 ## 验收标准
 
-- [ ] playful 触发和拒绝都有低敏 reason。
-- [ ] 诊断能区分 cooldown、quiet、off、active interaction 等拦截原因。
-- [ ] 诊断不含敏感内容。
-- [ ] 调参值可在本地配置或测试 fixture 中调整。
-- [ ] 测试覆盖诊断字段。
+- [x] playful 触发和拒绝都有低敏 reason。
+- [x] 诊断能区分 cooldown、quiet、off、active interaction 等拦截原因。
+- [x] 诊断不含敏感内容。
+- [x] 调参值可在本地配置或测试 fixture 中调整。
+- [x] 测试覆盖诊断字段。
 
 ## 验证方式
 

@@ -2,7 +2,7 @@
 
 ## 状态
 
-草稿，待确认。
+已实现，待用户验收。
 
 ## 问题 / 目标
 
@@ -42,11 +42,11 @@
 
 ## 验收标准
 
-- [ ] zoomies 包含 4-8 个真实 movement waypoint。
-- [ ] waypoint 覆盖范围明显大于 0022 run-around。
-- [ ] 所有 waypoint 都经过边界策略约束。
-- [ ] zoomies 结束后回 idle 或回 anchor。
-- [ ] 用户 active interaction 和 quiet mode 阻止启动。
+- [x] zoomies 包含 4-8 个真实 movement waypoint。
+- [x] waypoint 覆盖范围明显大于 0022 run-around。
+- [x] 所有 waypoint 都经过边界策略约束。
+- [x] zoomies 结束后回 idle 或回 anchor。
+- [x] 用户 active interaction 和 quiet mode 阻止启动。
 
 ## 验证方式
 

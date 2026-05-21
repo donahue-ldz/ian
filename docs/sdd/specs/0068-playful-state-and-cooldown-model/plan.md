@@ -30,3 +30,7 @@ npm run desktop:typecheck
 ## 风险和回滚
 
 状态机过复杂会拖慢迭代。回滚方式是先实现 cooldown key，不暴露完整 PlayfulState。
+
+## 执行结果
+
+已按本计划完成，验证记录见 `verification.md`。

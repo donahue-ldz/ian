@@ -1,0 +1,23 @@
+{
+  "url": "http://127.0.0.1:1420/?v=0069b",
+  "pageSmoke": {
+    "title": "Ian",
+    "hasStage": true,
+    "hasSprite": true,
+    "animation": "idle",
+    "hasSettingsButton": true
+  },
+  "settingsSmoke": {
+    "hasHighEnergy": true,
+    "optionLabels": ["关闭", "低", "正常", "高"],
+    "hasPrivacyCopy": true,
+    "hasDeveloperDisclosure": true
+  },
+  "clickSmoke": {
+    "hasEffect": true,
+    "effect": "heart_pop",
+    "hasBubble": true,
+    "bubbleText": "我在这儿。+"
+  },
+  "screenshot": "0060-browser-smoke-playful.png"
+}

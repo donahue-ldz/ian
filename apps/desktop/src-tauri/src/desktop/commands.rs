@@ -6,7 +6,7 @@ use crate::{
     app::IanRuntime,
     protocol::{
         BehaviorMode, BuildTestStatus, DeveloperSnooze, DeveloperWorkspace, IanAction, IanEvent,
-        IanState, Position, QuietHours,
+        IanState, PlayfulEnergy, Position, QuietHours,
     },
 };
 
@@ -72,6 +72,8 @@ pub fn save_creature_settings(
     movement_intensity: String,
     bubble_frequency: String,
     rest_behavior: String,
+    playful_energy: PlayfulEnergy,
+    playful_snoozed_until_ms: Option<i64>,
     surface_scale: f64,
     diagnostics_enabled: bool,
     runtime: State<'_, Mutex<IanRuntime>>,
@@ -83,6 +85,8 @@ pub fn save_creature_settings(
             movement_intensity,
             bubble_frequency,
             rest_behavior,
+            playful_energy,
+            playful_snoozed_until_ms,
             surface_scale,
             diagnostics_enabled,
         )

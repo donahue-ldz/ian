@@ -1,0 +1,46 @@
+{
+  "url": "http://127.0.0.1:1420/?v=0070",
+  "pageSmoke": {
+    "animation": "happy",
+    "hasSettingsButton": true,
+    "hasSprite": true,
+    "hasStage": true,
+    "title": "Ian"
+  },
+  "settingsSmoke": {
+    "hasDeveloperDisclosure": true,
+    "hasHighEnergy": true,
+    "hasPrivacyCopy": true,
+    "optionLabels": [
+      "关闭",
+      "低",
+      "正常",
+      "高"
+    ]
+  },
+  "clickSmoke": {
+    "bubbleText": "再摸摸也可以。+",
+    "effect": "heart_pop",
+    "hasBubble": true,
+    "hasEffect": true
+  },
+  "zoomiesSmoke": {
+    "source": "Rust behavior and TypeScript reducer verification",
+    "actionTypes": [
+      "playful.diagnostic",
+      "playful.state",
+      "behavior.zoomies",
+      "effect.play",
+      "animation.play",
+      "movement.move_to"
+    ],
+    "diagnosticResult": "triggered",
+    "effect": "speed_lines",
+    "animation": "zoomies"
+  },
+  "safetySmoke": {
+    "offBlocksZoomies": true,
+    "quietBlocksZoomies": true
+  },
+  "screenshot": "0070-browser-smoke-playful.png"
+}

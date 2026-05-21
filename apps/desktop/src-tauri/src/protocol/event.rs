@@ -29,6 +29,15 @@ pub enum IanEvent {
     MouseDragStart { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_end")]
     MouseDragEnd { x: f64, y: f64 },
+    #[serde(rename = "mouse.chase_candidate")]
+    MouseChaseCandidate { x: f64, y: f64, now_ms: i64 },
+    #[serde(rename = "screen.bounds")]
+    ScreenBounds {
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
     #[serde(rename = "dialogue.user_message")]
     DialogueUserMessage { text: String },
     #[serde(rename = "bubble.input_started")]
@@ -85,6 +94,15 @@ enum IanEventWire {
     MouseDragStart { x: f64, y: f64 },
     #[serde(rename = "mouse.drag_end")]
     MouseDragEnd { x: f64, y: f64 },
+    #[serde(rename = "mouse.chase_candidate")]
+    MouseChaseCandidate { x: f64, y: f64, now_ms: i64 },
+    #[serde(rename = "screen.bounds")]
+    ScreenBounds {
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    },
     #[serde(rename = "dialogue.user_message")]
     DialogueUserMessage { text: String },
     #[serde(rename = "bubble.input_started")]
@@ -142,6 +160,20 @@ impl From<IanEventWire> for IanEvent {
             IanEventWire::MouseLeave { x, y } => Self::MouseLeave { x, y },
             IanEventWire::MouseDragStart { x, y } => Self::MouseDragStart { x, y },
             IanEventWire::MouseDragEnd { x, y } => Self::MouseDragEnd { x, y },
+            IanEventWire::MouseChaseCandidate { x, y, now_ms } => {
+                Self::MouseChaseCandidate { x, y, now_ms }
+            }
+            IanEventWire::ScreenBounds {
+                x,
+                y,
+                width,
+                height,
+            } => Self::ScreenBounds {
+                x,
+                y,
+                width,
+                height,
+            },
             IanEventWire::DialogueUserMessage { text } => Self::DialogueUserMessage { text },
             IanEventWire::BubbleInputStarted => Self::BubbleInputStarted,
             IanEventWire::BubbleInputEnded => Self::BubbleInputEnded,
@@ -206,6 +238,8 @@ impl IanEvent {
             Self::MouseLeave { .. } => "mouse.leave",
             Self::MouseDragStart { .. } => "mouse.drag_start",
             Self::MouseDragEnd { .. } => "mouse.drag_end",
+            Self::MouseChaseCandidate { .. } => "mouse.chase_candidate",
+            Self::ScreenBounds { .. } => "screen.bounds",
             Self::DialogueUserMessage { .. } => "dialogue.user_message",
             Self::BubbleInputStarted => "bubble.input_started",
             Self::BubbleInputEnded => "bubble.input_ended",
@@ -252,5 +286,25 @@ mod tests {
         assert!(serde_json::from_value::<IanEvent>(keyboard_payload).is_err());
         assert!(serde_json::from_value::<IanEvent>(build_payload).is_err());
         assert!(serde_json::from_value::<IanEvent>(app_payload).is_err());
+    }
+
+    #[test]
+    fn mouse_chase_candidate_accepts_only_low_sensitive_coordinates() {
+        let payload = json!({
+            "type": "mouse.chase_candidate",
+            "x": 640.0,
+            "y": 420.0,
+            "now_ms": 300_000
+        });
+        let sensitive_payload = json!({
+            "type": "mouse.chase_candidate",
+            "x": 640.0,
+            "y": 420.0,
+            "now_ms": 300_000,
+            "window_title": "private doc"
+        });
+
+        assert!(serde_json::from_value::<IanEvent>(payload).is_ok());
+        assert!(serde_json::from_value::<IanEvent>(sensitive_payload).is_err());
     }
 }

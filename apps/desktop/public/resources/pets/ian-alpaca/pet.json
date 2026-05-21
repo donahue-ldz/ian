@@ -8,5 +8,5 @@
   "animations": "animations.json",
   "expressions": "expressions.json",
   "sounds": "sounds/",
-  "capabilities": ["idle", "walk", "sleep", "run", "happy"]
+  "capabilities": ["idle", "rest", "walk", "sleep", "run", "zoomies", "happy"]
 }

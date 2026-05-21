@@ -1,0 +1,15 @@
+{
+  "url": "http://127.0.0.1:1420/?v=0071",
+  "smoke": {
+    "backgroundColor": "rgb(255, 255, 255)",
+    "borderColor": "rgb(17, 17, 17)",
+    "borderRadius": "48px",
+    "borderWidth": "4px",
+    "hasBubble": true,
+    "hasReplyButton": true,
+    "hasTailLarge": true,
+    "hasTailSmall": true,
+    "text": "我在这儿。"
+  },
+  "screenshot": "0071-cloud-bubble.png"
+}

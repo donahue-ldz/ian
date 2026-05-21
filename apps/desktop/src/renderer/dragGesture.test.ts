@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getDragOffset, shouldStartDrag } from "./dragGesture";
+import {
+  getDragOffset,
+  getPhysicalDragOffset,
+  shouldStartDrag,
+} from "./dragGesture";
 
 describe("dragGesture", () => {
   it("does not start dragging for a stationary Ian click", () => {
@@ -12,6 +16,15 @@ describe("dragGesture", () => {
     expect(getDragOffset({ x: 20, y: 20 }, { x: 29, y: 20 })).toEqual({
       x: 9,
       y: 0,
+    });
+  });
+
+  it("converts screen-space drag movement to physical window movement", () => {
+    expect(
+      getPhysicalDragOffset({ x: 500, y: 300 }, { x: 560, y: 335 }, 2),
+    ).toEqual({
+      x: 120,
+      y: 70,
     });
   });
 });

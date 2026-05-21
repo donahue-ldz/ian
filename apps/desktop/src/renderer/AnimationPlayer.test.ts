@@ -18,6 +18,11 @@ const manifest: AnimationManifest = {
       fps: 2,
       loop: true,
     },
+    rest: {
+      frames: [1],
+      fps: 1,
+      loop: true,
+    },
     walk: {
       frames: [2, 3, 4, 5],
       fps: 8,
@@ -33,6 +38,11 @@ const manifest: AnimationManifest = {
       fps: 12,
       loop: true,
     },
+    zoomies: {
+      frames: [8, 12, 9, 13],
+      fps: 14,
+      loop: true,
+    },
     happy: {
       frames: [12, 13],
       fps: 6,
@@ -43,7 +53,7 @@ const manifest: AnimationManifest = {
 
 describe("AnimationPlayer", () => {
   it("falls back to idle for unknown animations", () => {
-    expect(resolveAnimation(manifest, "zoomies")).toBe("idle");
+    expect(resolveAnimation(manifest, "spin")).toBe("idle");
   });
 
   it("selects looped frames from elapsed time and fps", () => {

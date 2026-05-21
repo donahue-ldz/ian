@@ -74,6 +74,7 @@ P0 / MVP + v0.1 Architecture Baseline。
 - [ ] 浏览器 fallback 状态、Rust 默认状态和前端首次加载默认资源包都使用 `ian-kitten`。
 - [ ] `IanSprite` 继续通过 Resource Pack sprite asset 渲染，不回退到 CSS fallback。
 - [ ] 点击 Ian 后仍能显示 bubble 并播放 `happy` 动画；双击 Ian 后仍能播放 `run` 动画。
+- [ ] 桌面窗口中拖动小猫时移动的是原生 Tauri 窗口，而不是只在透明窗口内部平移 sprite；拖动位移使用屏幕坐标，避免窗口移动后 `clientX/clientY` 坐标系重置导致只能拖在小框内。
 - [ ] 与默认资源包、动画帧、Rust 默认配置相关的单元测试通过。
 
 ## Verification Approach

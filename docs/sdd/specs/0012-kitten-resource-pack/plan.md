@@ -29,6 +29,7 @@
 8. 运行前端和 Rust 测试，修正只与本任务相关的失败。
 9. 启动本地预览，用浏览器验证默认 sprite 来源、idle/happy/run 变化和 bubble 不被遮挡。
 10. 更新 `docs/sdd/specs/0012-kitten-resource-pack/decisions.md` 和 `verification.md`，记录实现取舍、命令和结果。
+11. 修正桌面拖动链路：保留浏览器预览的内部 CSS 位移，但桌面 Tauri 窗口优先请求原生 `startDragging()`，并使用 `screenX/screenY` 计算屏幕空间位移作为兜底，再调用原生窗口位置 API 移动窗口；增加拖动坐标换算和 capability 回归测试。
 
 ## Expected File Changes
 
@@ -46,6 +47,9 @@
 - `apps/desktop/src-tauri/src/resources/resource_registry.rs`: 默认 active pet fallback 和测试。
 - `apps/desktop/src-tauri/src/storage/config.rs`: 默认配置恢复测试。
 - `apps/desktop/src/resources/resourceLoader.test.ts`: 新资源包 contract 测试。
+- `apps/desktop/src/renderer/dragGesture.ts`: 桌面拖动坐标换算 helper。
+- `apps/desktop/src/renderer/IanStage.tsx`: 桌面拖动使用屏幕坐标位移，浏览器预览继续使用 client 坐标位移。
+- `apps/desktop/src-tauri/capabilities/default.json`: 允许 Tauri 窗口原生拖动 API。
 
 ## Interfaces and Boundaries
 

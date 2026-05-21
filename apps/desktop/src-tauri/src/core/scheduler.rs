@@ -2,6 +2,8 @@ use chrono::Utc;
 
 use crate::protocol::{BehaviorMode, IanAction, IanEvent, IanState};
 
+const DESKTOP_TICK_WINDOW_SECS: i64 = 15;
+
 #[derive(Default)]
 pub struct Scheduler;
 
@@ -29,17 +31,17 @@ impl BehaviorScheduler {
             BehaviorMode::Lively => 45,
         };
 
-        if second > 0 && second % cadence == 0 {
+        if is_in_tick_window(second, cadence) {
             return Some(IanAction::AnimationPlay {
                 name: "sleep".to_string(),
                 looped: true,
             });
         }
 
-        if !matches!(state.behavior_mode, BehaviorMode::Quiet) && second > 0 && second % 45 == 0 {
+        if !matches!(state.behavior_mode, BehaviorMode::Quiet) && is_in_tick_window(second, 45) {
             return Some(IanAction::AnimationPlay {
-                name: "walk".to_string(),
-                looped: false,
+                name: "rest".to_string(),
+                looped: true,
             });
         }
 
@@ -48,6 +50,10 @@ impl BehaviorScheduler {
             looped: true,
         })
     }
+}
+
+fn is_in_tick_window(second: i64, cadence: i64) -> bool {
+    second >= cadence && second.rem_euclid(cadence) < DESKTOP_TICK_WINDOW_SECS
 }
 
 #[cfg(test)]
@@ -71,6 +77,24 @@ mod tests {
         ));
         assert!(matches!(
             lively,
+            Some(IanAction::AnimationPlay { ref name, .. }) if name == "sleep"
+        ));
+    }
+
+    #[test]
+    fn cadence_windows_survive_fifteen_second_desktop_ticks() {
+        let scheduler = BehaviorScheduler::default();
+        let state = IanState::default();
+
+        let rest = scheduler.action_for_tick(52_000, &state);
+        let sleep = scheduler.action_for_tick(97_000, &state);
+
+        assert!(matches!(
+            rest,
+            Some(IanAction::AnimationPlay { ref name, .. }) if name == "rest"
+        ));
+        assert!(matches!(
+            sleep,
             Some(IanAction::AnimationPlay { ref name, .. }) if name == "sleep"
         ));
     }

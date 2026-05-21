@@ -6,7 +6,9 @@ import {
   developerSnoozeOptions,
   isBehaviorMode,
   movementIntensityOptions,
+  playfulEnergyOptions,
   restBehaviorOptions,
+  settingsGroups,
   toTimeInputValue,
 } from "./settingsModel";
 
@@ -42,6 +44,12 @@ describe("settingsModel", () => {
       "normal",
       "active",
     ]);
+    expect(playfulEnergyOptions.map((option) => option.value)).toEqual([
+      "off",
+      "low",
+      "normal",
+      "high",
+    ]);
   });
 
   it("formats quiet hour minutes as time inputs", () => {
@@ -61,6 +69,33 @@ describe("settingsModel", () => {
     expect(
       developerCapabilityOptions.find((option) => option.capability === "keyboard_rhythm")?.scope,
     ).toContain("不记录按键内容");
+  });
+
+  it("organizes settings around user mental models", () => {
+    expect(settingsGroups.map((group) => group.label)).toEqual([
+      "性格",
+      "生活",
+      "打扰",
+      "隐私",
+      "高级",
+    ]);
+  });
+
+  it("keeps technical capability names out of the primary settings labels", () => {
+    expect(developerCapabilityOptions.map((option) => option.label)).toEqual([
+      "项目状态",
+      "构建测试",
+      "键盘节奏",
+      "当前应用",
+    ]);
+  });
+
+  it("explains every sensitive capability with read, non-read and disable copy", () => {
+    for (const option of developerCapabilityOptions) {
+      expect(option.reads).toBeTruthy();
+      expect(option.doesNotRead).toBeTruthy();
+      expect(option.canDisable).toBe("可随时关闭");
+    }
   });
 
   it("offers compact developer rhythm snooze durations", () => {

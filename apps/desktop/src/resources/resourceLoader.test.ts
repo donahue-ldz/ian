@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import {
   getResourcePackVersion,
   resolveExpressionWithFallback,
@@ -7,6 +8,9 @@ import {
   validatePetResourcePack,
   type PetResourcePack,
 } from "./resourceLoader";
+
+const DEFAULT_RESOURCE_PACK_IDS = ["ian-alpaca", "ian-kitten", "ian-puppy"] as const;
+const REQUIRED_ANIMATIONS = ["idle", "walk", "run", "happy", "rest", "sleep"];
 
 const pack: PetResourcePack = {
   pet: {
@@ -25,9 +29,11 @@ const pack: PetResourcePack = {
     meta: { frameWidth: 96, frameHeight: 96, scale: 2 },
     animations: {
       idle: { frames: [0], fps: 1, loop: true },
+      rest: { frames: [0], fps: 1, loop: true },
       walk: { frames: [1], fps: 1, loop: true },
       happy: { frames: [2], fps: 1, loop: false },
       run: { frames: [3], fps: 1, loop: true },
+      zoomies: { frames: [3, 2], fps: 2, loop: true },
       sleep: { frames: [4], fps: 1, loop: true },
     },
   },
@@ -78,4 +84,73 @@ describe("resourceLoader contract", () => {
       validatePetManifestFields({ ...pack.pet, animations: "" }),
     ).toThrow("pet.animations");
   });
+
+  it("keeps default resource pack animation states distinct and inside the sprite sheet", () => {
+    for (const packId of DEFAULT_RESOURCE_PACK_IDS) {
+      const pet = readPublicJson<PetResourcePack["pet"]>(
+        `../../public/resources/pets/${packId}/pet.json`,
+      );
+      const animations = readPublicJson<PetResourcePack["animations"]>(
+        `../../public/resources/pets/${packId}/${pet.animations}`,
+      );
+      const sprite = readPublicText(
+        `../../public/resources/pets/${packId}/${pet.sprite}`,
+      );
+      const frameCapacity = readSvgWidth(sprite) / animations.meta.frameWidth;
+
+      for (const animationName of REQUIRED_ANIMATIONS) {
+        expect(pet.capabilities, `${packId} capabilities`).toContain(
+          animationName,
+        );
+        expect(
+          animations.animations[animationName as keyof typeof animations.animations],
+          `${packId} ${animationName}`,
+        ).toBeDefined();
+      }
+
+      const idleFrames = animations.animations.idle.frames.join(",");
+      expect(animations.animations.rest.frames.join(",")).not.toBe(idleFrames);
+      expect(animations.animations.sleep.frames.join(",")).not.toBe(idleFrames);
+
+      if (packId === "ian-puppy") {
+        expect(animations.animations.idle.frames.length).toBeGreaterThanOrEqual(2);
+        expect(animations.animations.walk.fps).toBeLessThanOrEqual(5);
+        expect(animations.animations.run.fps).toBeLessThanOrEqual(8);
+        expect(animations.animations.zoomies.fps).toBeLessThanOrEqual(10);
+        expect(animations.animations.zoomies.frames.join(",")).not.toBe(
+          animations.animations.run.frames.join(","),
+        );
+        expect(sprite).toContain('data-style="rounded-puppy-v2"');
+      }
+
+      for (const [animationName, animation] of Object.entries(
+        animations.animations,
+      )) {
+        expect(animation.frames.length, `${packId} ${animationName}`).toBeGreaterThan(
+          0,
+        );
+        for (const frame of animation.frames) {
+          expect(frame, `${packId} ${animationName}`).toBeGreaterThanOrEqual(0);
+          expect(frame, `${packId} ${animationName}`).toBeLessThan(frameCapacity);
+        }
+      }
+    }
+  });
 });
+
+function readPublicJson<T>(path: string): T {
+  return JSON.parse(readPublicText(path)) as T;
+}
+
+function readPublicText(path: string): string {
+  return readFileSync(new URL(path, import.meta.url), "utf8");
+}
+
+function readSvgWidth(svg: string): number {
+  const width = svg.match(/<svg[^>]+width="(?<width>\d+)"/)?.groups?.width;
+  if (!width) {
+    throw new Error("Sprite sheet SVG must declare a numeric width");
+  }
+
+  return Number(width);
+}

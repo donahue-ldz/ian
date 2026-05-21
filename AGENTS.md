@@ -66,6 +66,8 @@ For feature work, architecture work, multi-file changes, data model changes, beh
 5. Record scope or design changes in `decisions.md`.
 6. Record verification commands and results in `verification.md`.
 
+For any Ian desktop-visible capability, browser verification is not sufficient. Verify the behavior in the real Tauri desktop shell before accepting the SDD. If desktop verification cannot run, record the reason, substitute checks, and remaining risk in `verification.md`.
+
 Small typo fixes, formatting-only edits, or simple read-only analysis do not need a full SDD packet.
 
 ## P0 Scope

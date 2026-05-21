@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="96" viewBox="0 0 1344 96" role="img" aria-label="Ian alpaca sprite sheet">
+<svg xmlns="http://www.w3.org/2000/svg" width="1536" height="96" viewBox="0 0 1536 96" role="img" aria-label="Ian alpaca sprite sheet">
   <defs>
     <style>
       .shadow { fill: #29352f; opacity: 0.16; }
@@ -22,6 +22,11 @@
       <path class="face" d="M64 37h6"/>
       <path class="face" d="M75 37h6"/>
       <path class="face" d="M70 47q3 2 6 0"/>
+    </g>
+    <g id="face-rest">
+      <path class="face" d="M64 37q3 2 6 0"/>
+      <path class="face" d="M75 37q3 2 6 0"/>
+      <path class="face" d="M70 47q3 3 6 0"/>
     </g>
     <g id="face-happy">
       <path class="face" d="M64 36q3 3 6 0"/>
@@ -153,6 +158,23 @@
       <use href="#body"/>
       <use href="#face-happy"/>
       <use href="#legs-right"/>
+    </g>
+  </g>
+
+  <g transform="translate(1344 0)">
+    <ellipse class="shadow" cx="46" cy="83" rx="29" ry="6"/>
+    <g transform="translate(0 2)">
+      <use href="#body"/>
+      <use href="#face-rest"/>
+      <use href="#legs-neutral"/>
+    </g>
+  </g>
+  <g transform="translate(1440 0)">
+    <ellipse class="shadow" cx="46" cy="84" rx="28" ry="6"/>
+    <g transform="translate(0 3) rotate(-2 52 50)">
+      <use href="#body"/>
+      <use href="#face-rest"/>
+      <use href="#legs-neutral"/>
     </g>
   </g>
 </svg>

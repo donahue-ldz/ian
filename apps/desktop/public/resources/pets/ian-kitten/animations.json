@@ -6,8 +6,13 @@
   },
   "animations": {
     "idle": {
-      "frames": [0, 1],
-      "fps": 2,
+      "frames": [0],
+      "fps": 1,
+      "loop": true
+    },
+    "rest": {
+      "frames": [14, 15],
+      "fps": 1,
       "loop": true
     },
     "walk": {
@@ -23,6 +28,11 @@
     "run": {
       "frames": [8, 9, 10, 11],
       "fps": 12,
+      "loop": true
+    },
+    "zoomies": {
+      "frames": [8, 12, 9, 13],
+      "fps": 14,
       "loop": true
     },
     "happy": {

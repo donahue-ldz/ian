@@ -1,5 +1,6 @@
 import { invoke } from "@tauri-apps/api/core";
 import type {
+  AnimationName,
   BehaviorMode,
   BuildTestStatus,
   DeveloperSnooze,
@@ -12,11 +13,11 @@ import type {
 } from "../protocol/generated";
 
 const browserFallbackState: IanState = {
-  active_pet_id: "ian-alpaca",
+  active_pet_id: "ian-puppy",
   current_behavior: "idle",
   current_animation: "idle",
   position: { x: 0, y: 0 },
-  active_resource_pack: "ian-alpaca",
+  active_resource_pack: "ian-puppy",
   behavior_mode: "normal",
   reminders_enabled: true,
   byom_enabled: false,
@@ -25,10 +26,17 @@ const browserFallbackState: IanState = {
   keyboard_rhythm_enabled: false,
   active_app_presence_enabled: false,
   home_anchor: { x: 0, y: 0 },
+  screen_bounds: null,
+  last_user_interaction_ms: 0,
   quiet_hours: { enabled: false, start_minute: 22 * 60, end_minute: 7 * 60 },
   movement_intensity: "normal",
   bubble_frequency: "normal",
   rest_behavior: "normal",
+  playful_energy: "normal",
+  playful_state: "idle",
+  playful_state_until_ms: null,
+  playful_snoozed_until_ms: null,
+  last_playful_diagnostic: null,
   surface_scale: 1,
   diagnostics_enabled: true,
   day_phase: "day",
@@ -48,6 +56,7 @@ const browserFallbackState: IanState = {
   },
   active_app_category: null,
 };
+const DESKTOP_TICK_WINDOW_SECS = 15;
 let browserInteractionCount = 0;
 let browserAttentionAvailableAfterMs = 0;
 
@@ -76,6 +85,91 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
   if (event.type === "active_app.presence") {
     browserFallbackState.active_app_category = event.category;
     return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (event.type === "screen.bounds") {
+    browserFallbackState.screen_bounds = {
+      x: event.x,
+      y: event.y,
+      width: event.width,
+      height: event.height,
+    };
+    return [{ type: "state.sync", state: browserFallbackState }];
+  }
+
+  if (event.type === "time.tick") {
+    const second = Math.floor(event.now_ms / 1000);
+    let name: AnimationName = "idle";
+    let looped = true;
+
+    if (
+      browserFallbackState.playful_energy === "high" &&
+      browserFallbackState.behavior_mode !== "quiet" &&
+      !browserFallbackState.is_bubble_input_active &&
+      isInTickWindow(second, 180)
+    ) {
+      browserFallbackState.current_animation = "zoomies";
+      browserFallbackState.current_behavior = "zooming";
+      browserFallbackState.playful_state = "cooling_down";
+      browserFallbackState.playful_state_until_ms = event.now_ms + 60_000;
+      browserFallbackState.last_playful_diagnostic = {
+        timestamp_ms: event.now_ms,
+        reason: "idle_surprise",
+        result: "triggered",
+        cooldown_key: "zoomies",
+        chosen_reaction_key: "zoomies_path",
+      };
+      return [
+        {
+          type: "playful.diagnostic",
+          ...browserFallbackState.last_playful_diagnostic,
+        },
+        { type: "behavior.zoomies", duration_ms: 3200, reason: "idle_surprise" },
+        {
+          type: "effect.play",
+          name: "speed_lines",
+          intensity: "high",
+          duration_ms: 900,
+        },
+        { type: "animation.play", name: "zoomies", looped: true },
+        { type: "state.sync", state: browserFallbackState },
+      ];
+    }
+
+    if (isInTickWindow(second, 90)) {
+      name = "sleep";
+    } else if (
+      browserFallbackState.behavior_mode !== "quiet" &&
+      isInTickWindow(second, 45)
+    ) {
+      name = "rest";
+    }
+
+    browserFallbackState.current_animation = name;
+    browserFallbackState.current_behavior =
+      name === "sleep" ? "sleeping" : name === "rest" ? "resting" : "idle";
+
+    const actions: IanAction[] = [
+      { type: "animation.play", name, looped },
+      { type: "state.sync", state: browserFallbackState },
+    ];
+
+    if (
+      name === "idle" &&
+      browserFallbackState.behavior_mode !== "quiet" &&
+      !browserFallbackState.is_bubble_input_active &&
+      second >= 30 &&
+      second % 30 < DESKTOP_TICK_WINDOW_SECS
+    ) {
+      actions.splice(1, 0, {
+        type: "effect.play",
+        name: "tail_wag",
+        intensity: "low",
+        duration_ms: 900,
+      });
+    }
+
+    return actions;
   }
 
   if (
@@ -133,14 +227,42 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
         y: browserFallbackState.home_anchor.y,
         speed: "fast",
       },
+      {
+        type: "playful.state",
+        state: "settling",
+        until_ms: Date.now() + 1200,
+      },
+      {
+        type: "effect.play",
+        name: "blush_puff",
+        intensity: "low",
+        duration_ms: 800,
+      },
       { type: "animation.play", name: "idle", looped: true },
     ];
   }
 
   if (event.type === "mouse.click") {
+    if (browserFallbackState.current_animation === "sleep") {
+      browserFallbackState.current_animation = "idle";
+      browserFallbackState.current_behavior = "idle";
+      return [
+        { type: "animation.play", name: "idle", looped: true },
+        { type: "state.sync", state: browserFallbackState },
+      ];
+    }
+
     browserInteractionCount += 1;
     if (browserInteractionCount % 4 === 3) {
-      return [];
+      return [
+        { type: "animation.play", name: "happy", looped: false },
+        {
+          type: "effect.play",
+          name: "sparkle_pop",
+          intensity: "low",
+          duration_ms: 700,
+        },
+      ];
     }
     const text =
       browserInteractionCount >= 4 && browserInteractionCount % 4 === 0
@@ -153,6 +275,18 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
       { type: "bubble.open" },
       { type: "speech.show", text, mood: "calm", duration_ms: 2400 },
       { type: "animation.play", name: "happy", looped: false },
+      {
+        type: "effect.play",
+        name:
+          browserInteractionCount >= 4 && browserInteractionCount % 4 === 0
+            ? "blush_puff"
+            : "heart_pop",
+        intensity: "low",
+        duration_ms:
+          browserInteractionCount >= 4 && browserInteractionCount % 4 === 0
+            ? 800
+            : 900,
+      },
     ];
 
     if (browserInteractionCount >= 4 && browserInteractionCount % 4 === 0) {
@@ -169,12 +303,23 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
 
   if (event.type === "mouse.drag_start") {
     browserFallbackState.is_dragging = true;
-    return [{ type: "state.sync", state: browserFallbackState }];
+    return [
+      { type: "animation.play", name: "happy", looped: false },
+      { type: "state.sync", state: browserFallbackState },
+    ];
   }
 
   if (event.type === "mouse.drag_end") {
     browserFallbackState.is_dragging = false;
     browserFallbackState.position = { x: event.x, y: event.y };
+    return [
+      { type: "movement.move_to", x: event.x, y: event.y, speed: "normal" },
+      { type: "speech.show", text: "放这里。", mood: "calm", duration_ms: 1600 },
+      { type: "state.sync", state: browserFallbackState },
+    ];
+  }
+
+  if (event.type === "mouse.chase_candidate") {
     return [{ type: "state.sync", state: browserFallbackState }];
   }
 
@@ -189,10 +334,15 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
       { type: "bubble.open" },
       { type: "speech.show", text, mood: "calm", duration_ms: 2600 },
       { type: "animation.play", name: "happy", looped: false },
+      { type: "state.sync", state: browserFallbackState },
     ];
   }
 
   return [{ type: "state.sync", state: browserFallbackState }];
+}
+
+function isInTickWindow(second: number, cadence: number): boolean {
+  return second >= cadence && second % cadence < DESKTOP_TICK_WINDOW_SECS;
 }
 
 export async function getIanState(): Promise<IanState> {
@@ -243,6 +393,8 @@ export async function saveCreatureSettings(settings: {
   movement_intensity: string;
   bubble_frequency: string;
   rest_behavior: string;
+  playful_energy: IanState["playful_energy"];
+  playful_snoozed_until_ms?: number | null;
   surface_scale: number;
   diagnostics_enabled: boolean;
 }): Promise<IanState> {
@@ -251,6 +403,8 @@ export async function saveCreatureSettings(settings: {
       movementIntensity: settings.movement_intensity,
       bubbleFrequency: settings.bubble_frequency,
       restBehavior: settings.rest_behavior,
+      playfulEnergy: settings.playful_energy,
+      playfulSnoozedUntilMs: settings.playful_snoozed_until_ms ?? null,
       surfaceScale: settings.surface_scale,
       diagnosticsEnabled: settings.diagnostics_enabled,
     });
@@ -259,6 +413,9 @@ export async function saveCreatureSettings(settings: {
   browserFallbackState.movement_intensity = settings.movement_intensity;
   browserFallbackState.bubble_frequency = settings.bubble_frequency;
   browserFallbackState.rest_behavior = settings.rest_behavior;
+  browserFallbackState.playful_energy = settings.playful_energy;
+  browserFallbackState.playful_snoozed_until_ms =
+    settings.playful_snoozed_until_ms ?? null;
   browserFallbackState.surface_scale = settings.surface_scale;
   browserFallbackState.diagnostics_enabled = settings.diagnostics_enabled;
   return browserFallbackState;

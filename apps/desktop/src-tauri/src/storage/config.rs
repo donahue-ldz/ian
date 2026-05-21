@@ -4,7 +4,8 @@ use directories::BaseDirs;
 use serde::{Deserialize, Serialize};
 
 use crate::protocol::{
-    BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, Position, QuietHours,
+    BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, PlayfulEnergy, Position,
+    QuietHours,
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -44,6 +45,10 @@ struct CreatureConfig {
     movement_intensity: String,
     bubble_frequency: String,
     rest_behavior: String,
+    #[serde(default)]
+    playful_energy: PlayfulEnergy,
+    #[serde(default)]
+    playful_snoozed_until_ms: Option<i64>,
     surface_scale: f64,
     diagnostics_enabled: bool,
 }
@@ -54,6 +59,8 @@ impl Default for CreatureConfig {
             movement_intensity: "normal".to_string(),
             bubble_frequency: "normal".to_string(),
             rest_behavior: "normal".to_string(),
+            playful_energy: PlayfulEnergy::Normal,
+            playful_snoozed_until_ms: None,
             surface_scale: 1.0,
             diagnostics_enabled: true,
         }
@@ -137,7 +144,9 @@ mod tests {
     use tempfile::tempdir;
 
     use super::{load_state, persist_state};
-    use crate::protocol::{BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, Position};
+    use crate::protocol::{
+        BehaviorMode, DeveloperSnooze, DeveloperWorkspace, IanState, PlayfulEnergy, Position,
+    };
 
     #[test]
     fn load_state_recovers_corrupt_config_to_default() {
@@ -146,11 +155,22 @@ mod tests {
 
         let state = load_state(dir.path()).expect("load recovered state");
 
-        assert_eq!(state.active_pet_id, "ian-alpaca");
+        assert_eq!(state.active_pet_id, "ian-puppy");
+        assert_eq!(state.active_resource_pack, "ian-puppy");
         assert_eq!(state.position.x, 0.0);
         assert!(fs::read_to_string(dir.path().join("config.toml"))
             .expect("read recovered config")
-            .contains("ian-alpaca"));
+            .contains("ian-puppy"));
+    }
+
+    #[test]
+    fn load_state_uses_puppy_for_new_default_config() {
+        let dir = tempdir().expect("temp dir");
+
+        let loaded = load_state(dir.path()).expect("load default config");
+
+        assert_eq!(loaded.active_pet_id, "ian-puppy");
+        assert_eq!(loaded.active_resource_pack, "ian-puppy");
     }
 
     #[test]
@@ -169,6 +189,7 @@ mod tests {
         state.rest_behavior = "restful".to_string();
         state.surface_scale = 1.2;
         state.diagnostics_enabled = false;
+        state.playful_energy = PlayfulEnergy::High;
         state.git_metadata_enabled = true;
         state.build_test_events_enabled = true;
         state.keyboard_rhythm_enabled = false;
@@ -203,6 +224,7 @@ mod tests {
         assert_eq!(loaded.rest_behavior, "restful");
         assert_eq!(loaded.surface_scale, 1.2);
         assert!(!loaded.diagnostics_enabled);
+        assert!(matches!(loaded.playful_energy, PlayfulEnergy::High));
         assert!(loaded.git_metadata_enabled);
         assert!(loaded.build_test_events_enabled);
         assert!(!loaded.keyboard_rhythm_enabled);
@@ -262,6 +284,8 @@ y = 24.0
 
         let loaded = load_state(dir.path()).expect("load old config");
 
+        assert_eq!(loaded.active_pet_id, "ian-alpaca");
+        assert_eq!(loaded.active_resource_pack, "ian-alpaca");
         assert!(loaded.reminders_enabled);
         assert_eq!(loaded.home_anchor.x, 12.0);
         assert_eq!(loaded.home_anchor.y, 24.0);
@@ -271,6 +295,7 @@ y = 24.0
         assert!(!loaded.active_app_presence_enabled);
         assert!(!loaded.developer_workspace.bound);
         assert!(!loaded.developer_snooze.enabled);
+        assert!(matches!(loaded.playful_energy, PlayfulEnergy::Normal));
     }
 }
 
@@ -301,6 +326,8 @@ impl From<IanState> for ConfigFile {
                 movement_intensity: state.movement_intensity,
                 bubble_frequency: state.bubble_frequency,
                 rest_behavior: state.rest_behavior,
+                playful_energy: state.playful_energy,
+                playful_snoozed_until_ms: state.playful_snoozed_until_ms,
                 surface_scale: state.surface_scale,
                 diagnostics_enabled: state.diagnostics_enabled,
             },
@@ -326,10 +353,17 @@ impl From<ConfigFile> for IanState {
             keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
             active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
             home_anchor: config.home_anchor.unwrap_or(config.position),
+            screen_bounds: None,
+            last_user_interaction_ms: 0,
             quiet_hours: config.quiet_hours,
             movement_intensity: config.creature.movement_intensity,
             bubble_frequency: config.creature.bubble_frequency,
             rest_behavior: config.creature.rest_behavior,
+            playful_energy: config.creature.playful_energy,
+            playful_state: Default::default(),
+            playful_state_until_ms: None,
+            playful_snoozed_until_ms: config.creature.playful_snoozed_until_ms,
+            last_playful_diagnostic: None,
             surface_scale: config.creature.surface_scale,
             diagnostics_enabled: config.creature.diagnostics_enabled,
             day_phase: "day".to_string(),
