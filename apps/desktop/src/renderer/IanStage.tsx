@@ -1,8 +1,10 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { IanViewState } from "../state/ianActions";
 import type { PetResourcePack } from "../resources/resourceLoader";
+import type { BehaviorMode } from "../protocol/generated";
 import { Bubble } from "./Bubble";
 import { IanSprite } from "./IanSprite";
+import { SettingsPanel } from "./SettingsPanel";
 import "./ianStage.css";
 
 type Point = {
@@ -13,20 +15,30 @@ type Point = {
 type IanStageProps = {
   resourcePack: PetResourcePack | null;
   viewState: IanViewState;
+  behaviorMode: BehaviorMode;
+  isSettingsOpen: boolean;
   onIanClick: (point: Point) => void;
   onIanDoubleClick: (point: Point) => void;
   onIanNear: (point: Point) => void;
   onSubmitMessage: (text: string) => void;
+  onSettingsToggle: () => void;
+  onSettingsClose: () => void;
+  onBehaviorModeChange: (mode: BehaviorMode) => void;
   onDragEnd: (point: Point) => void;
 };
 
 export function IanStage({
   resourcePack,
   viewState,
+  behaviorMode,
+  isSettingsOpen,
   onIanClick,
   onIanDoubleClick,
   onIanNear,
   onSubmitMessage,
+  onSettingsToggle,
+  onSettingsClose,
+  onBehaviorModeChange,
   onDragEnd,
 }: IanStageProps) {
   const dragOrigin = useRef<Point | null>(null);
@@ -55,6 +67,10 @@ export function IanStage({
           transform: `translate(${dragOffset.x}px, ${dragOffset.y}px)`,
         }}
         onPointerDown={(event) => {
+          if (!(event.target as HTMLElement).closest(".ian-click-target")) {
+            return;
+          }
+
           dragOrigin.current = pointFromPointer(event);
           event.currentTarget.setPointerCapture(event.pointerId);
         }}
@@ -77,6 +93,21 @@ export function IanStage({
         }}
       >
         <Bubble bubble={viewState.bubble} onSubmitMessage={onSubmitMessage} />
+        <button
+          aria-label="打开设置"
+          className="ian-settings-toggle"
+          type="button"
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={onSettingsToggle}
+        >
+          设置
+        </button>
+        <SettingsPanel
+          behaviorMode={behaviorMode}
+          isOpen={isSettingsOpen}
+          onClose={onSettingsClose}
+          onModeChange={onBehaviorModeChange}
+        />
         <button
           className="ian-click-target"
           aria-label="Ian"

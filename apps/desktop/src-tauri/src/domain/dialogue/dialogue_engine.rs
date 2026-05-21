@@ -1,4 +1,7 @@
-use crate::protocol::{IanAction, IanState};
+use crate::{
+    domain::{bond::BondStateView, mood::MoodState},
+    protocol::{IanAction, IanState},
+};
 
 use super::{
     dialogue_policy::DialoguePolicy,
@@ -29,11 +32,15 @@ impl DialogueEngine {
         text: String,
         state: &IanState,
         source: DialogueSource,
+        mood: MoodState,
+        bond: BondStateView,
     ) -> Vec<IanAction> {
         let context = DialogueContext {
             current_behavior: state.current_behavior.clone(),
             current_animation: state.current_animation.clone(),
             source,
+            mood,
+            bond,
         };
         let reply = self
             .policy
@@ -57,7 +64,11 @@ impl DialogueEngine {
 #[cfg(test)]
 mod tests {
     use crate::{
-        domain::dialogue::providers::{DialogueContext, DialogueProvider, DialogueSource},
+        domain::{
+            bond::BondStateView,
+            dialogue::providers::{DialogueContext, DialogueProvider, DialogueSource},
+            mood::MoodState,
+        },
         protocol::{CurrentBehavior, IanAction, IanState},
     };
 
@@ -71,6 +82,8 @@ mod tests {
             assert_eq!(context.source, DialogueSource::UserBubble);
             assert_eq!(context.current_animation, "idle");
             assert!(matches!(context.current_behavior, CurrentBehavior::Idle));
+            assert!(matches!(context.mood, MoodState::Happy));
+            assert!(matches!(context.bond, BondStateView::GettingCloser));
             "我正在安静地陪你待一会儿。".to_string()
         }
     }
@@ -86,6 +99,8 @@ mod tests {
             "你在干嘛".to_string(),
             &IanState::default(),
             DialogueSource::UserBubble,
+            MoodState::Happy,
+            BondStateView::GettingCloser,
         );
 
         assert!(actions.iter().any(|action| matches!(

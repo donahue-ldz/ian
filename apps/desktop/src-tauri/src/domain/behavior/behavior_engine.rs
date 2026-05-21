@@ -1,15 +1,20 @@
-use crate::protocol::{IanAction, IanEvent, IanState, MovementSpeed};
+use crate::{
+    core::scheduler::BehaviorScheduler,
+    protocol::{IanAction, IanEvent, IanState, MovementSpeed},
+};
 
 use super::behavior_policy::BehaviorPolicy;
 
 pub struct BehaviorEngine {
     policy: BehaviorPolicy,
+    scheduler: BehaviorScheduler,
 }
 
 impl Default for BehaviorEngine {
     fn default() -> Self {
         Self {
             policy: BehaviorPolicy::default(),
+            scheduler: BehaviorScheduler::default(),
         }
     }
 }
@@ -50,13 +55,11 @@ impl BehaviorEngine {
                 y: *y,
                 speed: MovementSpeed::Normal,
             }],
-            IanEvent::TimeTick { now_ms } => {
-                let (name, looped) = self.policy.tick_animation(*now_ms);
-                vec![IanAction::AnimationPlay {
-                    name: name.to_string(),
-                    looped,
-                }]
-            }
+            IanEvent::TimeTick { now_ms } => self
+                .scheduler
+                .action_for_tick(*now_ms, state)
+                .into_iter()
+                .collect(),
             IanEvent::MouseDragStart { .. } | IanEvent::DialogueUserMessage { .. } => vec![],
         }
     }

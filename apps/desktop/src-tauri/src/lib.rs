@@ -17,7 +17,9 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             desktop::commands::handle_ian_event,
             desktop::commands::get_ian_state,
-            desktop::commands::save_window_position
+            desktop::commands::save_window_position,
+            desktop::commands::get_settings,
+            desktop::commands::save_behavior_mode
         ])
         .setup(|app| {
             desktop::window::configure_main_window(app)?;

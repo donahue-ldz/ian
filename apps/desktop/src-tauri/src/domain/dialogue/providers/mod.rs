@@ -1,7 +1,10 @@
 pub mod demo;
 pub mod openai_compatible;
 
-use crate::protocol::CurrentBehavior;
+use crate::{
+    domain::{bond::BondStateView, mood::MoodState},
+    protocol::CurrentBehavior,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DialogueSource {
@@ -12,6 +15,8 @@ pub struct DialogueContext {
     pub current_behavior: CurrentBehavior,
     pub current_animation: String,
     pub source: DialogueSource,
+    pub mood: MoodState,
+    pub bond: BondStateView,
 }
 
 pub trait DialogueProvider: Send + Sync {

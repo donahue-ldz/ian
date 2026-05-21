@@ -22,3 +22,18 @@ pub enum IanEvent {
     #[serde(rename = "dialogue.user_message")]
     DialogueUserMessage { text: String },
 }
+
+impl IanEvent {
+    pub fn event_type(&self) -> &'static str {
+        match self {
+            Self::AppStarted => "app.started",
+            Self::TimeTick { .. } => "time.tick",
+            Self::MouseClick { .. } => "mouse.click",
+            Self::MouseDoubleClick { .. } => "mouse.double_click",
+            Self::MouseNear { .. } => "mouse.near",
+            Self::MouseDragStart { .. } => "mouse.drag_start",
+            Self::MouseDragEnd { .. } => "mouse.drag_end",
+            Self::DialogueUserMessage { .. } => "dialogue.user_message",
+        }
+    }
+}

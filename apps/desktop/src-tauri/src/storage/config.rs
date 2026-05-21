@@ -49,12 +49,19 @@ pub fn ensure_default_config(app_dir: &Path) -> io::Result<()> {
 pub fn load_state(app_dir: &Path) -> io::Result<IanState> {
     let config_path = app_dir.join("config.toml");
     if !config_path.exists() {
+        ensure_default_config(app_dir)?;
         return Ok(IanState::default());
     }
 
     let content = fs::read_to_string(config_path)?;
-    let config: ConfigFile = toml::from_str(&content)
-        .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+    let config: ConfigFile = match toml::from_str(&content) {
+        Ok(config) => config,
+        Err(_) => {
+            let default_state = IanState::default();
+            persist_state(app_dir, &default_state)?;
+            return Ok(default_state);
+        }
+    };
 
     Ok(config.into())
 }
@@ -64,6 +71,45 @@ pub fn persist_state(app_dir: &Path, state: &IanState) -> io::Result<()> {
     let serialized = toml::to_string_pretty(&ConfigFile::from(state.clone()))
         .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
     fs::write(config_path, serialized)
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+
+    use tempfile::tempdir;
+
+    use super::{load_state, persist_state};
+    use crate::protocol::{BehaviorMode, IanState, Position};
+
+    #[test]
+    fn load_state_recovers_corrupt_config_to_default() {
+        let dir = tempdir().expect("temp dir");
+        fs::write(dir.path().join("config.toml"), "not = [valid").expect("write corrupt config");
+
+        let state = load_state(dir.path()).expect("load recovered state");
+
+        assert_eq!(state.active_pet_id, "ian-alpaca");
+        assert_eq!(state.position.x, 0.0);
+        assert!(fs::read_to_string(dir.path().join("config.toml"))
+            .expect("read recovered config")
+            .contains("ian-alpaca"));
+    }
+
+    #[test]
+    fn persist_state_round_trips_position_and_behavior_mode() {
+        let dir = tempdir().expect("temp dir");
+        let mut state = IanState::default();
+        state.position = Position { x: 44.0, y: 88.0 };
+        state.behavior_mode = BehaviorMode::Lively;
+
+        persist_state(dir.path(), &state).expect("persist state");
+        let loaded = load_state(dir.path()).expect("load state");
+
+        assert_eq!(loaded.position.x, 44.0);
+        assert_eq!(loaded.position.y, 88.0);
+        assert!(matches!(loaded.behavior_mode, BehaviorMode::Lively));
+    }
 }
 
 impl From<IanState> for ConfigFile {

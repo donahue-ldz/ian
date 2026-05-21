@@ -32,6 +32,13 @@ export type PetResourcePack = {
   expressions: ExpressionManifest;
 };
 
+export class ResourcePackError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResourcePackError";
+  }
+}
+
 async function loadJson<T>(path: string): Promise<T> {
   const response = await fetch(path);
   if (!response.ok) {
@@ -48,9 +55,54 @@ export async function loadPetResourcePack(id: string): Promise<PetResourcePack> 
     loadJson<ExpressionManifest>(`${base}/${pet.expressions}`),
   ]);
 
-  return {
+  const pack = {
     pet,
     animations,
     expressions,
   };
+
+  validatePetResourcePack(pack);
+  return pack;
+}
+
+export function validatePetResourcePack(pack: PetResourcePack): void {
+  const requiredPetFields: Array<keyof PetManifest> = [
+    "id",
+    "name",
+    "version",
+    "sprite",
+    "animations",
+    "expressions",
+  ];
+
+  for (const field of requiredPetFields) {
+    if (!pack.pet[field]) {
+      throw new ResourcePackError(`Resource pack is missing pet.${field}`);
+    }
+  }
+
+  const { frameHeight, frameWidth, scale } = pack.animations.meta;
+  if (frameWidth <= 0 || frameHeight <= 0 || scale <= 0) {
+    throw new ResourcePackError("Resource pack animation meta must be positive");
+  }
+
+  const idle = pack.animations.animations.idle;
+  if (!idle || idle.frames.length === 0) {
+    throw new ResourcePackError("Resource pack must define idle animation");
+  }
+}
+
+export function getResourcePackVersion(pack: PetResourcePack): string {
+  return pack.pet.version;
+}
+
+export function resolveAnimationWithFallback(
+  pack: PetResourcePack,
+  requested: string,
+): keyof AnimationMap {
+  if (requested in pack.animations.animations) {
+    return requested as keyof AnimationMap;
+  }
+
+  return "idle";
 }

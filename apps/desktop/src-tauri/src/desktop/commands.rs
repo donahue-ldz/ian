@@ -4,7 +4,7 @@ use tauri::State;
 
 use crate::{
     app::IanRuntime,
-    protocol::{IanAction, IanEvent, IanState, Position},
+    protocol::{BehaviorMode, IanAction, IanEvent, IanState, Position},
 };
 
 #[tauri::command]
@@ -35,4 +35,20 @@ pub fn save_window_position(
         .lock()
         .map_err(|_| "Ian runtime lock poisoned".to_string())?
         .save_position(position)
+}
+
+#[tauri::command]
+pub fn get_settings(runtime: State<'_, Mutex<IanRuntime>>) -> Result<IanState, String> {
+    get_ian_state(runtime)
+}
+
+#[tauri::command]
+pub fn save_behavior_mode(
+    mode: BehaviorMode,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_behavior_mode(mode)
 }

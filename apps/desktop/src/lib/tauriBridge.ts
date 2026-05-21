@@ -1,5 +1,11 @@
 import { invoke } from "@tauri-apps/api/core";
-import type { IanAction, IanEvent, IanState, Position } from "../protocol/generated";
+import type {
+  BehaviorMode,
+  IanAction,
+  IanEvent,
+  IanState,
+  Position,
+} from "../protocol/generated";
 
 const browserFallbackState: IanState = {
   active_pet_id: "ian-alpaca",
@@ -66,4 +72,21 @@ export async function saveIanPosition(position: Position): Promise<IanAction[]> 
 
   browserFallbackState.position = position;
   return [{ type: "state.sync", state: browserFallbackState }];
+}
+
+export async function getIanSettings(): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("get_settings");
+  }
+
+  return browserFallbackState;
+}
+
+export async function saveBehaviorMode(mode: BehaviorMode): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_behavior_mode", { mode });
+  }
+
+  browserFallbackState.behavior_mode = mode;
+  return browserFallbackState;
 }
