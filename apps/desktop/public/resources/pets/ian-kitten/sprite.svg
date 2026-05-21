@@ -1,0 +1,234 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="96" viewBox="0 0 1344 96" role="img" aria-label="Ian kitten sprite sheet">
+  <defs>
+    <style>
+      .shadow { fill: #26312d; opacity: 0.16; }
+      .fur { fill: #6c7072; stroke: #2f3535; stroke-width: 2.8; stroke-linejoin: round; }
+      .chest { fill: #f7f7f0; stroke: #2f3535; stroke-width: 2.4; stroke-linejoin: round; }
+      .inner { fill: #45484a; }
+      .eye { fill: #f6d84f; stroke: #2f3535; stroke-width: 2; }
+      .pupil { fill: #25302c; }
+      .shine { fill: #fff8ce; }
+      .nose { fill: #2f3535; }
+      .mouth { fill: none; stroke: #2f3535; stroke-width: 1.8; stroke-linecap: round; }
+      .tongue { fill: #f09aa8; stroke: #2f3535; stroke-width: 1.4; }
+      .whisker { stroke: #2f3535; stroke-width: 1.4; stroke-linecap: round; }
+      .cheek { fill: #f0a6aa; opacity: 0.42; }
+      .paw { fill: #f7f7f0; stroke: #2f3535; stroke-width: 2.2; }
+      .tail { fill: #5b5f61; stroke: #2f3535; stroke-width: 2.6; stroke-linecap: round; }
+    </style>
+    <g id="tail-neutral">
+      <path class="tail" d="M67 64c19-1 27-10 25-23c-1-8-8-13-14-10c-5 3-2 10 3 12c5 3 3 9-2 12c-4 3-9 4-15 4z"/>
+    </g>
+    <g id="tail-up">
+      <path class="tail" d="M66 63c21-8 24-24 18-34c-4-7-12-8-16-4c-4 4 1 9 6 8c5-1 6 5 3 11c-3 6-8 10-15 13z"/>
+    </g>
+    <g id="tail-run">
+      <path class="tail" d="M66 63c20 3 31-3 32-15c1-8-5-14-12-13c-6 1-5 8 0 11c5 3 3 7-3 9c-5 2-11 2-18 0z"/>
+    </g>
+    <g id="body-sit">
+      <ellipse class="fur" cx="48" cy="61" rx="26" ry="25"/>
+      <path class="chest" d="M37 45c4 8 4 23-1 33h25c-6-10-5-26-1-34c-4 4-8 6-12 6s-8-1-11-5z"/>
+      <ellipse class="paw" cx="36" cy="80" rx="7" ry="5"/>
+      <ellipse class="paw" cx="60" cy="80" rx="7" ry="5"/>
+    </g>
+    <g id="body-step-left">
+      <ellipse class="fur" cx="48" cy="61" rx="26" ry="24"/>
+      <path class="chest" d="M37 45c4 8 4 23-1 33h25c-6-10-5-26-1-34c-4 4-8 6-12 6s-8-1-11-5z"/>
+      <ellipse class="paw" cx="32" cy="80" rx="7" ry="5"/>
+      <ellipse class="paw" cx="62" cy="78" rx="7" ry="5"/>
+    </g>
+    <g id="body-step-right">
+      <ellipse class="fur" cx="48" cy="61" rx="26" ry="24"/>
+      <path class="chest" d="M37 45c4 8 4 23-1 33h25c-6-10-5-26-1-34c-4 4-8 6-12 6s-8-1-11-5z"/>
+      <ellipse class="paw" cx="34" cy="78" rx="7" ry="5"/>
+      <ellipse class="paw" cx="64" cy="80" rx="7" ry="5"/>
+    </g>
+    <g id="head">
+      <path class="fur" d="M20 17l17 9c7-4 17-4 24 0l17-9l-4 22c4 6 5 14 3 21c-3 12-14 18-29 18s-26-6-29-18c-2-8-1-16 4-22z"/>
+      <path class="inner" d="M27 25l9 5c-3 2-6 5-9 8z"/>
+      <path class="inner" d="M69 25l-9 5c3 2 6 5 9 8z"/>
+    </g>
+    <g id="eyes-open">
+      <ellipse class="eye" cx="37" cy="48" rx="8" ry="10"/>
+      <ellipse class="eye" cx="59" cy="48" rx="8" ry="10"/>
+      <ellipse class="pupil" cx="38" cy="49" rx="2.7" ry="6.2"/>
+      <ellipse class="pupil" cx="60" cy="49" rx="2.7" ry="6.2"/>
+      <circle class="shine" cx="35" cy="44" r="2"/>
+      <circle class="shine" cx="57" cy="44" r="2"/>
+    </g>
+    <g id="eyes-blink">
+      <path class="mouth" d="M30 48q7 5 14 0"/>
+      <path class="mouth" d="M52 48q7 5 14 0"/>
+    </g>
+    <g id="eyes-sleep">
+      <path class="mouth" d="M31 48q6 3 12 0"/>
+      <path class="mouth" d="M53 48q6 3 12 0"/>
+    </g>
+    <g id="eyes-happy">
+      <path class="mouth" d="M30 46q7 7 14 0"/>
+      <path class="mouth" d="M52 46q7 7 14 0"/>
+    </g>
+    <g id="face-smile">
+      <path class="nose" d="M46 57l4 0l-2 3z"/>
+      <path class="mouth" d="M48 60q-4 5-8 2"/>
+      <path class="mouth" d="M48 60q4 5 8 2"/>
+      <path class="tongue" d="M46 65q2 5 5 0z"/>
+      <path class="whisker" d="M26 57h-13"/>
+      <path class="whisker" d="M27 62l-13 4"/>
+      <path class="whisker" d="M70 57h13"/>
+      <path class="whisker" d="M69 62l13 4"/>
+      <circle class="cheek" cx="28" cy="63" r="3"/>
+      <circle class="cheek" cx="68" cy="63" r="3"/>
+    </g>
+    <g id="face-calm">
+      <path class="nose" d="M46 57l4 0l-2 3z"/>
+      <path class="mouth" d="M48 60q-4 4-8 1"/>
+      <path class="mouth" d="M48 60q4 4 8 1"/>
+      <path class="whisker" d="M26 57h-13"/>
+      <path class="whisker" d="M27 62l-13 4"/>
+      <path class="whisker" d="M70 57h13"/>
+      <path class="whisker" d="M69 62l13 4"/>
+    </g>
+    <g id="kitten-open">
+      <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-calm"/>
+    </g>
+  </defs>
+
+  <use href="#kitten-open" x="0"/>
+
+  <g transform="translate(96 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+    <g transform="translate(0 -2)">
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-blink"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+
+  <g transform="translate(192 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+    <use href="#tail-neutral"/>
+    <use href="#body-step-left"/>
+    <use href="#head"/>
+    <use href="#eyes-open"/>
+    <use href="#face-calm"/>
+  </g>
+  <g transform="translate(288 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="29" ry="6"/>
+    <g transform="translate(2 -2)">
+      <use href="#tail-up"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+  <g transform="translate(384 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+    <use href="#tail-neutral"/>
+    <use href="#body-step-right"/>
+    <use href="#head"/>
+    <use href="#eyes-open"/>
+    <use href="#face-calm"/>
+  </g>
+  <g transform="translate(480 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="29" ry="6"/>
+    <g transform="translate(-2 -2)">
+      <use href="#tail-up"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+
+  <g transform="translate(576 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="31" ry="6"/>
+    <g transform="translate(0 4)">
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-sleep"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+  <g transform="translate(672 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="32" ry="6"/>
+    <g transform="translate(0 5) rotate(-3 48 58)">
+      <use href="#tail-neutral"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-sleep"/>
+      <use href="#face-calm"/>
+    </g>
+  </g>
+
+  <g transform="translate(768 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="28" ry="5"/>
+    <g transform="rotate(-6 48 58)">
+      <use href="#tail-run"/>
+      <use href="#body-step-left"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+  <g transform="translate(864 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="25" ry="5"/>
+    <g transform="translate(5 -5) rotate(4 48 58)">
+      <use href="#tail-up"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+  <g transform="translate(960 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="28" ry="5"/>
+    <g transform="rotate(6 48 58)">
+      <use href="#tail-run"/>
+      <use href="#body-step-right"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+  <g transform="translate(1056 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="25" ry="5"/>
+    <g transform="translate(-5 -5) rotate(-4 48 58)">
+      <use href="#tail-up"/>
+      <use href="#body-sit"/>
+      <use href="#head"/>
+      <use href="#eyes-open"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+
+  <g transform="translate(1152 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="27" ry="5"/>
+    <g transform="translate(0 -6) rotate(-4 48 58)">
+      <use href="#tail-up"/>
+      <use href="#body-step-left"/>
+      <use href="#head"/>
+      <use href="#eyes-happy"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+  <g transform="translate(1248 0)">
+    <ellipse class="shadow" cx="48" cy="86" rx="25" ry="5"/>
+    <g transform="translate(1 -9) rotate(4 48 58)">
+      <use href="#tail-up"/>
+      <use href="#body-step-right"/>
+      <use href="#head"/>
+      <use href="#eyes-happy"/>
+      <use href="#face-smile"/>
+    </g>
+  </g>
+</svg>

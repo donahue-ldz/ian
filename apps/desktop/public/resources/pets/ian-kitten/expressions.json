@@ -1,0 +1,7 @@
+{
+  "expressions": {
+    "idle": { "overlay": null },
+    "happy": { "overlay": null },
+    "sleep": { "overlay": null }
+  }
+}
