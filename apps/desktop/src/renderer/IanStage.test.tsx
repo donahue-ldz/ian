@@ -103,6 +103,19 @@ describe("IanStage idle visual comfort", () => {
     expect(ianStageCss).toContain("@keyframes ian-tail-wag");
   });
 
+  it("caps micro-effect animation timing and disables dynamic effects in reduced motion", () => {
+    const ianStageCss = readFileSync(
+      new URL("./ianStage.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(ianStageCss).toContain("--ian-effect-duration-cap: 1600ms");
+    expect(ianStageCss).toMatch(/animation-duration: min\([^)]*var\(--ian-effect-duration-cap\)/);
+    expect(ianStageCss).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*\.ian-visual-effect\s*{[\s\S]*display: none;/,
+    );
+  });
+
   it("keeps high-energy animation loops readable", () => {
     const ianStageCss = readFileSync(
       new URL("./ianStage.css", import.meta.url),
@@ -195,6 +208,10 @@ function baseProps(): Parameters<typeof IanStage>[0] {
     doNotDisturb: false,
     gitMetadataEnabled: false,
     activePetId: "ian-adventurer",
+    memoryCandidates: [],
+    memoryExportRecords: [],
+    isMemoryLoading: false,
+    memoryError: null,
     isSettingsOpen: false,
     isDesktopWindow: false,
     keyboardRhythmEnabled: false,
@@ -235,6 +252,13 @@ function baseProps(): Parameters<typeof IanStage>[0] {
     onPrivacyOnboardingSeenChange: vi.fn(),
     onFindIan: vi.fn(),
     onFindIanShortcutEnabledChange: vi.fn(),
+    onConfirmMemoryCandidate: vi.fn(),
+    onDeleteMemoryCandidate: vi.fn(),
+    onClearMemoryCandidates: vi.fn(),
+    onRefreshMemoryExport: vi.fn(),
+    onClearInteractionJournal: vi.fn(),
+    onResetLocalSettings: vi.fn(),
+    onMomentDebugTrigger: vi.fn(),
     onReminderIntervalMinutesChange: vi.fn(),
     onRemindersEnabledChange: vi.fn(),
     onResetAppearance: vi.fn(),

@@ -1,25 +1,18 @@
 # 0195 · 验证记录
 
-待实现后更新。
-
-## 计划验证项
-
-- checklist 覆盖启动、拖动、找回、气泡、设置、资源包。
-- 每个步骤有通过/失败判定。
-- 明确浏览器验证不能替代桌面验收。
-- 不要求读取屏幕内容或用户隐私。
-
-## 计划命令
-
-- Rust 目标测试：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
-- 前端目标测试：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:test`
-- 类型检查：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:typecheck`
-- 涉及桌面可见行为时：真实 Tauri 桌面端验收。
+状态：已执行，待后续桌面 SDD 复用。
 
 ## 实际结果
 
-待实现后记录实际命令、结果、失败项和跳过项。
+| 验证项 | 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| RED | `test -f docs/sdd/desktop-smoke-checklist.md` | 失败符合预期 | 清单文件不存在。 |
+| GREEN | `test -f docs/sdd/desktop-smoke-checklist.md` | 通过 | 清单已覆盖启动、基础存在感、点击气泡、拖动、位置恢复、找回、快捷键、设置隐私、资源包和记录要求。 |
+| Frontend tests | `PATH=/opt/homebrew/bin:$PATH npm run desktop:test` | 通过 | 12 files / 91 tests。 |
+| Typecheck / build | `PATH=/opt/homebrew/bin:$PATH npm run desktop:typecheck`; `PATH=/opt/homebrew/bin:$PATH npm run desktop:build` | 通过 | 类型检查和 Vite build 成功。 |
+| Tauri launch smoke | `PATH=/opt/homebrew/bin:$PATH npm run tauri --workspace @ian/desktop -- dev --config '{"build":{"beforeDevCommand":""}}' --no-dev-server-wait` | 通过启动 | 复用已有 dev server，Tauri app 编译并运行。 |
 
 ## 剩余风险
 
-实现前无验证结果。
+- 清单优先人工可执行；尚未把所有桌面交互自动化。
+- 后续 SDD 仍必须把真实桌面执行结果写入各自 `verification.md`。

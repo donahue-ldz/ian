@@ -5,7 +5,10 @@ pub mod repositories;
 
 use std::{fs, io, path::PathBuf};
 
-use crate::protocol::{IanEvent, IanState};
+use crate::{
+    protocol::{IanEvent, IanState},
+    storage::repositories::memory_repo::MemoryCandidate,
+};
 
 pub struct StorageService {
     app_dir: Option<PathBuf>,
@@ -70,6 +73,103 @@ impl StorageService {
         repository
             .record(event_type, payload_json, created_at_ms)
             .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn memory_candidates(&self) -> io::Result<Vec<MemoryCandidate>> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(Vec::new());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        repository
+            .candidates()
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn confirm_memory_candidate(&self, id: i64, confirmed_at_ms: i64) -> io::Result<()> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        repository
+            .confirm(id, confirmed_at_ms)
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn delete_memory_candidate(&self, id: i64) -> io::Result<()> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        repository
+            .delete(id)
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn clear_memory_candidates(&self) -> io::Result<()> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        repository
+            .clear_candidates()
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn memory_export_summary(&self) -> io::Result<Vec<MemoryCandidate>> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(Vec::new());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        repository
+            .all()
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn clear_interaction_journal(&self) -> io::Result<()> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(());
+        };
+
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::event_repo::EventRepository::new(database.connection());
+        repository
+            .clear_all()
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))
+    }
+
+    pub fn confirmed_memory_tags(&self) -> io::Result<Vec<String>> {
+        let Some(app_dir) = &self.app_dir else {
+            return Ok(Vec::new());
+        };
+
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        let database = db::Database::open(app_dir)?;
+        let repository = repositories::memory_repo::MemoryRepository::new(database.connection());
+        let records = repository
+            .confirmed(0, now_ms)
+            .map_err(|error| io::Error::new(io::ErrorKind::Other, error))?;
+
+        Ok(records
+            .into_iter()
+            .flat_map(|record| {
+                record
+                    .tags
+                    .split(',')
+                    .map(str::to_string)
+                    .collect::<Vec<String>>()
+            })
+            .take(4)
+            .collect())
     }
 }
 

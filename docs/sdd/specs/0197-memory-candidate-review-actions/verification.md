@@ -1,25 +1,16 @@
 # 0197 · 验证记录
 
-待实现后更新。
-
-## 计划验证项
-
-- 确认后候选状态变为 confirmed。
-- 删除后候选不再出现在列表。
-- 清空需要明确用户动作。
-- 操作失败有可理解反馈。
-
-## 计划命令
-
-- Rust 目标测试：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
-- 前端目标测试：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:test`
-- 类型检查：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:typecheck`
-- 涉及桌面可见行为时：真实 Tauri 桌面端验收。
+状态：已执行，待用户验收。
 
 ## 实际结果
 
-待实现后记录实际命令、结果、失败项和跳过项。
+| 验证项 | 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| RED | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml memory -- --nocapture` | 失败符合预期 | 缺少 `candidates` / `clear_candidates` 和 review 相关方法。 |
+| GREEN | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml memory -- --nocapture` | 通过 | 7 个 memory/dialogue 相关 tests 通过。 |
+| Full Rust tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` | 通过 | 153 tests。 |
+| Frontend tests | `PATH=/opt/homebrew/bin:$PATH npm run desktop:test` | 通过 | 12 files / 91 tests。 |
 
 ## 剩余风险
 
-实现前无验证结果。
+- 未在真实设置面点击确认、删除、清空按钮；Tauri command 和前端渲染路径已覆盖，人工交互待补。

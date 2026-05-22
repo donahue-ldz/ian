@@ -33,7 +33,14 @@ pub fn run() {
             desktop::commands::save_capability_enabled,
             desktop::commands::save_developer_workspace,
             desktop::commands::save_developer_snooze,
-            desktop::commands::ingest_build_test_summary
+            desktop::commands::ingest_build_test_summary,
+            desktop::commands::list_memory_candidates,
+            desktop::commands::confirm_memory_candidate,
+            desktop::commands::delete_memory_candidate,
+            desktop::commands::clear_memory_candidates,
+            desktop::commands::export_memory_summary,
+            desktop::commands::clear_interaction_journal,
+            desktop::commands::reset_local_settings
         ])
         .setup(|app| {
             desktop::window::configure_main_window(app)?;

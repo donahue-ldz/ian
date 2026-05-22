@@ -74,3 +74,55 @@ export function resolveSavedDragPosition(
 ): Position {
   return desktopWindowPosition ?? pointerPosition;
 }
+
+type SurfaceSize = {
+  width: number;
+  height: number;
+};
+
+export function clampPositionToBounds(
+  position: Position,
+  bounds: ScreenBounds,
+  size: SurfaceSize = { width: 220, height: 260 },
+  margin = 12,
+): Position {
+  return {
+    x: clamp(position.x, bounds.x + margin, bounds.x + bounds.width - size.width - margin),
+    y: clamp(position.y, bounds.y + margin, bounds.y + bounds.height - size.height - margin),
+  };
+}
+
+export function selectContainingMonitor(
+  position: Position,
+  monitors: ScreenBounds[],
+): ScreenBounds | null {
+  if (monitors.length === 0) {
+    return null;
+  }
+
+  return (
+    monitors.find(
+      (monitor) =>
+        position.x >= monitor.x &&
+        position.x <= monitor.x + monitor.width &&
+        position.y >= monitor.y &&
+        position.y <= monitor.y + monitor.height,
+    ) ?? monitors[0]
+  );
+}
+
+export function clampBubbleAnchorToBounds(
+  anchor: Position,
+  bounds: ScreenBounds,
+  size: SurfaceSize = { width: 176, height: 72 },
+  margin = 12,
+): Position {
+  return clampPositionToBounds(anchor, bounds, size, margin);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  if (max < min) {
+    return min;
+  }
+  return Math.min(Math.max(value, min), max);
+}

@@ -10,6 +10,7 @@ export const behaviorModeOptions: Array<{
 ];
 
 export const movementIntensityOptions = [
+  { label: "减少动画", value: "reduced" },
   { label: "少动", value: "low" },
   { label: "适中", value: "normal" },
   { label: "活跃", value: "high" },
@@ -38,11 +39,11 @@ export const playfulEnergyOptions: Array<{
 ];
 
 export const settingsGroups = [
-  { id: "personality", label: "性格" },
-  { id: "life", label: "生活" },
-  { id: "disturbance", label: "打扰" },
+  { id: "appearance", label: "外观" },
+  { id: "interaction", label: "互动" },
   { id: "privacy", label: "隐私" },
-  { id: "advanced", label: "高级" },
+  { id: "developer", label: "开发者" },
+  { id: "data", label: "数据" },
 ] as const;
 
 export const developerCapabilityOptions = [

@@ -67,13 +67,18 @@ impl IanRuntime {
         }
 
         let mut actions = match &event {
-            IanEvent::DialogueUserMessage { text } => self.dialogue.reply_to(
-                text.clone(),
-                self.state.snapshot(),
-                DialogueSource::UserBubble,
-                self.mood.current(),
-                self.bond.current(),
-            ),
+            IanEvent::DialogueUserMessage { text } => {
+                let confirmed_memory_tags =
+                    self.storage.confirmed_memory_tags().unwrap_or_default();
+                self.dialogue.reply_to(
+                    text.clone(),
+                    self.state.snapshot(),
+                    DialogueSource::UserBubble,
+                    self.mood.current(),
+                    self.bond.current(),
+                    confirmed_memory_tags,
+                )
+            }
             IanEvent::TimeTick { now_ms } => {
                 let mut actions = self.behavior.decide(
                     &IanEvent::TimeTick { now_ms: *now_ms },
@@ -285,6 +290,71 @@ impl IanRuntime {
         })
     }
 
+    pub fn memory_candidates(
+        &self,
+    ) -> Result<Vec<crate::storage::repositories::memory_repo::MemoryCandidate>, String> {
+        self.storage
+            .memory_candidates()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn confirm_memory_candidate(
+        &self,
+        id: i64,
+    ) -> Result<Vec<crate::storage::repositories::memory_repo::MemoryCandidate>, String> {
+        self.storage
+            .confirm_memory_candidate(id, chrono::Utc::now().timestamp_millis())
+            .map_err(|error| error.to_string())?;
+        self.memory_candidates()
+    }
+
+    pub fn delete_memory_candidate(
+        &self,
+        id: i64,
+    ) -> Result<Vec<crate::storage::repositories::memory_repo::MemoryCandidate>, String> {
+        self.storage
+            .delete_memory_candidate(id)
+            .map_err(|error| error.to_string())?;
+        self.memory_candidates()
+    }
+
+    pub fn clear_memory_candidates(
+        &self,
+    ) -> Result<Vec<crate::storage::repositories::memory_repo::MemoryCandidate>, String> {
+        self.storage
+            .clear_memory_candidates()
+            .map_err(|error| error.to_string())?;
+        self.memory_candidates()
+    }
+
+    pub fn export_memory_summary(
+        &self,
+    ) -> Result<Vec<crate::storage::repositories::memory_repo::MemoryCandidate>, String> {
+        self.storage
+            .memory_export_summary()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn clear_interaction_journal(&self) -> Result<(), String> {
+        self.storage
+            .clear_interaction_journal()
+            .map_err(|error| error.to_string())
+    }
+
+    pub fn reset_local_settings(&mut self) -> Result<IanState, String> {
+        let current = self.state.snapshot().clone();
+        let mut next = IanState::default();
+        next.position = current.position;
+        next.home_anchor = current.home_anchor;
+        next.screen_bounds = current.screen_bounds;
+        next.last_user_interaction_ms = current.last_user_interaction_ms;
+        self.state = CreatureState::new(next);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
     fn apply_internal_signals(&mut self, event: &IanEvent) {
         match event {
             IanEvent::MouseClick { .. } | IanEvent::MouseNear { .. } => {
@@ -318,6 +388,7 @@ impl IanRuntime {
             | IanEvent::DeveloperGitStatusChanged { .. }
             | IanEvent::KeyboardRhythm { .. }
             | IanEvent::SystemShortcutTriggered { .. }
+            | IanEvent::MomentDebugTrigger { .. }
             | IanEvent::MouseChaseCandidate { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => {}

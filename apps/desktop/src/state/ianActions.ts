@@ -2,6 +2,7 @@ import type { IanAction, MovementSpeed, Position } from "../protocol/generated";
 import { formatBubbleText } from "../renderer/bubbleModel";
 
 const DEFAULT_BUBBLE_DURATION_MS = 2400;
+const MAX_BUBBLE_DURATION_MS = 3600;
 
 export type IanViewState = {
   animation: {
@@ -98,7 +99,11 @@ export function reduceIanActions(
             text: formatBubbleText(action.text),
             mood: action.mood ?? null,
             visibleUntil:
-              now + (action.duration_ms ?? DEFAULT_BUBBLE_DURATION_MS),
+              now +
+              Math.min(
+                action.duration_ms ?? DEFAULT_BUBBLE_DURATION_MS,
+                MAX_BUBBLE_DURATION_MS,
+              ),
           },
         };
       case "bubble.open":
@@ -232,15 +237,36 @@ export function expireRunAroundIfNeeded(
   };
 }
 
+export function expireVisualEffectIfNeeded(
+  state: IanViewState,
+  now = Date.now(),
+): IanViewState {
+  if (!state.visualEffect || now < state.visualEffect.visibleUntil) {
+    return state;
+  }
+
+  return {
+    ...state,
+    visualEffect: null,
+  };
+}
+
 function behaviorForAnimation(current: string, animation: string): string {
   switch (animation) {
     case "idle":
+    case "wake":
       return "idle";
     case "rest":
       return "resting";
     case "walk":
       return "walking";
+    case "run":
+    case "tantrum":
+      return "running";
     case "happy":
+    case "find":
+    case "wave":
+    case "affection":
       return "happy";
     case "zoomies":
       return "zooming";

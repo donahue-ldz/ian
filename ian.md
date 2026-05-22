@@ -595,6 +595,10 @@ Ian 可以逐渐拥有：
 
 # 01 · Behavior System · 日常行为系统
 
+> Moment System 技术方案入口：`docs/codex/ian-moment-system.md`。
+>
+> 后续惊喜感优先通过 Moment Orchestrator 编排短场景实现，而不是继续堆随机动画。Moment 属于 Rust Core / Behavior Policy，输出仍然是 IanAction，前端只负责执行。
+
 ## 行为原则
 
 Ian 在用户不理它的时候，不应该只是静止的桌面挂件。
@@ -3459,6 +3463,7 @@ P0 只验证：
 
 - 喝水 / 休息提醒
 - 更多 idle / walk / sleep / happy 动作
+- Moment System：找回入场、鼠标好奇、拖动抱起、放下安顿、低频 idle 惊喜、记忆回响
 - 简版 Mood State
 - 简版 Bond State
 - SQLite 状态恢复

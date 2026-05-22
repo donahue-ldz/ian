@@ -2,6 +2,7 @@ import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { IanViewState } from "../state/ianActions";
 import type { PetResourcePack } from "../resources/resourceLoader";
 import type { FindIanShortcutStatus } from "../lib/findIanShortcut";
+import type { MemoryCandidateView, MemoryExportRecord } from "../lib/tauriBridge";
 import type {
   BehaviorMode,
   DeveloperSnooze,
@@ -51,6 +52,10 @@ type IanStageProps = {
   surfaceScale: number;
   diagnosticsEnabled: boolean;
   activePetId: string;
+  memoryCandidates: MemoryCandidateView[];
+  memoryExportRecords: MemoryExportRecord[];
+  isMemoryLoading: boolean;
+  memoryError: string | null;
   isSettingsOpen: boolean;
   isDesktopWindow: boolean;
   onIanClick: (point: Point) => void;
@@ -75,6 +80,13 @@ type IanStageProps = {
   onPetChange: (petId: string) => void;
   onResetAppearance: () => void;
   onResetPosition: () => void;
+  onConfirmMemoryCandidate: (id: number) => void;
+  onDeleteMemoryCandidate: (id: number) => void;
+  onClearMemoryCandidates: () => void;
+  onRefreshMemoryExport: () => void;
+  onClearInteractionJournal: () => void;
+  onResetLocalSettings: () => void;
+  onMomentDebugTrigger: (kind: string) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -117,6 +129,10 @@ export function IanStage({
   surfaceScale,
   diagnosticsEnabled,
   activePetId,
+  memoryCandidates,
+  memoryExportRecords,
+  isMemoryLoading,
+  memoryError,
   isSettingsOpen,
   isDesktopWindow,
   onIanClick,
@@ -141,6 +157,13 @@ export function IanStage({
   onPetChange,
   onResetAppearance,
   onResetPosition,
+  onConfirmMemoryCandidate,
+  onDeleteMemoryCandidate,
+  onClearMemoryCandidates,
+  onRefreshMemoryExport,
+  onClearInteractionJournal,
+  onResetLocalSettings,
+  onMomentDebugTrigger,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
   onDragStart,
@@ -278,6 +301,10 @@ export function IanStage({
           surfaceScale={surfaceScale}
           diagnosticsEnabled={diagnosticsEnabled}
           activePetId={activePetId}
+          memoryCandidates={memoryCandidates}
+          memoryExportRecords={memoryExportRecords}
+          isMemoryLoading={isMemoryLoading}
+          memoryError={memoryError}
           isOpen={isSettingsOpen}
           onClose={onSettingsClose}
           onModeChange={onBehaviorModeChange}
@@ -293,6 +320,13 @@ export function IanStage({
           onPetChange={onPetChange}
           onResetAppearance={onResetAppearance}
           onResetPosition={onResetPosition}
+          onConfirmMemoryCandidate={onConfirmMemoryCandidate}
+          onDeleteMemoryCandidate={onDeleteMemoryCandidate}
+          onClearMemoryCandidates={onClearMemoryCandidates}
+          onRefreshMemoryExport={onRefreshMemoryExport}
+          onClearInteractionJournal={onClearInteractionJournal}
+          onResetLocalSettings={onResetLocalSettings}
+          onMomentDebugTrigger={onMomentDebugTrigger}
           onCreatureSettingsChange={onCreatureSettingsChange}
           onCapabilityEnabledChange={onCapabilityEnabledChange}
         />

@@ -3,6 +3,7 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-05-22 | 创建本 SDD，按真实缺口推进：记忆候选生成策略。 | 用户要求基于已实现 SDD 和产品设计仔细拆分，不按编号猜测。 | 后续实现必须先读本 spec 和 plan，避免重复做已完成 skeleton。 |
+| 2026-05-22 | 新增内部 `MemoryCandidatePolicy`，但不主动把用户对话自动写入 candidate。 | 本 SDD 是 Memory Prep，不能让 Ian 在 P0/v0.1.x 里悄悄记东西。 | 生成策略有 allowlist、敏感拒绝、去重和频率测试，后续接入仍需单独 SDD。 |
 
 ## Deferred Work
 

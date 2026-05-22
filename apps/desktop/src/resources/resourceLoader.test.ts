@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import {
+  buildAnimationCoverageMatrix,
   getResourcePackVersion,
+  REQUIRED_SEMANTIC_ANIMATIONS,
   resolveExpressionWithFallback,
   resolveAnimationWithFallback,
   validatePetManifestFields,
@@ -174,6 +176,15 @@ describe("resourceLoader contract", () => {
         expect(sprite).toContain('data-prop="glow-staff"');
         expect(sprite).toContain('data-prop="soft-scarf"');
         expect(sprite).toContain('data-prop="small-backpack"');
+        expect(pet.capabilities).toEqual(
+          expect.arrayContaining(["find", "wake", "wave", "affection", "tantrum"]),
+        );
+        for (const semantic of ["find", "wake", "wave", "affection", "tantrum"]) {
+          expect(
+            animations.animations[semantic as keyof typeof animations.animations],
+            `${packId} ${semantic}`,
+          ).toBeDefined();
+        }
       }
 
       for (const [animationName, animation] of Object.entries(
@@ -186,6 +197,24 @@ describe("resourceLoader contract", () => {
           expect(frame, `${packId} ${animationName}`).toBeGreaterThanOrEqual(0);
           expect(frame, `${packId} ${animationName}`).toBeLessThan(frameCapacity);
         }
+      }
+    }
+  });
+
+  it("builds an animation coverage matrix with explicit fallbacks for every built-in pack", () => {
+    for (const packId of DEFAULT_RESOURCE_PACK_IDS) {
+      const pet = readPublicJson<PetResourcePack["pet"]>(
+        `../../public/resources/pets/${packId}/pet.json`,
+      );
+      const animations = readPublicJson<PetResourcePack["animations"]>(
+        `../../public/resources/pets/${packId}/${pet.animations}`,
+      );
+      const matrix = buildAnimationCoverageMatrix({ ...pack, pet, animations });
+
+      expect(matrix.map((row) => row.semantic)).toEqual(REQUIRED_SEMANTIC_ANIMATIONS);
+      for (const row of matrix) {
+        expect(row.animation).toBeTruthy();
+        expect(row.status === "direct" || row.fallback).toBeTruthy();
       }
     }
   });

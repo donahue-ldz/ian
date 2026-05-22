@@ -125,6 +125,34 @@ describe("Bubble view", () => {
     expect(css).toContain('width: max-content;');
     expect(css).not.toContain('width: 178px;');
   });
+
+  it("has restrained mood style variants without changing layout safety", () => {
+    const happyHtml = renderToStaticMarkup(
+      <Bubble
+        bubble={openBubble({ mood: "happy" })}
+        onInputEnded={vi.fn()}
+        onInputStarted={vi.fn()}
+        onSubmitMessage={vi.fn()}
+      />,
+    );
+    const sleepyHtml = renderToStaticMarkup(
+      <Bubble
+        bubble={openBubble({ mood: "sleepy" })}
+        onInputEnded={vi.fn()}
+        onInputStarted={vi.fn()}
+        onSubmitMessage={vi.fn()}
+      />,
+    );
+    const css = readFileSync("src/renderer/ianStage.css", "utf8");
+
+    expect(happyHtml).toContain('data-mood="happy"');
+    expect(sleepyHtml).toContain('data-mood="sleepy"');
+    expect(css).toContain('.ian-bubble[data-mood="happy"]');
+    expect(css).toContain('.ian-bubble[data-mood="sleepy"]');
+    expect(css).toContain('.ian-bubble[data-mood="attention"]');
+    expect(css).not.toMatch(/\.ian-bubble\[data-mood="happy"\]\s*{[^}]*position:/s);
+    expect(css).not.toMatch(/\.ian-bubble\[data-mood="sleepy"\]\s*{[^}]*width:/s);
+  });
 });
 
 function openBubble(

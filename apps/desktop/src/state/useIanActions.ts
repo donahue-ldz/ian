@@ -23,6 +23,7 @@ import {
   createInitialIanViewState,
   expireBubbleIfNeeded,
   expireRunAroundIfNeeded,
+  expireVisualEffectIfNeeded,
   reduceIanActions,
   type IanViewState,
 } from "./ianActions";
@@ -66,6 +67,18 @@ export function useIanActions() {
 
     return () => window.clearTimeout(timeout);
   }, [viewState.bubble.isOpen, viewState.bubble.visibleUntil]);
+
+  useEffect(() => {
+    if (!viewState.visualEffect) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setViewState((current) => expireVisualEffectIfNeeded(current));
+    }, Math.max(viewState.visualEffect.visibleUntil - Date.now(), 0));
+
+    return () => window.clearTimeout(timeout);
+  }, [viewState.visualEffect]);
 
   const sendEvent = useCallback(
     async (event: IanEvent) => {

@@ -39,6 +39,40 @@ export type PetResourcePackOption = {
   previewTone: string;
 };
 
+export const REQUIRED_SEMANTIC_ANIMATIONS = [
+  "idle",
+  "run",
+  "happy",
+  "sleep",
+  "wake",
+  "find",
+  "wave",
+  "tantrum",
+] as const;
+
+export type SemanticAnimationName = (typeof REQUIRED_SEMANTIC_ANIMATIONS)[number];
+
+export type AnimationCoverageRow = {
+  semantic: SemanticAnimationName;
+  animation: keyof AnimationMap;
+  status: "direct" | "fallback";
+  fallback: keyof AnimationMap | null;
+};
+
+const SEMANTIC_ANIMATION_FALLBACKS: Record<
+  SemanticAnimationName,
+  keyof AnimationMap
+> = {
+  idle: "idle",
+  run: "run",
+  happy: "happy",
+  sleep: "sleep",
+  wake: "happy",
+  find: "happy",
+  wave: "happy",
+  tantrum: "run",
+};
+
 export const BUILT_IN_PET_RESOURCE_PACKS: PetResourcePackOption[] = [
   { id: "ian-adventurer", label: "小冒险家", previewAnimation: "happy", previewTone: "像素" },
   { id: "ian-puppy", label: "小狗", previewAnimation: "happy", previewTone: "圆润" },
@@ -124,6 +158,29 @@ export function validatePetManifestFields(pet: PetManifest): void {
 
 export function getResourcePackVersion(pack: PetResourcePack): string {
   return pack.pet.version;
+}
+
+export function buildAnimationCoverageMatrix(
+  pack: PetResourcePack,
+): AnimationCoverageRow[] {
+  return REQUIRED_SEMANTIC_ANIMATIONS.map((semantic) => {
+    if (pack.animations.animations[semantic]) {
+      return {
+        semantic,
+        animation: semantic,
+        status: "direct",
+        fallback: null,
+      };
+    }
+
+    const fallback = SEMANTIC_ANIMATION_FALLBACKS[semantic];
+    return {
+      semantic,
+      animation: fallback,
+      status: "fallback",
+      fallback,
+    };
+  });
 }
 
 export function resolveAnimationWithFallback(

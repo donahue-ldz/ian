@@ -1,24 +1,15 @@
 # 0199 · 验证记录
 
-待实现后更新。
-
-## 计划验证项
-
-- 文档列出允许和禁止的 tag。
-- repository 拒绝不合规 tag。
-- 测试覆盖路径、代码、HTML、私密文本拒绝。
-
-## 计划命令
-
-- Rust 目标测试：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
-- 前端目标测试：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:test`
-- 类型检查：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:typecheck`
-- 涉及桌面可见行为时：真实 Tauri 桌面端验收。
+状态：已执行，待用户验收。
 
 ## 实际结果
 
-待实现后记录实际命令、结果、失败项和跳过项。
+| 验证项 | 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| Taxonomy doc | 检查 `docs/codex/memory-tag-taxonomy.md` | 通过 | 文档列出允许和禁止 tag。 |
+| Rust tag tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml memory -- --nocapture` | 通过 | Repository 拒绝路径、代码、HTML、`text:`、未知前缀和空值。 |
+| Full Rust tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` | 通过 | 153 tests。 |
 
 ## 剩余风险
 
-实现前无验证结果。
+- 当前 tag 值限制为小写 ASCII / 数字 / `_` / `-`，未来若需要本地化 tag 值，需要更新 taxonomy 和验证器。

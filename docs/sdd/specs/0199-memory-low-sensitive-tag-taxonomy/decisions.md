@@ -3,6 +3,7 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-05-22 | 创建本 SDD，按真实缺口推进：低敏记忆标签体系。 | 用户要求基于已实现 SDD 和产品设计仔细拆分，不按编号猜测。 | 后续实现必须先读本 spec 和 plan，避免重复做已完成 skeleton。 |
+| 2026-05-22 | 低敏 tag 只允许 `pref/topic/routine/moment/place` 五类前缀。 | 需要明确禁止正文、代码、路径、HTML、私密内容和任意字段。 | Repository 验证器和 `docs/codex/memory-tag-taxonomy.md` 同步约束。 |
 
 ## Deferred Work
 

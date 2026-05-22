@@ -1,5 +1,6 @@
 use std::sync::Mutex;
 
+use serde::Serialize;
 use tauri::State;
 
 use crate::{
@@ -9,6 +10,15 @@ use crate::{
         IanState, PlayfulEnergy, Position, QuietHours,
     },
 };
+
+#[derive(Debug, Clone, Serialize)]
+pub struct MemoryCandidateView {
+    pub id: i64,
+    pub tags: Vec<String>,
+    pub status: String,
+    pub created_at_ms: i64,
+    pub confirmed_at_ms: Option<i64>,
+}
 
 #[tauri::command]
 pub fn handle_ian_event(
@@ -233,4 +243,89 @@ pub fn ingest_build_test_summary(
             tests_failed,
             error_kind,
         )
+}
+
+#[tauri::command]
+pub fn list_memory_candidates(
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<MemoryCandidateView>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .memory_candidates()
+        .map(|records| records.into_iter().map(MemoryCandidateView::from).collect())
+}
+
+#[tauri::command]
+pub fn confirm_memory_candidate(
+    id: i64,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<MemoryCandidateView>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .confirm_memory_candidate(id)
+        .map(|records| records.into_iter().map(MemoryCandidateView::from).collect())
+}
+
+#[tauri::command]
+pub fn delete_memory_candidate(
+    id: i64,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<MemoryCandidateView>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .delete_memory_candidate(id)
+        .map(|records| records.into_iter().map(MemoryCandidateView::from).collect())
+}
+
+#[tauri::command]
+pub fn clear_memory_candidates(
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<MemoryCandidateView>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .clear_memory_candidates()
+        .map(|records| records.into_iter().map(MemoryCandidateView::from).collect())
+}
+
+#[tauri::command]
+pub fn export_memory_summary(
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<MemoryCandidateView>, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .export_memory_summary()
+        .map(|records| records.into_iter().map(MemoryCandidateView::from).collect())
+}
+
+#[tauri::command]
+pub fn clear_interaction_journal(runtime: State<'_, Mutex<IanRuntime>>) -> Result<(), String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .clear_interaction_journal()
+}
+
+#[tauri::command]
+pub fn reset_local_settings(runtime: State<'_, Mutex<IanRuntime>>) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .reset_local_settings()
+}
+
+impl From<crate::storage::repositories::memory_repo::MemoryCandidate> for MemoryCandidateView {
+    fn from(candidate: crate::storage::repositories::memory_repo::MemoryCandidate) -> Self {
+        Self {
+            id: candidate.id,
+            tags: candidate.tags.split(',').map(str::to_string).collect(),
+            status: candidate.status,
+            created_at_ms: candidate.created_at_ms,
+            confirmed_at_ms: candidate.confirmed_at_ms,
+        }
+    }
 }

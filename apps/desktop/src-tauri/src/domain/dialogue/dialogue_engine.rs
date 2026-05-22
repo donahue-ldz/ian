@@ -56,6 +56,7 @@ impl DialogueEngine {
         source: DialogueSource,
         mood: MoodState,
         bond: BondStateView,
+        confirmed_memory_tags: Vec<String>,
     ) -> Vec<IanAction> {
         let context = DialogueContext {
             current_behavior: state.current_behavior.clone(),
@@ -66,6 +67,7 @@ impl DialogueEngine {
             day_phase: state.day_phase.clone(),
             interaction_count: 0,
             recent_activity_level: "none".to_string(),
+            confirmed_memory_tags,
         };
         let intent = classify_reply_intent(&text, &context);
         let reply = self.remembered_reply(
@@ -161,6 +163,7 @@ mod tests {
             assert!(matches!(context.mood, MoodState::Happy));
             assert!(matches!(context.bond, BondStateView::GettingCloser));
             assert_eq!(context.day_phase, "day");
+            assert!(context.confirmed_memory_tags.is_empty());
             "我正在安静地陪你待一会儿。".to_string()
         }
     }
@@ -178,6 +181,7 @@ mod tests {
             DialogueSource::UserBubble,
             MoodState::Happy,
             BondStateView::GettingCloser,
+            vec![],
         );
 
         assert!(actions.iter().any(|action| matches!(
@@ -203,6 +207,7 @@ mod tests {
             DialogueSource::UserBubble,
             MoodState::Calm,
             BondStateView::Familiar,
+            vec![],
         );
 
         assert!(actions.iter().any(|action| matches!(
@@ -222,6 +227,7 @@ mod tests {
             DialogueSource::UserBubble,
             MoodState::Calm,
             BondStateView::New,
+            vec![],
         );
         let second = engine.reply_to(
             "还在吗".to_string(),
@@ -229,9 +235,37 @@ mod tests {
             DialogueSource::UserBubble,
             MoodState::Calm,
             BondStateView::New,
+            vec![],
         );
 
         assert_ne!(speech_text(&first), speech_text(&second));
+    }
+
+    #[test]
+    fn dialogue_uses_only_confirmed_memory_tags_as_small_context() {
+        let engine = DialogueEngine::default();
+        let state = IanState::default();
+
+        let without_memory = engine.reply_to(
+            "你记得什么".to_string(),
+            &state,
+            DialogueSource::UserBubble,
+            MoodState::Calm,
+            BondStateView::Familiar,
+            vec![],
+        );
+        let with_confirmed_memory = engine.reply_to(
+            "你记得什么".to_string(),
+            &state,
+            DialogueSource::UserBubble,
+            MoodState::Calm,
+            BondStateView::Familiar,
+            vec!["pref:quiet".to_string()],
+        );
+
+        assert!(!speech_text(&without_memory).contains("安静一点"));
+        assert!(speech_text(&with_confirmed_memory).contains("安静一点"));
+        assert!(speech_text(&with_confirmed_memory).chars().count() <= 18);
     }
 
     fn speech_text(actions: &[IanAction]) -> String {

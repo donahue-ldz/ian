@@ -30,6 +30,31 @@
       "fps": 5,
       "loop": false
     },
+    "find": {
+      "frames": [26, 27],
+      "fps": 5,
+      "loop": false
+    },
+    "wake": {
+      "frames": [0, 1, 26],
+      "fps": 3,
+      "loop": false
+    },
+    "wave": {
+      "frames": [26, 27],
+      "fps": 5,
+      "loop": false
+    },
+    "affection": {
+      "frames": [28, 29],
+      "fps": 5,
+      "loop": false
+    },
+    "tantrum": {
+      "frames": [20, 21, 22, 23],
+      "fps": 9,
+      "loop": false
+    },
     "rest": {
       "frames": [30, 31, 32],
       "fps": 1.2,

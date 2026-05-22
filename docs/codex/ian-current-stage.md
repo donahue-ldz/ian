@@ -122,11 +122,14 @@ After P0 feels alive, move into v0.1.x:
 
 - gentle drink / rest reminders
 - more animations and expressions
+- Moment System / small creature moments for life-like surprise
 - simple settings
 - simple Mood State
 - simple Bond State
 - stronger SQLite persistence
 - optional BYOM UI
+
+Moment System is a v0.1.x Life Feel direction, not a P0 scope expansion. Its detailed architecture lives in `docs/codex/ian-moment-system.md`. Moments should compose existing local events, state, animations, bubbles, movement, cooldowns, and privacy boundaries into short, low-frequency scenes.
 
 Developer Rhythm belongs in v0.2:
 
@@ -134,4 +137,3 @@ Developer Rhythm belongs in v0.2:
 - build / test events
 - keyboard rhythm
 - basic developer-context reactions
-

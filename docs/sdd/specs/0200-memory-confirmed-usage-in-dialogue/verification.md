@@ -1,25 +1,16 @@
 # 0200 · 验证记录
 
-待实现后更新。
-
-## 计划验证项
-
-- 仅 confirmed 记忆可进入 dialogue context。
-- 未确认 candidate 不被使用。
-- 输出仍短、角色化、bubble-friendly。
-- 记忆缺失时对话正常退化。
-
-## 计划命令
-
-- Rust 目标测试：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
-- 前端目标测试：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:test`
-- 类型检查：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:typecheck`
-- 涉及桌面可见行为时：真实 Tauri 桌面端验收。
+状态：已执行，待用户验收。
 
 ## 实际结果
 
-待实现后记录实际命令、结果、失败项和跳过项。
+| 验证项 | 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| RED | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml memory -- --nocapture` | 失败符合预期 | `DialogueEngine::reply_to` 不支持 confirmed memory tags。 |
+| GREEN | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml memory -- --nocapture` | 通过 | `dialogue_uses_only_confirmed_memory_tags_as_small_context` 通过。 |
+| Full Rust tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml` | 通过 | 153 tests。 |
+| Frontend tests | `PATH=/opt/homebrew/bin:$PATH npm run desktop:test` | 通过 | 12 files / 91 tests。 |
 
 ## 剩余风险
 
-实现前无验证结果。
+- Demo Dialogue 目前只轻量消费 `pref:quiet`；更多 confirmed tags 的表达需要后续单独调优。

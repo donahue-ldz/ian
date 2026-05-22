@@ -6,6 +6,15 @@ describe("Bubble", () => {
     expect(normalizeBubbleMessage("  你在干嘛  ")).toBe("你在干嘛");
   });
 
+  it("folds whitespace and caps submitted bubble messages", () => {
+    const message = normalizeBubbleMessage(
+      `  ${"Ian ".repeat(30)}  今天    慢慢来  `,
+    );
+
+    expect(message).not.toContain("  ");
+    expect(Array.from(message ?? "").length).toBeLessThanOrEqual(80);
+  });
+
   it("does not submit empty bubble messages", () => {
     expect(normalizeBubbleMessage("   ")).toBeNull();
   });

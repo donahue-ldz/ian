@@ -62,12 +62,23 @@ const browserFallbackState: IanState = {
   },
   active_app_category: null,
 };
+export type MemoryCandidateView = {
+  id: number;
+  tags: string[];
+  status: "candidate" | "confirmed" | string;
+  created_at_ms: number;
+  confirmed_at_ms?: number | null;
+};
+
+export type MemoryExportRecord = MemoryCandidateView;
+
+const browserFallbackMemoryCandidates: MemoryCandidateView[] = [];
 const DESKTOP_TICK_WINDOW_SECS = 15;
 let browserInteractionCount = 0;
 let browserAttentionAvailableAfterMs = 0;
 
 function isTauriRuntime(): boolean {
-  return "__TAURI_INTERNALS__" in window;
+  return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
 export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
@@ -104,12 +115,19 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
   }
 
   if (event.type === "time.tick") {
+    if (browserFallbackState.do_not_disturb) {
+      browserFallbackState.current_animation = "idle";
+      browserFallbackState.current_behavior = "idle";
+      return [{ type: "animation.play", name: "idle", looped: true }];
+    }
+
     const second = Math.floor(event.now_ms / 1000);
     let name: AnimationName = "idle";
     let looped = true;
 
     if (
       browserFallbackState.playful_energy === "high" &&
+      browserFallbackState.movement_intensity !== "reduced" &&
       browserFallbackState.behavior_mode !== "quiet" &&
       !browserFallbackState.is_bubble_input_active &&
       isInTickWindow(second, 180)
@@ -162,6 +180,7 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
 
     if (
       name === "idle" &&
+      browserFallbackState.movement_intensity !== "reduced" &&
       browserFallbackState.behavior_mode !== "quiet" &&
       !browserFallbackState.is_bubble_input_active &&
       second >= 30 &&
@@ -329,13 +348,85 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     return [{ type: "state.sync", state: browserFallbackState }];
   }
 
+  if (event.type === "moment.debug_trigger") {
+    const diagnostic = {
+      type: "playful.diagnostic" as const,
+      timestamp_ms: event.now_ms,
+      reason: event.kind,
+      result: "diagnostic_triggered",
+      cooldown_key: event.kind,
+      chosen_reaction_key: `${event.kind}_sequence`,
+    };
+
+    if (event.kind === "rare_idle_surprise") {
+      if (browserFallbackState.do_not_disturb) {
+        return [{ ...diagnostic, result: "blocked_dnd", chosen_reaction_key: null }];
+      }
+      if (browserFallbackState.movement_intensity === "reduced") {
+        return [
+          { ...diagnostic, result: "blocked_reduced_motion", chosen_reaction_key: null },
+        ];
+      }
+    }
+
+    const actionsByKind: Record<string, IanAction[]> = {
+      find_ian_entrance: [
+        diagnostic,
+        { type: "movement.move_to", x: 48, y: 48, speed: "fast" },
+        { type: "bubble.open" },
+        { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 1800 },
+        { type: "effect.play", name: "find_beacon", intensity: "low", duration_ms: 1200 },
+      ],
+      pointer_curiosity: [
+        diagnostic,
+        { type: "animation.play", name: "wave", looped: false },
+        { type: "effect.play", name: "sparkle_pop", intensity: "low", duration_ms: 600 },
+      ],
+      drag_carry: [
+        diagnostic,
+        { type: "appearance.scale_to", scale: 0.92, duration_ms: 180 },
+        { type: "animation.play", name: "affection", looped: false },
+      ],
+      drop_settle: [
+        diagnostic,
+        { type: "movement.move_to", x: 24, y: 16, speed: "normal" },
+        { type: "speech.show", text: "放这里。", mood: "calm", duration_ms: 1200 },
+      ],
+      rare_idle_surprise: [
+        diagnostic,
+        { type: "animation.play", name: "wave", looped: false },
+        { type: "effect.play", name: "tail_wag", intensity: "low", duration_ms: 800 },
+      ],
+      memory_echo: [
+        diagnostic,
+        { type: "bubble.open" },
+        {
+          type: "speech.show",
+          text: "我记得你喜欢安静一点。",
+          mood: "calm",
+          duration_ms: 1800,
+        },
+      ],
+    };
+
+    return actionsByKind[event.kind] ?? [
+      {
+        ...diagnostic,
+        reason: "moment_debug",
+        result: "blocked_unknown_kind",
+        cooldown_key: null,
+        chosen_reaction_key: null,
+      },
+    ];
+  }
+
   if (event.type === "system.shortcut_triggered" && event.action === "find_ian") {
     browserFallbackState.position = { x: 48, y: 48 };
     return [
       { type: "movement.move_to", x: 48, y: 48, speed: "fast" },
       { type: "bubble.open" },
       { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 2200 },
-      { type: "effect.play", name: "sparkle_pop", intensity: "low", duration_ms: 900 },
+      { type: "effect.play", name: "find_beacon", intensity: "low", duration_ms: 1600 },
       { type: "animation.play", name: "happy", looped: false },
       { type: "state.sync", state: browserFallbackState },
     ];
@@ -577,4 +668,82 @@ export async function ingestBuildTestSummary(summary: {
     tests_failed: summary.tests_failed,
     error_kind: summary.error_kind,
   });
+}
+
+export async function listMemoryCandidates(): Promise<MemoryCandidateView[]> {
+  if (isTauriRuntime()) {
+    return invoke<MemoryCandidateView[]>("list_memory_candidates");
+  }
+
+  return [...browserFallbackMemoryCandidates];
+}
+
+export async function confirmMemoryCandidate(id: number): Promise<MemoryCandidateView[]> {
+  if (isTauriRuntime()) {
+    return invoke<MemoryCandidateView[]>("confirm_memory_candidate", { id });
+  }
+
+  const candidate = browserFallbackMemoryCandidates.find((item) => item.id === id);
+  if (candidate) {
+    candidate.status = "confirmed";
+    candidate.confirmed_at_ms = Date.now();
+  }
+  return browserFallbackMemoryCandidates.filter((item) => item.status === "candidate");
+}
+
+export async function deleteMemoryCandidate(id: number): Promise<MemoryCandidateView[]> {
+  if (isTauriRuntime()) {
+    return invoke<MemoryCandidateView[]>("delete_memory_candidate", { id });
+  }
+
+  const index = browserFallbackMemoryCandidates.findIndex((item) => item.id === id);
+  if (index >= 0) {
+    browserFallbackMemoryCandidates.splice(index, 1);
+  }
+  return [...browserFallbackMemoryCandidates];
+}
+
+export async function clearMemoryCandidates(): Promise<MemoryCandidateView[]> {
+  if (isTauriRuntime()) {
+    return invoke<MemoryCandidateView[]>("clear_memory_candidates");
+  }
+
+  browserFallbackMemoryCandidates.splice(0, browserFallbackMemoryCandidates.length);
+  return [];
+}
+
+export async function exportMemorySummary(): Promise<MemoryExportRecord[]> {
+  if (isTauriRuntime()) {
+    return invoke<MemoryExportRecord[]>("export_memory_summary");
+  }
+
+  return [...browserFallbackMemoryCandidates];
+}
+
+export async function clearInteractionJournal(): Promise<void> {
+  if (isTauriRuntime()) {
+    await invoke<void>("clear_interaction_journal");
+  }
+}
+
+export async function resetLocalSettings(): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("reset_local_settings");
+  }
+
+  Object.assign(browserFallbackState, {
+    behavior_mode: "normal",
+    reminders_enabled: true,
+    reminder_interval_minutes: 90,
+    do_not_disturb: false,
+    find_ian_shortcut_enabled: false,
+    quiet_hours: { enabled: false, start_minute: 22 * 60, end_minute: 7 * 60 },
+    movement_intensity: "normal",
+    bubble_frequency: "normal",
+    rest_behavior: "normal",
+    playful_energy: "normal",
+    surface_scale: 1,
+    diagnostics_enabled: true,
+  });
+  return browserFallbackState;
 }

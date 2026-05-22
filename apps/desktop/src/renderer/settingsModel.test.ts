@@ -30,6 +30,7 @@ describe("settingsModel", () => {
 
   it("exposes compact creature life setting options", () => {
     expect(movementIntensityOptions.map((option) => option.value)).toEqual([
+      "reduced",
       "low",
       "normal",
       "high",
@@ -73,11 +74,11 @@ describe("settingsModel", () => {
 
   it("organizes settings around user mental models", () => {
     expect(settingsGroups.map((group) => group.label)).toEqual([
-      "性格",
-      "生活",
-      "打扰",
+      "外观",
+      "互动",
       "隐私",
-      "高级",
+      "开发者",
+      "数据",
     ]);
   });
 
@@ -88,6 +89,12 @@ describe("settingsModel", () => {
       "键盘节奏",
       "当前应用",
     ]);
+  });
+
+  it("offers a reduced motion movement profile for accessibility", () => {
+    expect(movementIntensityOptions.map((option) => option.value)).toContain("reduced");
+    expect(movementIntensityOptions.find((option) => option.value === "reduced")?.label)
+      .toContain("减少动画");
   });
 
   it("explains every sensitive capability with read, non-read and disable copy", () => {

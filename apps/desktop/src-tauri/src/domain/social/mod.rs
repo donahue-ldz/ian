@@ -192,7 +192,9 @@ impl SocialPresenceReadinessGate {
     pub fn conditions(&self) -> Vec<String> {
         vec![
             "所有社交 skeleton 默认关闭，并通过白名单逐项授权".to_string(),
+            "无默认网络请求，Feishu / Pet Visit 不会在 P0 自动联网".to_string(),
             "远端消息清洗后才允许进入短气泡".to_string(),
+            "高敏 payload 拒绝或脱敏后才允许进入 IanEvent".to_string(),
             "Pet Visit 只播放本地白名单动作和资源".to_string(),
         ]
     }
@@ -270,5 +272,13 @@ mod tests {
         assert!(gate.conditions().iter().any(|condition| {
             condition.contains("白名单") && condition.contains("默认关闭")
         }));
+        assert!(gate
+            .conditions()
+            .iter()
+            .any(|condition| condition.contains("无默认网络请求")));
+        assert!(gate
+            .conditions()
+            .iter()
+            .any(|condition| condition.contains("高敏 payload")));
     }
 }

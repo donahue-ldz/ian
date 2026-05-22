@@ -3,6 +3,7 @@ import {
   createInitialIanViewState,
   expireBubbleIfNeeded,
   expireRunAroundIfNeeded,
+  expireVisualEffectIfNeeded,
   reduceIanActions,
   viewStateForWindowContent,
 } from "./ianActions";
@@ -32,6 +33,25 @@ describe("reduceIanActions", () => {
     expect(next.bubble.text).toBe("我在这儿。");
     expect(next.bubble.mood).toBe("calm");
     expect(next.bubble.visibleUntil).toBe(3400);
+  });
+
+  it("keeps Moment bubble copy short and softly timed", () => {
+    const next = reduceIanActions(
+      createInitialIanViewState(),
+      [
+        {
+          type: "speech.show",
+          text: "我在这儿，我会慢慢靠近一下然后就安静待着，不会一直打扰你。",
+          mood: "calm",
+          duration_ms: 6_000,
+        },
+      ],
+      1_000,
+    );
+
+    expect(next.bubble.text).toHaveLength(25);
+    expect(next.bubble.text?.endsWith("…")).toBe(true);
+    expect(next.bubble.visibleUntil).toBeLessThanOrEqual(4_600);
   });
 
   it("does not replace visible text while bubble input is active", () => {
@@ -200,6 +220,51 @@ describe("reduceIanActions", () => {
     expect(next.animation.name).toBe("zoomies");
     expect(next.behavior).toBe("zooming");
     expect(next.visualEffect?.name).toBe("speed_lines");
+  });
+
+  it("expires transient visual effects after their duration", () => {
+    const active = reduceIanActions(
+      createInitialIanViewState(),
+      [
+        {
+          type: "effect.play",
+          name: "heart_pop",
+          intensity: "low",
+          duration_ms: 900,
+        },
+      ],
+      1_000,
+    );
+
+    expect(expireVisualEffectIfNeeded(active, 1_899).visualEffect?.name).toBe(
+      "heart_pop",
+    );
+    expect(expireVisualEffectIfNeeded(active, 1_900).visualEffect).toBeNull();
+  });
+
+  it("maps semantic reaction animations into stable view behavior", () => {
+    const reactionBehaviors = new Map([
+      ["find", "happy"],
+      ["wake", "idle"],
+      ["wave", "happy"],
+      ["affection", "happy"],
+      ["tantrum", "running"],
+    ]);
+
+    for (const [animation, behavior] of reactionBehaviors) {
+      const next = reduceIanActions(
+        createInitialIanViewState(),
+        [
+          {
+            type: "animation.play",
+            name: animation,
+            looped: false,
+          } as IanAction,
+        ],
+      );
+
+      expect(next.behavior).toBe(behavior);
+    }
   });
 
   it("records the latest movement target from Rust Core movement actions", () => {

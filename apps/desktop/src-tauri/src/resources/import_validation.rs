@@ -49,6 +49,10 @@ impl SoundPackPolicy {
         requested.clamp(0.0, self.max_volume)
     }
 
+    pub fn can_play(&self, user_enabled: bool, do_not_disturb: bool) -> bool {
+        user_enabled && !do_not_disturb
+    }
+
     pub fn validate_asset(&self, asset: &str) -> Result<(), String> {
         validate_local_static_asset(asset)?;
         if !(asset.ends_with(".ogg") || asset.ends_with(".wav") || asset.ends_with(".mp3")) {
@@ -70,9 +74,26 @@ fn validate_local_static_asset(asset: &str) -> Result<(), String> {
     Ok(())
 }
 
+#[derive(Debug, Default)]
+pub struct ResourceImportProductGate;
+
+impl ResourceImportProductGate {
+    pub fn is_product_ready(&self) -> bool {
+        false
+    }
+
+    pub fn requirements(&self) -> Vec<String> {
+        vec![
+            "manifest 校验、资源完整性校验和用户可见回滚必须先完成".to_string(),
+            "脚本、远端引用和路径穿越必须在导入入口统一拒绝".to_string(),
+            "导入失败必须保持当前 resource pack 可恢复且不破坏桌面壳".to_string(),
+        ]
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{ResourcePackImportValidator, SoundPackPolicy};
+    use super::{ResourceImportProductGate, ResourcePackImportValidator, SoundPackPolicy};
     use crate::resources::resource_registry::MultiMonitorRoamingPolicy;
 
     #[test]
@@ -96,10 +117,28 @@ mod tests {
 
         assert!(!policy.enabled_by_default());
         assert_eq!(policy.normalize_volume(1.0), 0.6);
+        assert!(!policy.can_play(false, true));
+        assert!(!policy.can_play(true, true));
+        assert!(policy.can_play(true, false));
         assert!(policy.validate_asset("sounds/chirp.ogg").is_ok());
         assert!(policy
             .validate_asset("https://example.com/chirp.ogg")
             .is_err());
+    }
+
+    #[test]
+    fn resource_import_gate_blocks_productization_until_required_safety_checks_exist() {
+        let gate = ResourceImportProductGate::default();
+
+        assert!(!gate.is_product_ready());
+        assert!(gate
+            .requirements()
+            .iter()
+            .any(|requirement| requirement.contains("manifest") && requirement.contains("回滚")));
+        assert!(gate
+            .requirements()
+            .iter()
+            .any(|requirement| requirement.contains("脚本") && requirement.contains("远端引用")));
     }
 
     #[test]

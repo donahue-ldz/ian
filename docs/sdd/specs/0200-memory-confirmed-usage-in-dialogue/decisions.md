@@ -3,6 +3,7 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-05-22 | 创建本 SDD，按真实缺口推进：已确认记忆用于短对话。 | 用户要求基于已实现 SDD 和产品设计仔细拆分，不按编号猜测。 | 后续实现必须先读本 spec 和 plan，避免重复做已完成 skeleton。 |
+| 2026-05-22 | DialogueContext 只接收少量 confirmed tags，candidate 不进入对话。 | 记忆必须由用户确认后才影响 Ian 的短句。 | Demo Dialogue 可轻量使用 `pref:quiet`，缺失记忆时正常退化。 |
 
 ## Deferred Work
 

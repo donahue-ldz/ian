@@ -7,6 +7,7 @@ import type {
 } from "../protocol/generated";
 import type { FindIanShortcutStatus } from "../lib/findIanShortcut";
 import { formatFindIanShortcut } from "../lib/findIanShortcut";
+import type { MemoryCandidateView, MemoryExportRecord } from "../lib/tauriBridge";
 import { BUILT_IN_PET_RESOURCE_PACKS } from "../resources/resourceLoader";
 import {
   behaviorModeOptions,
@@ -50,6 +51,10 @@ type SettingsPanelProps = {
   surfaceScale: number;
   diagnosticsEnabled: boolean;
   activePetId: string;
+  memoryCandidates: MemoryCandidateView[];
+  memoryExportRecords: MemoryExportRecord[];
+  isMemoryLoading: boolean;
+  memoryError: string | null;
   isOpen: boolean;
   onClose: () => void;
   onModeChange: (mode: BehaviorMode) => void;
@@ -65,6 +70,13 @@ type SettingsPanelProps = {
   onPetChange: (petId: string) => void;
   onResetAppearance: () => void;
   onResetPosition: () => void;
+  onConfirmMemoryCandidate: (id: number) => void;
+  onDeleteMemoryCandidate: (id: number) => void;
+  onClearMemoryCandidates: () => void;
+  onRefreshMemoryExport: () => void;
+  onClearInteractionJournal: () => void;
+  onResetLocalSettings: () => void;
+  onMomentDebugTrigger: (kind: string) => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -103,6 +115,10 @@ export function SettingsPanel({
   surfaceScale,
   diagnosticsEnabled,
   activePetId,
+  memoryCandidates,
+  memoryExportRecords,
+  isMemoryLoading,
+  memoryError,
   isOpen,
   onClose,
   onModeChange,
@@ -118,6 +134,13 @@ export function SettingsPanel({
   onPetChange,
   onResetAppearance,
   onResetPosition,
+  onConfirmMemoryCandidate,
+  onDeleteMemoryCandidate,
+  onClearMemoryCandidates,
+  onRefreshMemoryExport,
+  onClearInteractionJournal,
+  onResetLocalSettings,
+  onMomentDebugTrigger,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
 }: SettingsPanelProps) {
@@ -137,8 +160,8 @@ export function SettingsPanel({
           x
         </button>
       </div>
-      <section className="ian-settings-section" aria-labelledby="ian-settings-personality">
-        <h3 id="ian-settings-personality">性格</h3>
+      <section className="ian-settings-section" aria-labelledby="ian-settings-interaction">
+        <h3 id="ian-settings-interaction">互动</h3>
         <div className="ian-settings-row">
           <span>陪伴方式</span>
           <div className="ian-segmented" role="group" aria-label="行为模式">
@@ -188,8 +211,8 @@ export function SettingsPanel({
           }
         />
       </section>
-      <section className="ian-settings-section" aria-labelledby="ian-settings-life">
-        <h3 id="ian-settings-life">生活</h3>
+      <section className="ian-settings-section" aria-labelledby="ian-settings-appearance">
+        <h3 id="ian-settings-appearance">外观</h3>
         <label className="ian-settings-select-row">
           <span>宠物</span>
           <select
@@ -280,12 +303,14 @@ export function SettingsPanel({
           onChange={(value) => onReminderIntervalMinutesChange(Number(value))}
         />
       </section>
-      <section className="ian-settings-section" aria-labelledby="ian-settings-disturbance">
-        <h3 id="ian-settings-disturbance">打扰</h3>
+      <section className="ian-settings-section" aria-labelledby="ian-settings-recovery">
+        <h3 id="ian-settings-recovery">找回</h3>
         <div className="ian-settings-row">
           <span>
             找回 Ian
-            <small>只监听一个找回 Ian 快捷键，不记录输入内容</small>
+            <small>
+              只监听一个找回 Ian 快捷键，不记录输入内容。可以从托盘菜单找回 Ian。
+            </small>
           </span>
           <button type="button" aria-label="找回 Ian" onClick={onFindIan}>
             找回 Ian
@@ -298,6 +323,7 @@ export function SettingsPanel({
               {formatFindIanShortcut(findIanShortcut)}
               {findIanShortcutStatus === "conflict" ? " · 快捷键被其他应用占用" : ""}
               {findIanShortcutStatus === "registered" ? " · 已启用" : ""}
+              {" · 快捷键冲突时，可以先用设置或托盘找回。"}
             </small>
           </span>
           <input
@@ -354,14 +380,20 @@ export function SettingsPanel({
             }
           />
         </div>
+        <p className="ian-settings-note">找回时只显示短暂信标，不读取屏幕内容。</p>
       </section>
       <section className="ian-settings-section" aria-labelledby="ian-settings-privacy">
         <h3 id="ian-settings-privacy">隐私</h3>
         <p className="ian-settings-note">默认不读取代码、窗口标题、终端全文或按键内容。</p>
         <div className="ian-permission-center">
-          <strong>权限中心</strong>
+          <strong>隐私中心</strong>
           <p className="ian-settings-note">
             Ian 默认本地优先。高敏能力默认关闭，开启前会说明读取范围。
+          </p>
+          <p className="ian-settings-note">
+            快捷键：{findIanShortcutEnabled ? "开启" : "关闭"} · 记忆：候选{" "}
+            {memoryCandidates.length} 条 · 提醒：{remindersEnabled ? "开启" : "关闭"} ·
+            开发者状态：{developerWorkspace.bound ? "已绑定" : "未绑定"}
           </p>
           <label className="ian-settings-toggle-row">
             <span>已了解隐私说明</span>
@@ -378,16 +410,28 @@ export function SettingsPanel({
         <details className="ian-settings-developer">
           <summary>记忆候选</summary>
           <p className="ian-settings-note">
-            Ian 只会把低敏标签作为候选，确认后才会本地保存。
+            Ian 只会把低敏标签作为候选，确认后才会本地保存。本地保存，可删除。
           </p>
+          <MemoryCandidateList
+            candidates={memoryCandidates}
+            error={memoryError}
+            isLoading={isMemoryLoading}
+            onConfirm={onConfirmMemoryCandidate}
+            onDelete={onDeleteMemoryCandidate}
+          />
           <div className="ian-settings-reset-row">
-            <button type="button" aria-label="确认记忆候选">
-              确认候选
-            </button>
-            <button type="button" aria-label="清空记忆候选">
+            <button
+              type="button"
+              aria-label="清空记忆候选"
+              onClick={onClearMemoryCandidates}
+            >
               清空候选
             </button>
+            <button type="button" aria-label="导出记忆摘要" onClick={onRefreshMemoryExport}>
+              导出摘要
+            </button>
           </div>
+          <MemoryExportSummary records={memoryExportRecords} />
         </details>
         <details className="ian-settings-developer">
           <summary>未来社交和插件能力</summary>
@@ -396,8 +440,8 @@ export function SettingsPanel({
           </p>
         </details>
         <details className="ian-settings-developer">
-          <summary>可选开发节奏</summary>
-          <p className="ian-settings-note">想让 Ian 理解一点开发节奏时再开启。</p>
+          <summary>开发者</summary>
+          <p className="ian-settings-note">可选开发节奏，想让 Ian 理解一点开发节奏时再开启。</p>
           <label className="ian-settings-toggle-row">
             <span>
               工作区
@@ -459,7 +503,7 @@ export function SettingsPanel({
         </details>
       </section>
       <details className="ian-settings-section ian-settings-advanced">
-        <summary>高级</summary>
+        <summary>开发者</summary>
         <div className="ian-settings-row">
           <span>对话模式</span>
           <div className="ian-segmented" role="group" aria-label="对话模式">
@@ -513,9 +557,20 @@ export function SettingsPanel({
           <button type="button" aria-label="恢复默认外观" onClick={onResetAppearance}>
             默认外观
           </button>
-          <button type="button" aria-label="重置桌面位置" onClick={onResetPosition}>
-            重置位置
+          <button type="button" aria-label="回到回家点" onClick={onResetPosition}>
+            回家点
           </button>
+        </div>
+        <p className="ian-settings-note">回家点会保存到本地，下次启动继续回到这里。</p>
+        <div className="ian-permission-center">
+          <strong>能力状态</strong>
+          <p className="ian-settings-note">
+            资源包：内置可用 · 自带模型：
+            {byomKeyConfigured ? "已配置本地 key" : "未配置本地 key"} ·
+            快捷键：{findIanShortcutStatus === "registered" ? "已启用" : "未启用"} ·
+            提醒：{remindersEnabled ? "开启" : "关闭"}
+          </p>
+          <p className="ian-settings-note">资源包异常时会退回内置宠物。</p>
         </div>
         <label className="ian-settings-toggle-row">
           <span>本地诊断</span>
@@ -536,9 +591,143 @@ export function SettingsPanel({
             }
           />
         </label>
+        {diagnosticsEnabled ? (
+          <div className="ian-permission-center" aria-label="Moment 诊断">
+            <strong>Moment 诊断</strong>
+            <p className="ian-settings-note">只触发本地 Core action，不读取屏幕内容。</p>
+            <div className="ian-settings-reset-row">
+              {momentDebugOptions.map((option) => (
+                <button
+                  aria-label={`诊断触发${option.label}`}
+                  key={option.kind}
+                  type="button"
+                  onClick={() => onMomentDebugTrigger(option.kind)}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : null}
       </details>
+      <section className="ian-settings-section" aria-labelledby="ian-settings-data">
+        <h3 id="ian-settings-data">数据</h3>
+        <p className="ian-settings-note">
+          只清理 Ian 本地数据，不触碰外部账号或远端内容。
+        </p>
+        <div className="ian-settings-reset-row">
+          <button type="button" aria-label="清空交互日志" onClick={onClearInteractionJournal}>
+            清空日志
+          </button>
+          <button type="button" aria-label="恢复设置默认值" onClick={onResetLocalSettings}>
+            默认设置
+          </button>
+        </div>
+      </section>
     </aside>
   );
+}
+
+const momentDebugOptions = [
+  { kind: "find_ian_entrance", label: "找回入场" },
+  { kind: "pointer_curiosity", label: "鼠标好奇" },
+  { kind: "drag_carry", label: "抱起" },
+  { kind: "drop_settle", label: "放下" },
+  { kind: "rare_idle_surprise", label: "Idle 惊喜" },
+  { kind: "memory_echo", label: "记忆回响" },
+] as const;
+
+type MemoryCandidateListProps = {
+  candidates: MemoryCandidateView[];
+  error: string | null;
+  isLoading: boolean;
+  onConfirm: (id: number) => void;
+  onDelete: (id: number) => void;
+};
+
+function MemoryCandidateList({
+  candidates,
+  error,
+  isLoading,
+  onConfirm,
+  onDelete,
+}: MemoryCandidateListProps) {
+  if (error) {
+    return <p className="ian-settings-note">{error}</p>;
+  }
+
+  if (isLoading) {
+    return <p className="ian-settings-note">正在读取本地候选。</p>;
+  }
+
+  if (candidates.length === 0) {
+    return <p className="ian-settings-note">现在没有待确认的小记忆。</p>;
+  }
+
+  return (
+    <ul className="ian-memory-candidate-list" aria-label="记忆候选列表">
+      {candidates.map((candidate) => (
+        <li className="ian-memory-candidate" key={candidate.id}>
+          <span>
+            {candidate.tags.join(" · ")}
+            <small>{formatMemoryCandidateTime(candidate.created_at_ms)}</small>
+          </span>
+          <span className="ian-memory-actions">
+            <button
+              type="button"
+              aria-label={`确认记忆候选 ${candidate.id}`}
+              onClick={() => onConfirm(candidate.id)}
+            >
+              确认
+            </button>
+            <button
+              type="button"
+              aria-label={`删除记忆候选 ${candidate.id}`}
+              onClick={() => onDelete(candidate.id)}
+            >
+              删除
+            </button>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+type MemoryExportSummaryProps = {
+  records: MemoryExportRecord[];
+};
+
+function MemoryExportSummary({ records }: MemoryExportSummaryProps) {
+  if (records.length === 0) {
+    return <p className="ian-settings-note">导出记忆摘要：暂无已保存摘要。</p>;
+  }
+
+  return (
+    <ul className="ian-memory-candidate-list" aria-label="记忆摘要导出预览">
+      {records.map((record) => (
+        <li className="ian-memory-candidate" key={`${record.status}-${record.id}`}>
+          <span>
+            {record.tags.join(" · ")}
+            <small>
+              {record.status} · {formatMemoryCandidateTime(record.created_at_ms)}
+            </small>
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function formatMemoryCandidateTime(timestampMs: number): string {
+  if (!Number.isFinite(timestampMs) || timestampMs <= 0) {
+    return "本地候选";
+  }
+
+  return new Date(timestampMs).toLocaleDateString("zh-CN", {
+    month: "2-digit",
+    day: "2-digit",
+  });
 }
 
 export function stepSurfaceScale(value: number, direction: -1 | 1): number {

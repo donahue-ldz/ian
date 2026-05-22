@@ -1,26 +1,17 @@
 # 0194 · 验证记录
 
-待实现后更新。
-
-## 计划验证项
-
-- 快捷键默认关闭或由用户明确开启。
-- 关闭后不再响应全局快捷键。
-- 触发事件不包含键盘文本或节奏数据。
-- Ian 越界时回到可见安全区域，已可见时只短回应。
-- 真实桌面验收记录完整。
-
-## 计划命令
-
-- Rust 目标测试：`cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml`
-- 前端目标测试：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:test`
-- 类型检查：`PATH=/opt/homebrew/bin:$PATH /opt/homebrew/bin/npm run desktop:typecheck`
-- 涉及桌面可见行为时：真实 Tauri 桌面端验收。
+状态：已执行，真实快捷键人工验收待补。
 
 ## 实际结果
 
-待实现后记录实际命令、结果、失败项和跳过项。
+| 验证项 | 命令 / 检查 | 结果 | 说明 |
+| --- | --- | --- | --- |
+| Rust shortcut tests | `cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml find_ian` | 已由全量 Rust 覆盖 | 全量 153 tests 通过；包括 `find_ian_shortcut_emits_find_actions_without_keyboard_rhythm` 和 protocol low-sensitive 测试。 |
+| Frontend tests | `PATH=/opt/homebrew/bin:$PATH npm run desktop:test` | 通过 | 12 files / 91 tests，设置面默认关闭快捷键和冲突提示覆盖。 |
+| Typecheck | `PATH=/opt/homebrew/bin:$PATH npm run desktop:typecheck` | 通过 | `tsc --noEmit` exit 0。 |
+| Desktop launch | `PATH=/opt/homebrew/bin:$PATH npm run tauri --workspace @ian/desktop -- dev --config '{"build":{"beforeDevCommand":""}}' --no-dev-server-wait` | 通过启动 | Tauri 编译并运行 `target/debug/ian_desktop`，本轮进程已停止。 |
 
 ## 剩余风险
 
-实现前无验证结果。
+- 未在真实桌面按 `Cmd+Shift+I` 做人工验证；需要补验开启、关闭、冲突提示和越界找回。
+- 本轮只确认事件链路不包含键盘文本或节奏数据，没有采集任何全局键盘文本。

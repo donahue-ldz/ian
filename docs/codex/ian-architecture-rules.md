@@ -58,6 +58,7 @@ Rust Core owns:
 - mood engine
 - bond engine
 - behavior engine
+- moment orchestrator
 - reminder engine
 - policy engine
 - dialogue orchestration
@@ -78,6 +79,25 @@ React owns:
 - visual feedback
 
 React must execute `IanAction`. It must not decide Ian's core behavior, long-term state, mood, bond, or policy.
+
+## Moment Rules
+
+Moment System is Ian's short-scene orchestration layer for life-like surprise.
+
+Moment Orchestrator belongs in Rust Core / Behavior Policy. It consumes `IanEvent`, `IanState`, local policy context, cooldowns, and low-sensitive confirmed memory tags, then emits `IanAction`.
+
+React may render and execute a moment through animation, movement, bubble, and effect actions. React must not choose moment timing, maintain long-term moment state, bypass cooldowns, or create random creature behavior outside `IanAction`.
+
+Moments must be:
+
+- low frequency
+- short
+- interruptible
+- user-controllable
+- respectful of do-not-disturb and reduced motion
+- privacy-safe by default
+
+Moment details live in `docs/codex/ian-moment-system.md`.
 
 ## Adapter Rules
 
@@ -200,4 +220,3 @@ Default forbidden:
 - private chat content
 - screen OCR
 - arbitrary file content
-

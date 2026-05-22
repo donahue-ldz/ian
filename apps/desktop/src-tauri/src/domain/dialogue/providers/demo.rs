@@ -9,6 +9,15 @@ impl DialogueProvider for DemoDialogueProvider {
     fn reply(&self, text: &str, context: &DialogueContext) -> String {
         let lowered = text.to_lowercase();
 
+        if context
+            .confirmed_memory_tags
+            .iter()
+            .any(|tag| tag == "pref:quiet")
+            && (text.contains("记得") || lowered.contains("remember"))
+        {
+            return "安静一点，我记得。".to_string();
+        }
+
         if context.day_phase == "night" {
             return "小声陪你。".to_string();
         }

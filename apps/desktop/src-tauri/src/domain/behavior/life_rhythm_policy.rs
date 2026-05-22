@@ -8,6 +8,7 @@ pub struct DailyGreetingPolicy {
 impl DailyGreetingPolicy {
     pub fn greeting_for_day(&mut self, day_index: i64, state: &IanState) -> Option<&'static str> {
         if matches!(state.behavior_mode, BehaviorMode::Quiet)
+            || state.do_not_disturb
             || self.last_greeting_day == Some(day_index)
         {
             return None;
@@ -99,6 +100,9 @@ mod tests {
 
         state.behavior_mode = BehaviorMode::Quiet;
         assert_eq!(policy.greeting_for_day(13, &state), None);
+        state.behavior_mode = BehaviorMode::Normal;
+        state.do_not_disturb = true;
+        assert_eq!(policy.greeting_for_day(14, &state), None);
     }
 
     #[test]

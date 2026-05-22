@@ -1,4 +1,5 @@
 .ian-stage {
+  --ian-effect-duration-cap: 1600ms;
   position: fixed;
   inset: 0;
   display: grid;
@@ -190,6 +191,52 @@
   line-height: 1.35;
 }
 
+.ian-memory-candidate-list {
+  display: grid;
+  gap: 6px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.ian-memory-candidate {
+  display: grid;
+  gap: 6px;
+  padding: 7px;
+  border: 1px solid rgba(69, 86, 76, 0.14);
+  border-radius: 7px;
+  background: rgba(248, 250, 247, 0.9);
+}
+
+.ian-memory-candidate span {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.ian-memory-candidate small {
+  color: #65736a;
+  font-size: 10px;
+}
+
+.ian-memory-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.ian-memory-actions button {
+  min-width: 0;
+  height: 24px;
+  padding: 0 6px;
+  border: 1px solid rgba(69, 86, 76, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #4b5f54;
+  font: inherit;
+}
+
 .ian-settings-toggle-row {
   display: flex;
   align-items: center;
@@ -311,6 +358,15 @@
   color: #65736a;
   font-size: 10px;
   text-align: right;
+}
+
+.ian-visual-effect[data-effect="find_beacon"] {
+  position: absolute;
+  inset: 12px;
+  z-index: 0;
+  border: 2px solid rgba(75, 95, 84, 0.34);
+  border-radius: 999px;
+  animation: ian-find-beacon 800ms ease-out infinite;
 }
 
 .ian-settings-reset-row {
@@ -440,6 +496,24 @@
 .ian-bubble[data-cloud-size="input"] {
   width: 176px;
   place-items: stretch;
+}
+
+.ian-bubble[data-mood="happy"] {
+  --ian-cloud-bubble-fill: #fff9ec;
+  --ian-cloud-bubble-ink: rgba(113, 87, 39, 0.66);
+  box-shadow: 0 8px 15px rgba(113, 87, 39, 0.1);
+}
+
+.ian-bubble[data-mood="sleepy"] {
+  --ian-cloud-bubble-fill: #f4f8fb;
+  --ian-cloud-bubble-ink: rgba(60, 76, 92, 0.58);
+  box-shadow: 0 7px 13px rgba(60, 76, 92, 0.09);
+}
+
+.ian-bubble[data-mood="attention"] {
+  --ian-cloud-bubble-fill: #fff5f5;
+  --ian-cloud-bubble-ink: rgba(126, 64, 74, 0.62);
+  box-shadow: 0 8px 16px rgba(126, 64, 74, 0.1);
 }
 
 .ian-bubble::before {
@@ -818,7 +892,7 @@
 .ian-visual-effect[data-effect="tail_wag"]::after {
   position: absolute;
   content: "";
-  animation-duration: 820ms;
+  animation-duration: min(820ms, var(--ian-effect-duration-cap));
   animation-timing-function: ease-out;
   animation-iteration-count: infinite;
 }
@@ -1129,6 +1203,18 @@
   }
 }
 
+@keyframes ian-find-beacon {
+  0%,
+  100% {
+    opacity: 0.18;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.58;
+    transform: scale(1.08);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .ian-creature-surface {
     transition: none;
@@ -1150,6 +1236,12 @@
 
   .ian-visual-effect {
     display: none;
+  }
+
+  .ian-visual-effect[data-effect="find_beacon"] {
+    display: block;
+    animation: none;
+    opacity: 0.28;
   }
 
   .ian-eye {

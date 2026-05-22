@@ -8,5 +8,18 @@
   "animations": "animations.json",
   "expressions": "expressions.json",
   "sounds": "sounds/",
-  "capabilities": ["idle", "walk", "run", "zoomies", "happy", "rest", "sleep"]
+  "capabilities": [
+    "idle",
+    "walk",
+    "run",
+    "zoomies",
+    "happy",
+    "rest",
+    "sleep",
+    "find",
+    "wake",
+    "wave",
+    "affection",
+    "tantrum"
+  ]
 }

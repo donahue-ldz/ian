@@ -54,6 +54,14 @@ impl MoodAnimationPolicy {
             ],
         }
     }
+
+    pub fn first_available_for(&self, mood: MoodState, available: &[&str]) -> &'static str {
+        self.candidates_for(mood)
+            .into_iter()
+            .find(|candidate| available.contains(&candidate.animation))
+            .map(|candidate| candidate.animation)
+            .unwrap_or("idle")
+    }
 }
 
 #[cfg(test)]
@@ -74,5 +82,19 @@ mod tests {
             .iter()
             .any(|candidate| { candidate.animation == "sleep" && candidate.weight > 1 }));
         assert_ne!(happy, sleepy);
+    }
+
+    #[test]
+    fn mood_animation_falls_back_to_available_animation_without_error() {
+        let policy = MoodAnimationPolicy::default();
+
+        assert_eq!(
+            policy.first_available_for(MoodState::Sleepy, &["idle", "rest"]),
+            "rest"
+        );
+        assert_eq!(
+            policy.first_available_for(MoodState::Happy, &["idle"]),
+            "idle"
+        );
     }
 }

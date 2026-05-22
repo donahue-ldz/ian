@@ -1,7 +1,17 @@
 // Generated from Rust protocol types by ts-rs.
 // P0 keeps this checked in so the frontend can typecheck before a Rust toolchain is available.
 
-export type AnimationName = "idle" | "rest" | "walk" | "happy" | "run" | "zoomies" | "sleep";
+export type AnimationName =
+  | "idle"
+  | "rest"
+  | "walk"
+  | "happy"
+  | "run"
+  | "zoomies"
+  | "sleep"
+  | "find"
+  | "wave"
+  | "affection";
 export type MovementSpeed = "slow" | "normal" | "fast";
 export type CurrentBehavior = "idle" | "resting" | "walking" | "happy" | "running" | "zooming" | "sleeping";
 export type BehaviorMode = "quiet" | "normal" | "lively";
@@ -128,7 +138,8 @@ export type IanEvent =
       confidence: number;
       app_id?: string | null;
     }
-  | { type: "system.shortcut_triggered"; action: string; now_ms: number };
+  | { type: "system.shortcut_triggered"; action: string; now_ms: number }
+  | { type: "moment.debug_trigger"; kind: string; now_ms: number };
 
 export type IanAction =
   | { type: "animation.play"; name: AnimationName; looped: boolean }

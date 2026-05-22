@@ -64,9 +64,22 @@ impl LocalPluginPermissionModel {
     }
 }
 
+#[derive(Debug, Default)]
+pub struct LocalPluginRuntimeGate;
+
+impl LocalPluginRuntimeGate {
+    pub fn can_load_plugins(&self) -> bool {
+        false
+    }
+
+    pub fn can_execute_scripts(&self) -> bool {
+        false
+    }
+}
+
 #[cfg(test)]
 mod tests {
-    use super::{LocalPluginPermissionModel, PluginManifest};
+    use super::{LocalPluginPermissionModel, LocalPluginRuntimeGate, PluginManifest};
 
     #[test]
     fn plugin_manifest_validates_permissions_and_stays_default_off() {
@@ -88,6 +101,8 @@ mod tests {
             ..manifest
         };
         assert!(bad.validate().is_err());
+        assert!(!LocalPluginRuntimeGate::default().can_load_plugins());
+        assert!(!LocalPluginRuntimeGate::default().can_execute_scripts());
     }
 
     #[test]

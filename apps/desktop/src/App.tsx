@@ -11,7 +11,14 @@ import type {
 import { IanStage } from "./renderer/IanStage";
 import { loadPetResourcePack, type PetResourcePack } from "./resources/resourceLoader";
 import {
+  clearMemoryCandidates,
+  clearInteractionJournal,
+  confirmMemoryCandidate,
+  deleteMemoryCandidate,
+  exportMemorySummary,
   getIanSettings,
+  listMemoryCandidates,
+  resetLocalSettings,
   saveActivePet,
   saveBehaviorMode,
   saveCapabilityEnabled,
@@ -24,6 +31,8 @@ import {
   saveQuietHours,
   saveReminderSettings,
   saveRemindersEnabled,
+  type MemoryCandidateView,
+  type MemoryExportRecord,
 } from "./lib/tauriBridge";
 import {
   getDesktopCursorPosition,
@@ -186,6 +195,10 @@ export default function App() {
     reason: null,
   });
   const [creatureSettings, setCreatureSettings] = useState(createCreatureSettingsState());
+  const [memoryCandidates, setMemoryCandidates] = useState<MemoryCandidateView[]>([]);
+  const [memoryExportRecords, setMemoryExportRecords] = useState<MemoryExportRecord[]>([]);
+  const [isMemoryLoading, setIsMemoryLoading] = useState(false);
+  const [memoryError, setMemoryError] = useState<string | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const pointerLeaveChaseArmed = useRef(false);
   const pointerChaseFallbackTimeout = useRef<number | null>(null);
@@ -216,6 +229,11 @@ export default function App() {
       setDeveloperWorkspace(state.developer_workspace);
       setDeveloperSnooze(state.developer_snooze);
       setCreatureSettings(creatureSettingsFromIanState(state));
+    });
+    void refreshMemoryCandidates({
+      setMemoryCandidates,
+      setIsMemoryLoading,
+      setMemoryError,
     });
     void sendEvent({ type: "app.started" });
     void sendDesktopScreenBounds(sendEvent);
@@ -304,6 +322,10 @@ export default function App() {
       surfaceScale={creatureSettings.surfaceScale}
       diagnosticsEnabled={creatureSettings.diagnosticsEnabled}
       activePetId={activePetId}
+      memoryCandidates={memoryCandidates}
+      memoryExportRecords={memoryExportRecords}
+      isMemoryLoading={isMemoryLoading}
+      memoryError={memoryError}
       isSettingsOpen={isSettingsOpen}
       isDesktopWindow={isDesktopWindow}
       onIanClick={(point) => {
@@ -466,6 +488,53 @@ export default function App() {
       onResetPosition={() => {
         void resetPosition();
       }}
+      onConfirmMemoryCandidate={(id) => {
+        setMemoryError(null);
+        void confirmMemoryCandidate(id)
+          .then(setMemoryCandidates)
+          .catch(() => setMemoryError("记忆候选操作失败"));
+      }}
+      onDeleteMemoryCandidate={(id) => {
+        setMemoryError(null);
+        void deleteMemoryCandidate(id)
+          .then(setMemoryCandidates)
+          .catch(() => setMemoryError("记忆候选操作失败"));
+      }}
+      onClearMemoryCandidates={() => {
+        setMemoryError(null);
+        void clearMemoryCandidates()
+          .then(setMemoryCandidates)
+          .catch(() => setMemoryError("记忆候选操作失败"));
+      }}
+      onRefreshMemoryExport={() => {
+        setMemoryError(null);
+        void exportMemorySummary()
+          .then(setMemoryExportRecords)
+          .catch(() => setMemoryError("记忆摘要导出失败"));
+      }}
+      onClearInteractionJournal={() => {
+        setMemoryError(null);
+        void clearInteractionJournal().catch(() => setMemoryError("本地日志清理失败"));
+      }}
+      onResetLocalSettings={() => {
+        void resetLocalSettings().then((state) => {
+          setBehaviorMode(state.behavior_mode);
+          setRemindersEnabled(state.reminders_enabled);
+          setReminderIntervalMinutes(state.reminder_interval_minutes);
+          setDoNotDisturb(state.do_not_disturb);
+          setPrivacyOnboardingSeen(state.privacy_onboarding_seen);
+          setFindIanShortcutEnabled(state.find_ian_shortcut_enabled);
+          setFindIanShortcut(state.find_ian_shortcut);
+          setCapabilities(capabilityStateFromIanState(state));
+          setQuietHours(state.quiet_hours);
+          setDeveloperWorkspace(state.developer_workspace);
+          setDeveloperSnooze(state.developer_snooze);
+          setCreatureSettings(creatureSettingsFromIanState(state));
+        });
+      }}
+      onMomentDebugTrigger={(kind) => {
+        void sendEvent({ type: "moment.debug_trigger", kind, now_ms: Date.now() });
+      }}
       onCreatureSettingsChange={(nextSettings) => {
         setCreatureSettings(nextSettings);
         void saveCreatureSettings({
@@ -567,6 +636,26 @@ async function sendDesktopScreenBounds(
   }
 
   await sendEvent({ type: "screen.bounds", ...bounds });
+}
+
+async function refreshMemoryCandidates({
+  setMemoryCandidates,
+  setIsMemoryLoading,
+  setMemoryError,
+}: {
+  setMemoryCandidates: (candidates: MemoryCandidateView[]) => void;
+  setIsMemoryLoading: (loading: boolean) => void;
+  setMemoryError: (error: string | null) => void;
+}) {
+  setIsMemoryLoading(true);
+  setMemoryError(null);
+  try {
+    setMemoryCandidates(await listMemoryCandidates());
+  } catch {
+    setMemoryError("记忆候选读取失败");
+  } finally {
+    setIsMemoryLoading(false);
+  }
 }
 
 function capabilityToStateKey(capability: string): keyof ReturnType<typeof createCapabilityState> {

@@ -75,6 +75,8 @@ pub enum IanEvent {
     },
     #[serde(rename = "system.shortcut_triggered")]
     SystemShortcutTriggered { action: String, now_ms: i64 },
+    #[serde(rename = "moment.debug_trigger")]
+    MomentDebugTrigger { kind: String, now_ms: i64 },
 }
 
 #[derive(Debug, Deserialize)]
@@ -142,6 +144,8 @@ enum IanEventWire {
     },
     #[serde(rename = "system.shortcut_triggered")]
     SystemShortcutTriggered { action: String, now_ms: i64 },
+    #[serde(rename = "moment.debug_trigger")]
+    MomentDebugTrigger { kind: String, now_ms: i64 },
 }
 
 impl<'de> Deserialize<'de> for IanEvent {
@@ -230,6 +234,9 @@ impl From<IanEventWire> for IanEvent {
             IanEventWire::SystemShortcutTriggered { action, now_ms } => {
                 Self::SystemShortcutTriggered { action, now_ms }
             }
+            IanEventWire::MomentDebugTrigger { kind, now_ms } => {
+                Self::MomentDebugTrigger { kind, now_ms }
+            }
         }
     }
 }
@@ -255,6 +262,7 @@ impl IanEvent {
             Self::KeyboardRhythm { .. } => "keyboard.rhythm",
             Self::ActiveAppPresence { .. } => "active_app.presence",
             Self::SystemShortcutTriggered { .. } => "system.shortcut_triggered",
+            Self::MomentDebugTrigger { .. } => "moment.debug_trigger",
         }
     }
 }

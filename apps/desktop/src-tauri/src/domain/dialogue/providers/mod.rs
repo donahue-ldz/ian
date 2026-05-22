@@ -20,6 +20,7 @@ pub struct DialogueContext {
     pub day_phase: String,
     pub interaction_count: u32,
     pub recent_activity_level: String,
+    pub confirmed_memory_tags: Vec<String>,
 }
 
 pub trait DialogueProvider: Send + Sync {

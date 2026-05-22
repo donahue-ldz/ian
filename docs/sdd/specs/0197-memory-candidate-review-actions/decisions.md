@@ -3,6 +3,7 @@
 | 日期 | 决策 | 原因 | 影响 |
 | --- | --- | --- | --- |
 | 2026-05-22 | 创建本 SDD，按真实缺口推进：记忆确认与删除动作。 | 用户要求基于已实现 SDD 和产品设计仔细拆分，不按编号猜测。 | 后续实现必须先读本 spec 和 plan，避免重复做已完成 skeleton。 |
+| 2026-05-22 | 确认、删除和清空都通过 Tauri command 进入 Rust Runtime / StorageService。 | React 只负责用户操作和刷新列表，不能直接写入长期状态。 | confirmed 记录保留，清空只清理 candidate，避免误删已确认记忆。 |
 
 ## Deferred Work
 
