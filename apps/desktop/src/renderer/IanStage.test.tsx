@@ -49,6 +49,25 @@ describe("IanStage desktop chrome", () => {
     expect(html).toContain('data-dragging="false"');
   });
 
+  it("marks movement profiles so CSS can express body feel", () => {
+    const html = renderToStaticMarkup(
+      <IanStage
+        {...baseProps()}
+        viewState={{
+          ...createInitialIanViewState(),
+          movementTarget: {
+            x: 24,
+            y: 36,
+            speed: "normal",
+            profile: "playful",
+          },
+        }}
+      />,
+    );
+
+    expect(html).toContain('data-motion-profile="playful"');
+  });
+
   it("marks desktop and browser preview window contexts separately", () => {
     const desktopHtml = renderToStaticMarkup(
       <IanStage {...baseProps()} isDesktopWindow={true} />,
@@ -128,6 +147,19 @@ describe("IanStage idle visual comfort", () => {
     expect(ianStageCss).toMatch(
       /\.ian-sprite\[data-animation="zoomies"\]\s*{[^}]*animation: ian-zoomies 360ms/s,
     );
+  });
+
+  it("defines motion profile styling for gentle, playful, and settle movement", () => {
+    const ianStageCss = readFileSync(
+      new URL("./ianStage.css", import.meta.url),
+      "utf8",
+    );
+
+    expect(ianStageCss).toContain('[data-motion-profile="gentle"]');
+    expect(ianStageCss).toContain('[data-motion-profile="playful"]');
+    expect(ianStageCss).toContain('[data-motion-profile="settle"]');
+    expect(ianStageCss).toContain("@keyframes ian-playful-move");
+    expect(ianStageCss).toContain("@keyframes ian-settle-move");
   });
 
   it("reserves a desktop safe area for the full cloud bubble", () => {

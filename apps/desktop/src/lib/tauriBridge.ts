@@ -245,12 +245,14 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
         x: browserFallbackState.position.x + 80,
         y: browserFallbackState.position.y,
         speed: "fast",
+        profile: "playful",
       },
       {
         type: "movement.move_to",
         x: browserFallbackState.home_anchor.x,
         y: browserFallbackState.home_anchor.y,
         speed: "fast",
+        profile: "settle",
       },
       {
         type: "playful.state",
@@ -320,6 +322,7 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
         x: browserFallbackState.position.x + 18,
         y: browserFallbackState.position.y,
         speed: "slow",
+        profile: "gentle",
       });
     }
 
@@ -338,7 +341,13 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     browserFallbackState.is_dragging = false;
     browserFallbackState.position = { x: event.x, y: event.y };
     return [
-      { type: "movement.move_to", x: event.x, y: event.y, speed: "normal" },
+      {
+        type: "movement.move_to",
+        x: event.x,
+        y: event.y,
+        speed: "normal",
+        profile: "settle",
+      },
       { type: "speech.show", text: "放这里。", mood: "calm", duration_ms: 1600 },
       { type: "state.sync", state: browserFallbackState },
     ];
@@ -372,7 +381,7 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     const actionsByKind: Record<string, IanAction[]> = {
       find_ian_entrance: [
         diagnostic,
-        { type: "movement.move_to", x: 48, y: 48, speed: "fast" },
+        { type: "movement.move_to", x: 48, y: 48, speed: "fast", profile: "playful" },
         { type: "bubble.open" },
         { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 1800 },
         { type: "effect.play", name: "find_beacon", intensity: "low", duration_ms: 1200 },
@@ -380,6 +389,13 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
       pointer_curiosity: [
         diagnostic,
         { type: "animation.play", name: "wave", looped: false },
+        {
+          type: "movement.move_to",
+          x: browserFallbackState.position.x + 24,
+          y: browserFallbackState.position.y,
+          speed: "slow",
+          profile: "playful",
+        },
         { type: "effect.play", name: "sparkle_pop", intensity: "low", duration_ms: 600 },
       ],
       drag_carry: [
@@ -389,7 +405,7 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
       ],
       drop_settle: [
         diagnostic,
-        { type: "movement.move_to", x: 24, y: 16, speed: "normal" },
+        { type: "movement.move_to", x: 24, y: 16, speed: "normal", profile: "settle" },
         { type: "speech.show", text: "放这里。", mood: "calm", duration_ms: 1200 },
       ],
       rare_idle_surprise: [
@@ -423,7 +439,7 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
   if (event.type === "system.shortcut_triggered" && event.action === "find_ian") {
     browserFallbackState.position = { x: 48, y: 48 };
     return [
-      { type: "movement.move_to", x: 48, y: 48, speed: "fast" },
+      { type: "movement.move_to", x: 48, y: 48, speed: "fast", profile: "playful" },
       { type: "bubble.open" },
       { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 2200 },
       { type: "effect.play", name: "find_beacon", intensity: "low", duration_ms: 1600 },

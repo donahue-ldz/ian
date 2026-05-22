@@ -1,14 +1,18 @@
 use crate::{
     core::scheduler::BehaviorScheduler,
-    protocol::{IanAction, IanEvent, IanState, MovementSpeed, PlayfulState, Position},
+    protocol::{
+        IanAction, IanEvent, IanState, MotionProfile, MovementSpeed, PlayfulState, Position,
+    },
 };
 
 use super::{
     behavior_policy::{BehaviorPolicy, ControlledRandom},
     day_phase_policy::minute_of_day_from_epoch_ms,
     developer_rhythm_policy::DeveloperRhythmPolicy,
+    life_drive::LifeDrive,
     life_rhythm_policy::{AbsenceReturnPolicy, DailyGreetingPolicy},
     moment_orchestrator::{IanMomentKind, MomentOrchestrator},
+    moment_story::MomentStory,
     momentary_life_state::MomentaryLifeState,
     movement_boundary_policy::MovementBoundaryPolicy,
 };
@@ -24,6 +28,7 @@ pub struct BehaviorEngine {
     daily_greeting: std::sync::Mutex<DailyGreetingPolicy>,
     absence_return: std::sync::Mutex<AbsenceReturnPolicy>,
     moments: std::sync::Mutex<MomentOrchestrator>,
+    life_drive: std::sync::Mutex<LifeDrive>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -49,6 +54,7 @@ impl Default for BehaviorEngine {
             daily_greeting: std::sync::Mutex::new(DailyGreetingPolicy::default()),
             absence_return: std::sync::Mutex::new(AbsenceReturnPolicy::default()),
             moments: std::sync::Mutex::new(MomentOrchestrator::default()),
+            life_drive: std::sync::Mutex::new(LifeDrive::default()),
         }
     }
 }
@@ -56,6 +62,7 @@ impl Default for BehaviorEngine {
 impl BehaviorEngine {
     pub fn decide(&self, event: &IanEvent, state: &IanState) -> Vec<IanAction> {
         self.record_momentary_event(event);
+        self.record_life_drive_event(event);
 
         let actions = match event {
             IanEvent::AppStarted => vec![
@@ -119,6 +126,12 @@ impl BehaviorEngine {
 
         self.record_momentary_actions(&actions);
         actions
+    }
+
+    fn record_life_drive_event(&self, event: &IanEvent) {
+        if let Ok(mut drive) = self.life_drive.lock() {
+            drive.record_event(event);
+        }
     }
 
     fn actions_for_click(&self, state: &IanState) -> Vec<IanAction> {
@@ -206,6 +219,7 @@ impl BehaviorEngine {
                     x: target.x,
                     y: target.y,
                     speed: MovementSpeed::Fast,
+                    profile: MotionProfile::Gentle,
                 },
             );
         }
@@ -232,27 +246,53 @@ impl BehaviorEngine {
             return vec![decision.diagnostic(now_ms)];
         }
 
-        vec![
-            decision.diagnostic(now_ms),
-            IanAction::AnimationPlay {
+        let mut actions = vec![decision.diagnostic(now_ms)];
+        actions.extend(self.pointer_curiosity_story(state).into_actions(false));
+        actions.push(IanAction::EffectPlay {
+            name: "sparkle_pop".to_string(),
+            intensity: "low".to_string(),
+            duration_ms: 700,
+        });
+        actions.push(IanAction::SpeechShow {
+            text: "看到你啦。".to_string(),
+            mood: Some("calm".to_string()),
+            duration_ms: Some(1200),
+        });
+        actions
+    }
+
+    fn pointer_curiosity_story(&self, state: &IanState) -> MomentStory {
+        let drive = self
+            .life_drive
+            .lock()
+            .map(|drive| drive.snapshot())
+            .unwrap_or_else(|_| LifeDrive::default().snapshot());
+        let step = if drive.curiosity >= 48 || drive.energy >= 56 {
+            36.0
+        } else {
+            20.0
+        };
+
+        MomentStory::new("pointer_curiosity")
+            .discover(IanAction::AnimationPlay {
                 name: "wave".to_string(),
                 looped: false,
-            },
-            IanAction::AnimationPlay {
+            })
+            .pause(180)
+            .act(IanAction::MovementMoveTo {
+                x: state.position.x + step,
+                y: state.position.y,
+                speed: MovementSpeed::Slow,
+                profile: MotionProfile::Playful,
+            })
+            .act(IanAction::AnimationPlay {
                 name: "happy".to_string(),
                 looped: false,
-            },
-            IanAction::EffectPlay {
-                name: "sparkle_pop".to_string(),
-                intensity: "low".to_string(),
-                duration_ms: 700,
-            },
-            IanAction::SpeechShow {
-                text: "看到你啦。".to_string(),
-                mood: Some("calm".to_string()),
-                duration_ms: Some(1200),
-            },
-        ]
+            })
+            .settle(IanAction::AnimationPlay {
+                name: "idle".to_string(),
+                looped: true,
+            })
     }
 
     fn actions_for_run_around(&self, state: &IanState) -> Vec<IanAction> {
@@ -288,16 +328,19 @@ impl BehaviorEngine {
                 x: first.x,
                 y: first.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Playful,
             },
             IanAction::MovementMoveTo {
                 x: second.x,
                 y: second.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Playful,
             },
             IanAction::MovementMoveTo {
                 x: state.home_anchor.x,
                 y: state.home_anchor.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Settle,
             },
             IanAction::PlayfulStateSet {
                 state: PlayfulState::Settling,
@@ -358,6 +401,7 @@ impl BehaviorEngine {
                     x: state.position.x + 24.0,
                     y: state.position.y,
                     speed: MovementSpeed::Slow,
+                    profile: MotionProfile::Gentle,
                 },
             ],
             TouchReaction::DragStart => vec![
@@ -400,6 +444,7 @@ impl BehaviorEngine {
                         x: target.x,
                         y: target.y,
                         speed: MovementSpeed::Normal,
+                        profile: MotionProfile::Settle,
                     },
                     IanAction::EffectPlay {
                         name: "blush_puff".to_string(),
@@ -673,6 +718,7 @@ impl BehaviorEngine {
                             x: target.x,
                             y: target.y,
                             speed: MovementSpeed::Fast,
+                            profile: MotionProfile::Playful,
                         },
                     );
                 }
@@ -690,27 +736,14 @@ impl BehaviorEngine {
                     ];
                 }
 
-                vec![
-                    diagnostic,
-                    IanAction::AnimationPlay {
-                        name: "wave".to_string(),
-                        looped: false,
-                    },
-                    IanAction::MovementMoveTo {
-                        x: state.position.x + 36.0,
-                        y: state.position.y,
-                        speed: MovementSpeed::Slow,
-                    },
-                    IanAction::EffectPlay {
-                        name: "sparkle_pop".to_string(),
-                        intensity: "low".to_string(),
-                        duration_ms: 600,
-                    },
-                    IanAction::AnimationPlay {
-                        name: "idle".to_string(),
-                        looped: true,
-                    },
-                ]
+                let mut actions = vec![diagnostic];
+                actions.extend(self.pointer_curiosity_story(state).into_actions(false));
+                actions.push(IanAction::EffectPlay {
+                    name: "sparkle_pop".to_string(),
+                    intensity: "low".to_string(),
+                    duration_ms: 600,
+                });
+                actions
             }
             IanMomentKind::DragCarry => vec![
                 diagnostic,
@@ -734,6 +767,7 @@ impl BehaviorEngine {
                     x: state.position.x + 24.0,
                     y: state.position.y + 16.0,
                     speed: MovementSpeed::Normal,
+                    profile: MotionProfile::Settle,
                 },
                 IanAction::EffectPlay {
                     name: "blush_puff".to_string(),
@@ -869,6 +903,7 @@ impl BehaviorEngine {
             x: target.x,
             y: target.y,
             speed: MovementSpeed::Slow,
+            profile: MotionProfile::Gentle,
         }));
 
         Some(actions)
@@ -921,11 +956,13 @@ impl BehaviorEngine {
                 x: first.x,
                 y: first.y,
                 speed: MovementSpeed::Normal,
+                profile: MotionProfile::Gentle,
             },
             IanAction::MovementMoveTo {
                 x: second.x,
                 y: second.y,
                 speed: MovementSpeed::Slow,
+                profile: MotionProfile::Gentle,
             },
             IanAction::AnimationPlay {
                 name: "idle".to_string(),
@@ -1014,11 +1051,13 @@ impl BehaviorEngine {
                 x: left.x,
                 y: left.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Gentle,
             },
             IanAction::MovementMoveTo {
                 x: right.x,
                 y: right.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Gentle,
             },
             IanAction::AnimationPlay {
                 name: "idle".to_string(),
@@ -1152,16 +1191,19 @@ impl BehaviorEngine {
                 x: first_target.x,
                 y: first_target.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Playful,
             },
             IanAction::MovementMoveTo {
                 x: chase_target.x,
                 y: chase_target.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Playful,
             },
             IanAction::MovementMoveTo {
                 x: settle_target.x,
                 y: settle_target.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Settle,
             },
             IanAction::AnimationPlay {
                 name: "idle".to_string(),
@@ -1272,6 +1314,7 @@ impl BehaviorEngine {
                 x: target.x,
                 y: target.y,
                 speed: MovementSpeed::Fast,
+                profile: MotionProfile::Gentle,
             });
         }
 
@@ -1279,6 +1322,7 @@ impl BehaviorEngine {
             x: state.home_anchor.x,
             y: state.home_anchor.y,
             speed: MovementSpeed::Fast,
+            profile: MotionProfile::Gentle,
         });
         actions.push(IanAction::PlayfulStateSet {
             state: PlayfulState::Settling,
@@ -1412,7 +1456,10 @@ fn find_ian_target(state: &IanState) -> Position {
 
 #[cfg(test)]
 mod tests {
-    use crate::protocol::{IanAction, IanEvent, IanState, PlayfulEnergy, PlayfulState, Position};
+    use crate::protocol::{
+        IanAction, IanEvent, IanState, MotionProfile, MovementSpeed, PlayfulEnergy, PlayfulState,
+        Position,
+    };
 
     use super::BehaviorEngine;
 
@@ -1674,7 +1721,7 @@ mod tests {
         )));
         assert!(actions.iter().any(|action| matches!(
             action,
-            IanAction::MovementMoveTo { x, y, speed }
+            IanAction::MovementMoveTo { x, y, speed, .. }
                 if *x <= 48.0 && *y <= 48.0 && matches!(speed, crate::protocol::MovementSpeed::Slow)
         )));
     }
@@ -2110,7 +2157,7 @@ mod tests {
         let movement_targets = actions
             .iter()
             .filter_map(|action| {
-                if let IanAction::MovementMoveTo { x, y, speed } = action {
+                if let IanAction::MovementMoveTo { x, y, speed, .. } = action {
                     Some((*x, *y, speed))
                 } else {
                     None
@@ -2743,6 +2790,97 @@ mod tests {
         assert!(!repeated
             .iter()
             .any(|action| matches!(action, IanAction::SpeechShow { .. })));
+    }
+
+    #[test]
+    fn life_drive_updates_from_low_sensitive_events_without_exposing_scores() {
+        let mut drive = crate::domain::behavior::life_drive::LifeDrive::default();
+        let idle = drive.snapshot();
+
+        drive.record_event(&IanEvent::MouseClick { x: 12.0, y: 16.0 });
+        drive.record_event(&IanEvent::MouseDragStart { x: 12.0, y: 16.0 });
+        drive.record_event(&IanEvent::MouseDragEnd { x: 42.0, y: 54.0 });
+        drive.record_event(&IanEvent::TimeTick { now_ms: 90_000 });
+
+        let updated = drive.snapshot();
+
+        assert!(updated.affection > idle.affection);
+        assert!(updated.comfort > idle.comfort);
+        assert!(updated.boredom > idle.boredom);
+        assert!(updated.energy <= 100);
+        assert_eq!(updated.as_public_score(), None);
+    }
+
+    #[test]
+    fn micro_story_outputs_ordered_beats_and_reduced_motion_variant() {
+        let story = crate::domain::behavior::moment_story::MomentStory::new("pointer_tease")
+            .discover(IanAction::AnimationPlay {
+                name: "wave".to_string(),
+                looped: false,
+            })
+            .pause(180)
+            .act(IanAction::MovementMoveTo {
+                x: 24.0,
+                y: 0.0,
+                speed: MovementSpeed::Slow,
+                profile: MotionProfile::Playful,
+            })
+            .settle(IanAction::AnimationPlay {
+                name: "idle".to_string(),
+                looped: true,
+            });
+
+        let beats = story.beats();
+        assert_eq!(
+            beats[0].kind,
+            crate::domain::behavior::moment_story::MomentBeatKind::Discover
+        );
+        assert_eq!(
+            beats[1].kind,
+            crate::domain::behavior::moment_story::MomentBeatKind::Pause
+        );
+        assert_eq!(
+            beats[2].kind,
+            crate::domain::behavior::moment_story::MomentBeatKind::Act
+        );
+        assert_eq!(
+            beats[3].kind,
+            crate::domain::behavior::moment_story::MomentBeatKind::Settle
+        );
+
+        let actions = story.clone().into_actions(false);
+        let reduced = story.into_actions(true);
+
+        assert!(actions.len() > reduced.len());
+        assert!(reduced.iter().all(|action| {
+            !matches!(action, IanAction::MovementMoveTo { profile, .. }
+                if matches!(profile, MotionProfile::Playful))
+        }));
+    }
+
+    #[test]
+    fn pointer_debug_moment_uses_story_and_playful_motion_profile() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.diagnostics_enabled = true;
+
+        let actions = engine.decide(
+            &IanEvent::MomentDebugTrigger {
+                kind: "pointer_curiosity".to_string(),
+                now_ms: 10_000,
+            },
+            &state,
+        );
+
+        assert!(actions.iter().any(|action| matches!(
+            action,
+            IanAction::MovementMoveTo {
+                profile: MotionProfile::Playful,
+                ..
+            }
+        )));
+        assert!(plays_animation(&actions, "wave"));
+        assert!(plays_animation(&actions, "idle"));
     }
 
     fn plays_animation(actions: &[IanAction], animation: &str) -> bool {

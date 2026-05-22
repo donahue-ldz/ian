@@ -269,14 +269,46 @@ describe("reduceIanActions", () => {
 
   it("records the latest movement target from Rust Core movement actions", () => {
     const actions: IanAction[] = [
-      { type: "movement.move_to", x: 24, y: 36, speed: "normal" },
+      {
+        type: "movement.move_to",
+        x: 24,
+        y: 36,
+        speed: "normal",
+        profile: "gentle",
+      },
     ];
 
     const next = reduceIanActions(createInitialIanViewState(), actions, 1000);
 
     expect(next.position).toEqual({ x: 24, y: 36 });
-    expect(next.movementTarget).toEqual({ x: 24, y: 36, speed: "normal" });
+    expect(next.movementTarget).toEqual({
+      x: 24,
+      y: 36,
+      speed: "normal",
+      profile: "gentle",
+    });
     expect(next.lastMovementAt).toBe(1000);
+  });
+
+  it("preserves Rust Core motion profile for desktop movement feel", () => {
+    const actions = [
+      {
+        type: "movement.move_to",
+        x: 24,
+        y: 36,
+        speed: "normal",
+        profile: "playful",
+      },
+    ] as IanAction[];
+
+    const next = reduceIanActions(createInitialIanViewState(), actions, 1000);
+
+    expect(next.movementTarget).toEqual({
+      x: 24,
+      y: 36,
+      speed: "normal",
+      profile: "playful",
+    });
   });
 
   it("applies transient appearance scale without changing persisted surface scale", () => {
@@ -299,13 +331,23 @@ describe("reduceIanActions", () => {
     const state = {
       ...createInitialIanViewState(),
       position: { x: 2840, y: 1570 },
-      movementTarget: { x: 2840, y: 1570, speed: "normal" as const },
+      movementTarget: {
+        x: 2840,
+        y: 1570,
+        speed: "normal" as const,
+        profile: "gentle" as const,
+      },
     };
 
     const next = viewStateForWindowContent(state, true);
 
     expect(next.position).toEqual({ x: 0, y: 0 });
-    expect(next.movementTarget).toEqual({ x: 0, y: 0, speed: "normal" });
+    expect(next.movementTarget).toEqual({
+      x: 0,
+      y: 0,
+      speed: "normal",
+      profile: "gentle",
+    });
   });
 
   it("keeps browser preview positions unchanged", () => {
@@ -367,6 +409,28 @@ describe("movement pacing", () => {
     expect(frames.some((frame) => frame.y > 20 && frame.y < 70)).toBe(true);
   });
 
+  it("adds motion-profile body feel to desktop movement frames", () => {
+    const playfulFrames = planDesktopMovementFrames(
+      { x: 10, y: 20 },
+      { x: 110, y: 20 },
+      "normal",
+      0,
+      "playful",
+    );
+    const settleFrames = planDesktopMovementFrames(
+      { x: 10, y: 20 },
+      { x: 110, y: 20 },
+      "normal",
+      0,
+      "settle",
+    );
+
+    expect(playfulFrames.some((frame) => frame.y < 20)).toBe(true);
+    expect(settleFrames.some((frame) => frame.y > 20)).toBe(true);
+    expect(playfulFrames.at(-1)).toEqual({ x: 110, y: 20 });
+    expect(settleFrames.at(-1)).toEqual({ x: 110, y: 20 });
+  });
+
   it("scales desktop movement duration by travel distance", () => {
     const shortMoveMs = durationForDesktopMovement(
       { x: 10, y: 20 },
@@ -386,14 +450,32 @@ describe("movement pacing", () => {
   it("cancels older desktop movement batches only when a newer movement batch starts", () => {
     const guard = createMovementSequenceGuard();
     const patrolBatch: IanAction[] = [
-      { type: "movement.move_to", x: 10, y: 10, speed: "slow" },
-      { type: "movement.move_to", x: 100, y: 10, speed: "slow" },
+      {
+        type: "movement.move_to",
+        x: 10,
+        y: 10,
+        speed: "slow",
+        profile: "gentle",
+      },
+      {
+        type: "movement.move_to",
+        x: 100,
+        y: 10,
+        speed: "slow",
+        profile: "gentle",
+      },
     ];
     const nonMovementBatch: IanAction[] = [
       { type: "animation.play", name: "idle", looped: true },
     ];
     const chaseBatch: IanAction[] = [
-      { type: "movement.move_to", x: 40, y: 10, speed: "fast" },
+      {
+        type: "movement.move_to",
+        x: 40,
+        y: 10,
+        speed: "fast",
+        profile: "playful",
+      },
     ];
 
     const patrolSequence = guard.startBatch(patrolBatch);

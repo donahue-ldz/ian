@@ -1,4 +1,9 @@
-import type { IanAction, MovementSpeed, Position } from "../protocol/generated";
+import type {
+  IanAction,
+  MotionProfile,
+  MovementSpeed,
+  Position,
+} from "../protocol/generated";
 import { formatBubbleText } from "../renderer/bubbleModel";
 
 const DEFAULT_BUBBLE_DURATION_MS = 2400;
@@ -18,7 +23,7 @@ export type IanViewState = {
   };
   isBubbleInputActive: boolean;
   position: Position;
-  movementTarget: (Position & { speed: MovementSpeed }) | null;
+  movementTarget: (Position & { speed: MovementSpeed; profile: MotionProfile }) | null;
   appearanceScale: number;
   visualEffect: { name: string; intensity: string; visibleUntil: number } | null;
   lastMovementAt: number;
@@ -183,6 +188,7 @@ export function reduceIanActions(
             x: action.x,
             y: action.y,
             speed: action.speed,
+            profile: action.profile ?? "gentle",
           },
           lastMovementAt: now,
         };

@@ -12,6 +12,16 @@ pub enum MovementSpeed {
     Fast,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "snake_case")]
+#[ts(export)]
+pub enum MotionProfile {
+    #[default]
+    Gentle,
+    Playful,
+    Settle,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, TS)]
 #[serde(tag = "type")]
 #[ts(export)]
@@ -23,6 +33,8 @@ pub enum IanAction {
         x: f64,
         y: f64,
         speed: MovementSpeed,
+        #[serde(default)]
+        profile: MotionProfile,
     },
     #[serde(rename = "speech.show")]
     SpeechShow {

@@ -199,6 +199,7 @@ export function IanStage({
         className="ian-creature-surface"
         data-behavior-mode={behaviorMode}
         data-dragging={isDraggingView ? "true" : "false"}
+        data-motion-profile={viewState.movementTarget?.profile ?? "gentle"}
         style={{
           transform: `translate(${viewState.position.x + dragOffset.x}px, ${
             viewState.position.y + dragOffset.y

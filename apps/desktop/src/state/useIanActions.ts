@@ -9,6 +9,7 @@ import {
 import type {
   IanAction,
   IanEvent,
+  MotionProfile,
   MovementSpeed,
   Position,
 } from "../protocol/generated";
@@ -129,6 +130,7 @@ async function applyActionSequence(
       await moveDesktopWindowSmoothly(
         { x: action.x, y: action.y },
         action.speed,
+        action.profile ?? "gentle",
         movementIndex,
         () => movementGuard.isCurrent(sequenceId),
       );
@@ -140,6 +142,7 @@ async function applyActionSequence(
 async function moveDesktopWindowSmoothly(
   target: Position,
   speed: MovementSpeed,
+  profile: MotionProfile,
   movementIndex: number,
   isCurrent = () => true,
 ) {
@@ -153,8 +156,20 @@ async function moveDesktopWindowSmoothly(
     return;
   }
 
-  const durationMs = durationForDesktopMovement(start, target, speed, movementIndex);
-  const frames = planDesktopMovementFrames(start, target, speed, movementIndex);
+  const durationMs = durationForDesktopMovement(
+    start,
+    target,
+    speed,
+    movementIndex,
+    profile,
+  );
+  const frames = planDesktopMovementFrames(
+    start,
+    target,
+    speed,
+    movementIndex,
+    profile,
+  );
   const frameDelayMs = Math.max(
     16,
     Math.round(durationMs / frames.length),
@@ -217,9 +232,12 @@ export function durationForDesktopMovement(
   to: Position,
   speed: MovementSpeed,
   movementIndex = 0,
+  profile: MotionProfile = "gentle",
 ): number {
   const distance = Math.hypot(to.x - from.x, to.y - from.y);
-  const pixelsPerSecond = speed === "fast" ? 280 : speed === "slow" ? 55 : 140;
+  const profileMultiplier = profile === "settle" ? 0.9 : profile === "playful" ? 1.08 : 1;
+  const pixelsPerSecond =
+    (speed === "fast" ? 280 : speed === "slow" ? 55 : 140) * profileMultiplier;
   const distanceDuration = Math.round((distance / pixelsPerSecond) * 1000);
 
   return Math.max(durationForSpeed(speed, movementIndex), distanceDuration);
@@ -230,11 +248,16 @@ export function planDesktopMovementFrames(
   to: Position,
   speed: MovementSpeed,
   movementIndex = 0,
+  profile: MotionProfile = "gentle",
 ): Position[] {
   const frameCount = Math.max(
     12,
-    Math.round(durationForDesktopMovement(from, to, speed, movementIndex) / 33),
+    Math.round(
+      durationForDesktopMovement(from, to, speed, movementIndex, profile) / 33,
+    ),
   );
+  const distance = Math.hypot(to.x - from.x, to.y - from.y);
+  const amplitude = Math.min(18, Math.max(4, distance * 0.08));
 
   return Array.from({ length: frameCount }, (_, index) => {
     const progress = (index + 1) / frameCount;
@@ -249,9 +272,24 @@ export function planDesktopMovementFrames(
 
     return {
       x: from.x + (to.x - from.x) * eased,
-      y: from.y + (to.y - from.y) * eased,
+      y: from.y + (to.y - from.y) * eased + motionProfileOffset(profile, progress, amplitude),
     };
   });
+}
+
+function motionProfileOffset(
+  profile: MotionProfile,
+  progress: number,
+  amplitude: number,
+): number {
+  switch (profile) {
+    case "playful":
+      return -Math.sin(progress * Math.PI) * amplitude;
+    case "settle":
+      return Math.sin(progress * Math.PI) * amplitude * (1 - progress * 0.35);
+    default:
+      return 0;
+  }
 }
 
 function delay(durationMs: number): Promise<void> {

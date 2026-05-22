@@ -13,6 +13,7 @@ export type AnimationName =
   | "wave"
   | "affection";
 export type MovementSpeed = "slow" | "normal" | "fast";
+export type MotionProfile = "gentle" | "playful" | "settle";
 export type CurrentBehavior = "idle" | "resting" | "walking" | "happy" | "running" | "zooming" | "sleeping";
 export type BehaviorMode = "quiet" | "normal" | "lively";
 export type BuildTestStatus = "success" | "failure";
@@ -143,7 +144,13 @@ export type IanEvent =
 
 export type IanAction =
   | { type: "animation.play"; name: AnimationName; looped: boolean }
-  | { type: "movement.move_to"; x: number; y: number; speed: MovementSpeed }
+  | {
+      type: "movement.move_to";
+      x: number;
+      y: number;
+      speed: MovementSpeed;
+      profile: MotionProfile;
+    }
   | {
       type: "speech.show";
       text: string;
