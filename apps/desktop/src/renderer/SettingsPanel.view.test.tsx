@@ -55,6 +55,71 @@ describe("SettingsPanel information architecture", () => {
     expect(html).toContain("羊驼");
   });
 
+  it("renders accessible resource pack preview cards that reuse pet switching", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain('class="ian-pet-preview-grid"');
+    expect(html).toContain('aria-label="切换到小冒险家"');
+    expect(html).toContain('aria-pressed="true"');
+    expect(html).toContain("像素");
+    expect(html).toContain("圆润");
+  });
+
+  it("renders visual reset controls without touching privacy or reminder settings", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain('aria-label="恢复默认外观"');
+    expect(html).toContain('aria-label="重置桌面位置"');
+  });
+
+  it("renders Demo and BYOM mode without allowing remote mode before a key exists", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain("对话模式");
+    expect(html).toContain("Demo");
+    expect(html).toContain("自带模型");
+    expect(html).toContain("先保存本地 key 后才能启用");
+    expect(html).toMatch(/aria-label="启用自带模型"[^>]*disabled=""/);
+  });
+
+  it("renders reminder cadence, do-not-disturb, permission center, and privacy onboarding copy", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain('aria-label="提醒间隔"');
+    expect(html).toContain('aria-label="启用勿扰"');
+    expect(html).toContain("权限中心");
+    expect(html).toContain("高敏能力默认关闭");
+    expect(html).toContain("Ian 默认本地优先");
+  });
+
+  it("renders memory review and future social plugin boundaries as local default-off surfaces", () => {
+    const html = renderToStaticMarkup(<SettingsPanel {...baseProps()} isOpen />);
+
+    expect(html).toContain("记忆候选");
+    expect(html).toContain("确认后才会本地保存");
+    expect(html).toContain("清空候选");
+    expect(html).toContain("未来社交和插件能力");
+    expect(html).toContain("Feishu、Pet Visit、插件系统默认关闭");
+    expect(html).toContain("默认无遥测");
+  });
+
+  it("renders find Ian controls with a default-off low-sensitive shortcut boundary", () => {
+    const html = renderToStaticMarkup(
+      <SettingsPanel
+        {...baseProps()}
+        isOpen
+        findIanShortcutEnabled={false}
+        findIanShortcutStatus="conflict"
+      />,
+    );
+
+    expect(html).toContain("找回 Ian");
+    expect(html).toContain("Cmd+Shift+I");
+    expect(html).toContain("只监听一个找回 Ian 快捷键，不记录输入内容");
+    expect(html).toContain("快捷键被其他应用占用");
+    expect(html).toContain('aria-label="启用找回 Ian 快捷键"');
+  });
+
   it("marks size controls disabled at supported bounds", () => {
     const minHtml = renderToStaticMarkup(
       <SettingsPanel {...baseProps()} isOpen surfaceScale={0.8} />,
@@ -85,6 +150,7 @@ function baseProps(): Parameters<typeof SettingsPanel>[0] {
     bubbleFrequency: "normal",
     buildTestEventsEnabled: false,
     byomEnabled: false,
+    byomKeyConfigured: false,
     developerSnooze: { enabled: false, until_ms: null, reason: null },
     developerWorkspace: {
       bound: false,
@@ -105,6 +171,12 @@ function baseProps(): Parameters<typeof SettingsPanel>[0] {
       end_minute: 7 * 60,
     },
     remindersEnabled: true,
+    reminderIntervalMinutes: 90,
+    doNotDisturb: false,
+    privacyOnboardingSeen: false,
+    findIanShortcutEnabled: false,
+    findIanShortcut: "Cmd+Shift+I",
+    findIanShortcutStatus: "idle",
     restBehavior: "normal",
     playfulEnergy: "normal",
     playfulSnoozedUntilMs: null,
@@ -117,6 +189,13 @@ function baseProps(): Parameters<typeof SettingsPanel>[0] {
     onModeChange: vi.fn(),
     onPetChange: vi.fn(),
     onQuietHoursChange: vi.fn(),
+    onDoNotDisturbChange: vi.fn(),
+    onPrivacyOnboardingSeenChange: vi.fn(),
+    onFindIan: vi.fn(),
+    onFindIanShortcutEnabledChange: vi.fn(),
     onRemindersEnabledChange: vi.fn(),
+    onReminderIntervalMinutesChange: vi.fn(),
+    onResetAppearance: vi.fn(),
+    onResetPosition: vi.fn(),
   };
 }

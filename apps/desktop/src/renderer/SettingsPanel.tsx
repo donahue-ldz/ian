@@ -5,6 +5,8 @@ import type {
   PlayfulEnergy,
   QuietHours,
 } from "../protocol/generated";
+import type { FindIanShortcutStatus } from "../lib/findIanShortcut";
+import { formatFindIanShortcut } from "../lib/findIanShortcut";
 import { BUILT_IN_PET_RESOURCE_PACKS } from "../resources/resourceLoader";
 import {
   behaviorModeOptions,
@@ -25,11 +27,18 @@ const SURFACE_SCALE_STEP = 0.1;
 type SettingsPanelProps = {
   behaviorMode: BehaviorMode;
   remindersEnabled: boolean;
+  reminderIntervalMinutes: number;
+  doNotDisturb: boolean;
   byomEnabled: boolean;
+  byomKeyConfigured: boolean;
   gitMetadataEnabled: boolean;
   buildTestEventsEnabled: boolean;
   keyboardRhythmEnabled: boolean;
   activeAppPresenceEnabled: boolean;
+  privacyOnboardingSeen: boolean;
+  findIanShortcutEnabled: boolean;
+  findIanShortcut: string;
+  findIanShortcutStatus: FindIanShortcutStatus;
   quietHours: QuietHours;
   developerWorkspace: DeveloperWorkspace;
   developerSnooze: DeveloperSnooze;
@@ -45,10 +54,17 @@ type SettingsPanelProps = {
   onClose: () => void;
   onModeChange: (mode: BehaviorMode) => void;
   onRemindersEnabledChange: (enabled: boolean) => void;
+  onReminderIntervalMinutesChange: (intervalMinutes: number) => void;
+  onDoNotDisturbChange: (enabled: boolean) => void;
+  onPrivacyOnboardingSeenChange: (seen: boolean) => void;
+  onFindIan: () => void;
+  onFindIanShortcutEnabledChange: (enabled: boolean) => void;
   onQuietHoursChange: (quietHours: QuietHours) => void;
   onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
   onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
   onPetChange: (petId: string) => void;
+  onResetAppearance: () => void;
+  onResetPosition: () => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -64,11 +80,18 @@ type SettingsPanelProps = {
 export function SettingsPanel({
   behaviorMode,
   remindersEnabled,
+  reminderIntervalMinutes,
+  doNotDisturb,
   byomEnabled,
+  byomKeyConfigured,
   gitMetadataEnabled,
   buildTestEventsEnabled,
   keyboardRhythmEnabled,
   activeAppPresenceEnabled,
+  privacyOnboardingSeen,
+  findIanShortcutEnabled,
+  findIanShortcut,
+  findIanShortcutStatus,
   quietHours,
   developerWorkspace,
   developerSnooze,
@@ -84,10 +107,17 @@ export function SettingsPanel({
   onClose,
   onModeChange,
   onRemindersEnabledChange,
+  onReminderIntervalMinutesChange,
+  onDoNotDisturbChange,
+  onPrivacyOnboardingSeenChange,
+  onFindIan,
+  onFindIanShortcutEnabledChange,
   onQuietHoursChange,
   onDeveloperWorkspaceChange,
   onDeveloperSnoozeChange,
   onPetChange,
+  onResetAppearance,
+  onResetPosition,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
 }: SettingsPanelProps) {
@@ -174,6 +204,28 @@ export function SettingsPanel({
             ))}
           </select>
         </label>
+        <div className="ian-pet-preview-grid" aria-label="宠物预览">
+          {BUILT_IN_PET_RESOURCE_PACKS.map((option) => (
+            <button
+              aria-label={`切换到${option.label}`}
+              aria-pressed={option.id === activePetId}
+              className="ian-pet-preview-card"
+              data-active={option.id === activePetId}
+              data-preview-animation={option.previewAnimation}
+              key={option.id}
+              type="button"
+              onClick={() => onPetChange(option.id)}
+            >
+              <span className="ian-pet-preview-mark" aria-hidden="true">
+                {option.label.slice(0, 1)}
+              </span>
+              <span>
+                {option.label}
+                <small>{option.previewTone}</small>
+              </span>
+            </button>
+          ))}
+        </div>
         <SettingsSelect
           label="休息"
           value={restBehavior}
@@ -215,9 +267,55 @@ export function SettingsPanel({
             onChange={(event) => onRemindersEnabledChange(event.currentTarget.checked)}
           />
         </label>
+        <SettingsSelect
+          label="提醒间隔"
+          value={String(reminderIntervalMinutes)}
+          options={[
+            { label: "30 分钟", value: "30" },
+            { label: "45 分钟", value: "45" },
+            { label: "60 分钟", value: "60" },
+            { label: "90 分钟", value: "90" },
+            { label: "120 分钟", value: "120" },
+          ]}
+          onChange={(value) => onReminderIntervalMinutesChange(Number(value))}
+        />
       </section>
       <section className="ian-settings-section" aria-labelledby="ian-settings-disturbance">
         <h3 id="ian-settings-disturbance">打扰</h3>
+        <div className="ian-settings-row">
+          <span>
+            找回 Ian
+            <small>只监听一个找回 Ian 快捷键，不记录输入内容</small>
+          </span>
+          <button type="button" aria-label="找回 Ian" onClick={onFindIan}>
+            找回 Ian
+          </button>
+        </div>
+        <label className="ian-settings-toggle-row">
+          <span>
+            快捷键
+            <small>
+              {formatFindIanShortcut(findIanShortcut)}
+              {findIanShortcutStatus === "conflict" ? " · 快捷键被其他应用占用" : ""}
+              {findIanShortcutStatus === "registered" ? " · 已启用" : ""}
+            </small>
+          </span>
+          <input
+            aria-label="启用找回 Ian 快捷键"
+            checked={findIanShortcutEnabled}
+            type="checkbox"
+            onChange={(event) => onFindIanShortcutEnabledChange(event.currentTarget.checked)}
+          />
+        </label>
+        <label className="ian-settings-toggle-row">
+          <span>勿扰</span>
+          <input
+            aria-label="启用勿扰"
+            checked={doNotDisturb}
+            type="checkbox"
+            onChange={(event) => onDoNotDisturbChange(event.currentTarget.checked)}
+          />
+        </label>
         <label className="ian-settings-toggle-row">
           <span>安静时段</span>
           <input
@@ -260,6 +358,43 @@ export function SettingsPanel({
       <section className="ian-settings-section" aria-labelledby="ian-settings-privacy">
         <h3 id="ian-settings-privacy">隐私</h3>
         <p className="ian-settings-note">默认不读取代码、窗口标题、终端全文或按键内容。</p>
+        <div className="ian-permission-center">
+          <strong>权限中心</strong>
+          <p className="ian-settings-note">
+            Ian 默认本地优先。高敏能力默认关闭，开启前会说明读取范围。
+          </p>
+          <label className="ian-settings-toggle-row">
+            <span>已了解隐私说明</span>
+            <input
+              aria-label="已了解隐私说明"
+              checked={privacyOnboardingSeen}
+              type="checkbox"
+              onChange={(event) =>
+                onPrivacyOnboardingSeenChange(event.currentTarget.checked)
+              }
+            />
+          </label>
+        </div>
+        <details className="ian-settings-developer">
+          <summary>记忆候选</summary>
+          <p className="ian-settings-note">
+            Ian 只会把低敏标签作为候选，确认后才会本地保存。
+          </p>
+          <div className="ian-settings-reset-row">
+            <button type="button" aria-label="确认记忆候选">
+              确认候选
+            </button>
+            <button type="button" aria-label="清空记忆候选">
+              清空候选
+            </button>
+          </div>
+        </details>
+        <details className="ian-settings-developer">
+          <summary>未来社交和插件能力</summary>
+          <p className="ian-settings-note">
+            Feishu、Pet Visit、插件系统默认关闭。默认无遥测，诊断需要手动导出。
+          </p>
+        </details>
         <details className="ian-settings-developer">
           <summary>可选开发节奏</summary>
           <p className="ian-settings-note">想让 Ian 理解一点开发节奏时再开启。</p>
@@ -325,11 +460,37 @@ export function SettingsPanel({
       </section>
       <details className="ian-settings-section ian-settings-advanced">
         <summary>高级</summary>
+        <div className="ian-settings-row">
+          <span>对话模式</span>
+          <div className="ian-segmented" role="group" aria-label="对话模式">
+            <button
+              className="ian-segmented-option"
+              data-active={!byomEnabled}
+              type="button"
+              onClick={() => onCapabilityEnabledChange("byom", false)}
+            >
+              Demo
+            </button>
+            <button
+              className="ian-segmented-option"
+              data-active={byomEnabled}
+              disabled={!byomKeyConfigured}
+              type="button"
+              onClick={() => onCapabilityEnabledChange("byom", true)}
+            >
+              自带模型
+            </button>
+          </div>
+        </div>
         <label className="ian-settings-toggle-row">
-          <span>自带模型</span>
+          <span>
+            自带模型
+            {!byomKeyConfigured ? <small>先保存本地 key 后才能启用</small> : null}
+          </span>
           <input
             aria-label="启用自带模型"
             checked={byomEnabled}
+            disabled={!byomKeyConfigured}
             type="checkbox"
             onChange={(event) => onCapabilityEnabledChange("byom", event.currentTarget.checked)}
           />
@@ -348,6 +509,14 @@ export function SettingsPanel({
             })
           }
         />
+        <div className="ian-settings-reset-row">
+          <button type="button" aria-label="恢复默认外观" onClick={onResetAppearance}>
+            默认外观
+          </button>
+          <button type="button" aria-label="重置桌面位置" onClick={onResetPosition}>
+            重置位置
+          </button>
+        </div>
         <label className="ian-settings-toggle-row">
           <span>本地诊断</span>
           <input

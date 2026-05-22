@@ -20,11 +20,17 @@ const browserFallbackState: IanState = {
   active_resource_pack: "ian-puppy",
   behavior_mode: "normal",
   reminders_enabled: true,
+  reminder_interval_minutes: 90,
+  do_not_disturb: false,
   byom_enabled: false,
+  byom_key_configured: false,
   git_metadata_enabled: false,
   build_test_events_enabled: false,
   keyboard_rhythm_enabled: false,
   active_app_presence_enabled: false,
+  privacy_onboarding_seen: false,
+  find_ian_shortcut_enabled: false,
+  find_ian_shortcut: "CommandOrControl+Shift+I",
   home_anchor: { x: 0, y: 0 },
   screen_bounds: null,
   last_user_interaction_ms: 0,
@@ -323,6 +329,18 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
     return [{ type: "state.sync", state: browserFallbackState }];
   }
 
+  if (event.type === "system.shortcut_triggered" && event.action === "find_ian") {
+    browserFallbackState.position = { x: 48, y: 48 };
+    return [
+      { type: "movement.move_to", x: 48, y: 48, speed: "fast" },
+      { type: "bubble.open" },
+      { type: "speech.show", text: "我在这儿。", mood: "calm", duration_ms: 2200 },
+      { type: "effect.play", name: "sparkle_pop", intensity: "low", duration_ms: 900 },
+      { type: "animation.play", name: "happy", looped: false },
+      { type: "state.sync", state: browserFallbackState },
+    ];
+  }
+
   if (event.type === "dialogue.user_message") {
     browserFallbackState.is_bubble_input_active = false;
     const text =
@@ -360,6 +378,16 @@ export async function saveIanPosition(position: Position): Promise<IanAction[]> 
 
   browserFallbackState.position = position;
   browserFallbackState.home_anchor = position;
+  return [{ type: "state.sync", state: browserFallbackState }];
+}
+
+export async function resetIanPosition(): Promise<IanAction[]> {
+  if (isTauriRuntime()) {
+    return invoke<IanAction[]>("reset_window_position");
+  }
+
+  browserFallbackState.position = { x: 0, y: 0 };
+  browserFallbackState.home_anchor = { x: 0, y: 0 };
   return [{ type: "state.sync", state: browserFallbackState }];
 }
 
@@ -437,6 +465,49 @@ export async function saveRemindersEnabled(enabled: boolean): Promise<IanState> 
   }
 
   browserFallbackState.reminders_enabled = enabled;
+  return browserFallbackState;
+}
+
+export async function saveReminderSettings(
+  enabled: boolean,
+  intervalMinutes: number,
+): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_reminder_settings", {
+      enabled,
+      intervalMinutes,
+    });
+  }
+
+  browserFallbackState.reminders_enabled = enabled;
+  browserFallbackState.reminder_interval_minutes = intervalMinutes;
+  return browserFallbackState;
+}
+
+export async function saveDoNotDisturb(enabled: boolean): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_do_not_disturb", { enabled });
+  }
+
+  browserFallbackState.do_not_disturb = enabled;
+  return browserFallbackState;
+}
+
+export async function savePrivacyOnboardingSeen(seen: boolean): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_privacy_onboarding_seen", { seen });
+  }
+
+  browserFallbackState.privacy_onboarding_seen = seen;
+  return browserFallbackState;
+}
+
+export async function saveFindIanShortcutEnabled(enabled: boolean): Promise<IanState> {
+  if (isTauriRuntime()) {
+    return invoke<IanState>("save_find_ian_shortcut_enabled", { enabled });
+  }
+
+  browserFallbackState.find_ian_shortcut_enabled = enabled;
   return browserFallbackState;
 }
 

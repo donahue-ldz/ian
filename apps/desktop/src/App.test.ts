@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import type { IanEvent, Position } from "./protocol/generated";
 import {
+  findIan,
   sendArmedChaseCandidate,
   sendIanClickAndArmChase,
   sendIanLeaveWithArmedChase,
@@ -70,6 +71,26 @@ describe("click armed pointer chase", () => {
     expect(isArmed).toBe(false);
   });
 
+  it("does not read the desktop cursor when settings are open", async () => {
+    const events: IanEvent[] = [];
+    const getCursorPosition = vi.fn(async () => ({ x: 620, y: 360 }));
+
+    const isArmed = await sendArmedChaseCandidate({
+      isDesktopWindow: true,
+      isChaseArmed: true,
+      isSettingsOpen: true,
+      now: () => 456_789,
+      getCursorPosition,
+      sendEvent: async (event) => {
+        events.push(event);
+      },
+    });
+
+    expect(getCursorPosition).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
+    expect(isArmed).toBe(false);
+  });
+
   it("does not read the desktop cursor on leave when chase is not armed", async () => {
     const events: IanEvent[] = [];
     const getCursorPosition = vi.fn(async () => ({ x: 620, y: 360 }));
@@ -108,6 +129,27 @@ describe("click armed pointer chase", () => {
     expect(getCursorPosition).not.toHaveBeenCalled();
     expect(events).toEqual([{ type: "mouse.leave", x: 12, y: 18 }]);
     expect(isArmed).toBe(false);
+  });
+});
+
+describe("find Ian", () => {
+  it("sends only a low-sensitive find_ian shortcut event", async () => {
+    const events: IanEvent[] = [];
+
+    await findIan({
+      now: () => 123_456,
+      sendEvent: async (event) => {
+        events.push(event);
+      },
+    });
+
+    expect(events).toEqual([
+      {
+        type: "system.shortcut_triggered",
+        action: "find_ian",
+        now_ms: 123_456,
+      },
+    ]);
   });
 });
 

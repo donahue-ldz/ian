@@ -78,6 +78,29 @@ describe("resourceLoader contract", () => {
     );
   });
 
+  it("throws a handled error when any required semantic animation is missing", () => {
+    const invalid = {
+      ...pack,
+      animations: {
+        ...pack.animations,
+        animations: { ...pack.animations.animations, run: undefined },
+      },
+    } as unknown as PetResourcePack;
+
+    expect(() => validatePetResourcePack(invalid)).toThrow(
+      "Resource pack must define run animation",
+    );
+  });
+
+  it("exposes preview metadata for every built-in resource pack", async () => {
+    const { BUILT_IN_PET_RESOURCE_PACKS } = await import("./resourceLoader");
+
+    for (const option of BUILT_IN_PET_RESOURCE_PACKS) {
+      expect(option.previewAnimation).toBeTruthy();
+      expect(option.previewTone).toBeTruthy();
+    }
+  });
+
   it("falls back unknown animations to idle", () => {
     expect(resolveAnimationWithFallback(pack, "jump")).toBe("idle");
     expect(resolveAnimationWithFallback(pack, "run")).toBe("run");

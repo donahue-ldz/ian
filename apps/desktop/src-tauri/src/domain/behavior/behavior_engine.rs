@@ -86,6 +86,10 @@ impl BehaviorEngine {
             IanEvent::MouseChaseCandidate { x, y, now_ms } => {
                 self.actions_for_pointer_chase(*now_ms, Position { x: *x, y: *y }, state)
             }
+            IanEvent::SystemShortcutTriggered { action, .. } if action == "find_ian" => {
+                self.actions_for_find_ian(state)
+            }
+            IanEvent::SystemShortcutTriggered { .. } => vec![],
             IanEvent::TimeTick { now_ms } => self.actions_for_tick(*now_ms, state),
             IanEvent::ScreenBounds { .. } => vec![],
             IanEvent::DeveloperBuildTestSummary { .. }
@@ -155,6 +159,40 @@ impl BehaviorEngine {
             None,
             Some(interaction_count),
         )
+    }
+
+    fn actions_for_find_ian(&self, state: &IanState) -> Vec<IanAction> {
+        let mut actions = vec![
+            IanAction::BubbleOpen,
+            IanAction::SpeechShow {
+                text: "我在这儿。".to_string(),
+                mood: Some("calm".to_string()),
+                duration_ms: Some(2200),
+            },
+            IanAction::EffectPlay {
+                name: "sparkle_pop".to_string(),
+                intensity: "low".to_string(),
+                duration_ms: 900,
+            },
+            IanAction::AnimationPlay {
+                name: "happy".to_string(),
+                looped: false,
+            },
+        ];
+
+        if !is_position_visible(state) {
+            let target = find_ian_target(state);
+            actions.insert(
+                0,
+                IanAction::MovementMoveTo {
+                    x: target.x,
+                    y: target.y,
+                    speed: MovementSpeed::Fast,
+                },
+            );
+        }
+
+        actions
     }
 
     fn actions_for_attention(&self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
@@ -396,7 +434,10 @@ impl BehaviorEngine {
             return actions;
         }
 
-        if self.policy.should_emit_micro_motion(now_ms, &state.behavior_mode) {
+        if self
+            .policy
+            .should_emit_micro_motion(now_ms, &state.behavior_mode)
+        {
             actions.extend(self.actions_for_micro_motion());
         }
 
@@ -459,9 +500,11 @@ impl BehaviorEngine {
 
         let min_x = bounds.x + PATROL_MARGIN - PATROL_VISUAL_OFFSET_X;
         let min_y = bounds.y + PATROL_MARGIN - PATROL_VISUAL_OFFSET_Y;
-        let max_x = bounds.x + bounds.width - PATROL_MARGIN - PATROL_VISUAL_WIDTH
-            - PATROL_VISUAL_OFFSET_X;
-        let max_y = bounds.y + bounds.height - PATROL_MARGIN - PATROL_VISUAL_HEIGHT
+        let max_x =
+            bounds.x + bounds.width - PATROL_MARGIN - PATROL_VISUAL_WIDTH - PATROL_VISUAL_OFFSET_X;
+        let max_y = bounds.y + bounds.height
+            - PATROL_MARGIN
+            - PATROL_VISUAL_HEIGHT
             - PATROL_VISUAL_OFFSET_Y;
 
         let corners = [
@@ -990,11 +1033,31 @@ fn is_active_settling_state(now_ms: i64, state: &IanState) -> bool {
             .unwrap_or(false)
 }
 
+fn is_position_visible(state: &IanState) -> bool {
+    let Some(bounds) = &state.screen_bounds else {
+        return false;
+    };
+
+    state.position.x >= bounds.x
+        && state.position.y >= bounds.y
+        && state.position.x <= bounds.x + bounds.width - 80.0
+        && state.position.y <= bounds.y + bounds.height - 80.0
+}
+
+fn find_ian_target(state: &IanState) -> Position {
+    if let Some(bounds) = &state.screen_bounds {
+        return Position {
+            x: bounds.x + (bounds.width - 220.0).max(24.0),
+            y: bounds.y + (bounds.height - 260.0).max(24.0),
+        };
+    }
+
+    Position { x: 48.0, y: 48.0 }
+}
+
 #[cfg(test)]
 mod tests {
-    use crate::protocol::{
-        IanAction, IanEvent, IanState, PlayfulEnergy, PlayfulState, Position,
-    };
+    use crate::protocol::{IanAction, IanEvent, IanState, PlayfulEnergy, PlayfulState, Position};
 
     use super::BehaviorEngine;
 

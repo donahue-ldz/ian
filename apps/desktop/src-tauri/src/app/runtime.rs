@@ -16,12 +16,8 @@ use crate::{
     storage::StorageService,
 };
 
-const BUILT_IN_ACTIVE_PET_IDS: &[&str] = &[
-    "ian-adventurer",
-    "ian-puppy",
-    "ian-kitten",
-    "ian-alpaca",
-];
+const BUILT_IN_ACTIVE_PET_IDS: &[&str] =
+    &["ian-adventurer", "ian-puppy", "ian-kitten", "ian-alpaca"];
 
 pub struct IanRuntime {
     event_bus: EventBus,
@@ -189,11 +185,54 @@ impl IanRuntime {
         Ok(self.state.snapshot().clone())
     }
 
+    pub fn save_reminder_settings(
+        &mut self,
+        enabled: bool,
+        interval_minutes: u16,
+    ) -> Result<IanState, String> {
+        self.state
+            .set_reminder_settings(enabled, interval_minutes.clamp(15, 240));
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_do_not_disturb(&mut self, enabled: bool) -> Result<IanState, String> {
+        self.state.set_do_not_disturb(enabled);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_privacy_onboarding_seen(&mut self, seen: bool) -> Result<IanState, String> {
+        self.state.set_privacy_onboarding_seen(seen);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
+    pub fn save_find_ian_shortcut_enabled(&mut self, enabled: bool) -> Result<IanState, String> {
+        self.state.set_find_ian_shortcut_enabled(enabled);
+        self.storage
+            .persist_state(self.state.snapshot())
+            .map_err(|error| error.to_string())?;
+        Ok(self.state.snapshot().clone())
+    }
+
     pub fn save_capability_enabled(
         &mut self,
         capability: String,
         enabled: bool,
     ) -> Result<IanState, String> {
+        if capability == "byom" && enabled && !self.state.snapshot().byom_key_configured {
+            return Err(
+                "BYOM requires a locally stored API key before it can be enabled".to_string(),
+            );
+        }
+
         if !self
             .state
             .set_capability_enabled(capability.as_str(), enabled)
@@ -278,6 +317,7 @@ impl IanRuntime {
             IanEvent::DeveloperBuildTestSummary { .. }
             | IanEvent::DeveloperGitStatusChanged { .. }
             | IanEvent::KeyboardRhythm { .. }
+            | IanEvent::SystemShortcutTriggered { .. }
             | IanEvent::MouseChaseCandidate { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => {}
@@ -475,6 +515,56 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(runtime.state().active_pet_id, "ian-puppy");
         assert_eq!(runtime.state().active_resource_pack, "ian-puppy");
+    }
+
+    #[test]
+    fn byom_cannot_be_enabled_without_a_configured_key() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let result = runtime.save_capability_enabled("byom".to_string(), true);
+
+        assert!(result.is_err());
+        assert!(!runtime.state().byom_enabled);
+        assert!(!runtime.state().byom_key_configured);
+    }
+
+    #[test]
+    fn reminder_settings_and_do_not_disturb_round_trip_through_runtime_state() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        runtime
+            .save_reminder_settings(true, 45)
+            .expect("save reminder settings");
+        let state = runtime
+            .save_do_not_disturb(true)
+            .expect("save do not disturb");
+
+        assert!(state.reminders_enabled);
+        assert_eq!(state.reminder_interval_minutes, 45);
+        assert!(state.do_not_disturb);
+    }
+
+    #[test]
+    fn find_ian_shortcut_emits_find_actions_without_keyboard_rhythm() {
+        let mut runtime = IanRuntime::new(StorageService::in_memory());
+
+        let actions = runtime
+            .handle_event(IanEvent::SystemShortcutTriggered {
+                action: "find_ian".to_string(),
+                now_ms: 1_000,
+            })
+            .expect("find Ian");
+
+        assert!(actions.iter().any(|action| {
+            matches!(action, IanAction::MovementMoveTo { speed, .. } if matches!(speed, crate::protocol::MovementSpeed::Fast))
+        }));
+        assert!(actions.iter().any(|action| {
+            matches!(action, IanAction::SpeechShow { text, .. } if text == "我在这儿。")
+        }));
+        assert!(!matches!(
+            runtime.state().current_animation.as_str(),
+            "keyboard_rhythm"
+        ));
     }
 
     #[test]

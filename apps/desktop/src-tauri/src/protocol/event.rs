@@ -73,6 +73,8 @@ pub enum IanEvent {
         confidence: f32,
         app_id: Option<String>,
     },
+    #[serde(rename = "system.shortcut_triggered")]
+    SystemShortcutTriggered { action: String, now_ms: i64 },
 }
 
 #[derive(Debug, Deserialize)]
@@ -138,6 +140,8 @@ enum IanEventWire {
         confidence: f32,
         app_id: Option<String>,
     },
+    #[serde(rename = "system.shortcut_triggered")]
+    SystemShortcutTriggered { action: String, now_ms: i64 },
 }
 
 impl<'de> Deserialize<'de> for IanEvent {
@@ -223,6 +227,9 @@ impl From<IanEventWire> for IanEvent {
                 confidence,
                 app_id,
             },
+            IanEventWire::SystemShortcutTriggered { action, now_ms } => {
+                Self::SystemShortcutTriggered { action, now_ms }
+            }
         }
     }
 }
@@ -247,6 +254,7 @@ impl IanEvent {
             Self::DeveloperBuildTestSummary { .. } => "developer.build_test_summary",
             Self::KeyboardRhythm { .. } => "keyboard.rhythm",
             Self::ActiveAppPresence { .. } => "active_app.presence",
+            Self::SystemShortcutTriggered { .. } => "system.shortcut_triggered",
         }
     }
 }
@@ -302,6 +310,24 @@ mod tests {
             "y": 420.0,
             "now_ms": 300_000,
             "window_title": "private doc"
+        });
+
+        assert!(serde_json::from_value::<IanEvent>(payload).is_ok());
+        assert!(serde_json::from_value::<IanEvent>(sensitive_payload).is_err());
+    }
+
+    #[test]
+    fn find_ian_shortcut_accepts_only_action_and_time() {
+        let payload = json!({
+            "type": "system.shortcut_triggered",
+            "action": "find_ian",
+            "now_ms": 300_000
+        });
+        let sensitive_payload = json!({
+            "type": "system.shortcut_triggered",
+            "action": "find_ian",
+            "now_ms": 300_000,
+            "text": "typed input"
         });
 
         assert!(serde_json::from_value::<IanEvent>(payload).is_ok());

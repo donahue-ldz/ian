@@ -25,6 +25,40 @@ impl ResourceRegistry {
     }
 }
 
+#[derive(Debug)]
+pub struct MultiMonitorRoamingPolicy {
+    cross_monitor_enabled: bool,
+    margin: f64,
+}
+
+impl Default for MultiMonitorRoamingPolicy {
+    fn default() -> Self {
+        Self {
+            cross_monitor_enabled: false,
+            margin: 40.0,
+        }
+    }
+}
+
+impl MultiMonitorRoamingPolicy {
+    pub fn cross_monitor_enabled(&self) -> bool {
+        self.cross_monitor_enabled
+    }
+
+    pub fn clamp_target(
+        &self,
+        x: f64,
+        y: f64,
+        screen_width: f64,
+        screen_height: f64,
+    ) -> (f64, f64) {
+        (
+            x.clamp(0.0, (screen_width - self.margin).max(0.0)),
+            y.clamp(0.0, (screen_height - self.margin).max(0.0)),
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::ResourceRegistry;

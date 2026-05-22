@@ -5,6 +5,7 @@ pub mod dialogue_adapter;
 pub mod git_metadata_adapter;
 pub mod keyboard_rhythm_adapter;
 pub mod mouse_adapter;
+pub mod permission_registry;
 pub mod time_adapter;
 
 pub use adapter_trait::*;

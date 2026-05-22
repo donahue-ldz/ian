@@ -1,6 +1,7 @@
 import { useRef, useState, type MouseEvent, type PointerEvent } from "react";
 import type { IanViewState } from "../state/ianActions";
 import type { PetResourcePack } from "../resources/resourceLoader";
+import type { FindIanShortcutStatus } from "../lib/findIanShortcut";
 import type {
   BehaviorMode,
   DeveloperSnooze,
@@ -11,7 +12,6 @@ import type {
 import { Bubble } from "./Bubble";
 import {
   getDragOffset,
-  getPhysicalDragOffset,
   shouldStartDrag,
 } from "./dragGesture";
 import { IanSprite } from "./IanSprite";
@@ -28,11 +28,18 @@ type IanStageProps = {
   viewState: IanViewState;
   behaviorMode: BehaviorMode;
   remindersEnabled: boolean;
+  reminderIntervalMinutes: number;
+  doNotDisturb: boolean;
   byomEnabled: boolean;
+  byomKeyConfigured: boolean;
   gitMetadataEnabled: boolean;
   buildTestEventsEnabled: boolean;
   keyboardRhythmEnabled: boolean;
   activeAppPresenceEnabled: boolean;
+  privacyOnboardingSeen: boolean;
+  findIanShortcutEnabled: boolean;
+  findIanShortcut: string;
+  findIanShortcutStatus: FindIanShortcutStatus;
   quietHours: QuietHours;
   developerWorkspace: DeveloperWorkspace;
   developerSnooze: DeveloperSnooze;
@@ -57,10 +64,17 @@ type IanStageProps = {
   onSettingsClose: () => void;
   onBehaviorModeChange: (mode: BehaviorMode) => void;
   onRemindersEnabledChange: (enabled: boolean) => void;
+  onReminderIntervalMinutesChange: (intervalMinutes: number) => void;
+  onDoNotDisturbChange: (enabled: boolean) => void;
+  onPrivacyOnboardingSeenChange: (seen: boolean) => void;
+  onFindIan: () => void;
+  onFindIanShortcutEnabledChange: (enabled: boolean) => void;
   onQuietHoursChange: (quietHours: QuietHours) => void;
   onDeveloperWorkspaceChange: (workspace: DeveloperWorkspace) => void;
   onDeveloperSnoozeChange: (snooze: DeveloperSnooze) => void;
   onPetChange: (petId: string) => void;
+  onResetAppearance: () => void;
+  onResetPosition: () => void;
   onCreatureSettingsChange: (settings: {
     movementIntensity: string;
     bubbleFrequency: string;
@@ -72,7 +86,6 @@ type IanStageProps = {
   }) => void;
   onCapabilityEnabledChange: (capability: string, enabled: boolean) => void;
   onDragStart: (point: Point) => void;
-  onDragMove: (offset: Point) => void;
   onDragEnd: (point: Point) => void;
 };
 
@@ -81,11 +94,18 @@ export function IanStage({
   viewState,
   behaviorMode,
   remindersEnabled,
+  reminderIntervalMinutes,
+  doNotDisturb,
   byomEnabled,
+  byomKeyConfigured,
   gitMetadataEnabled,
   buildTestEventsEnabled,
   keyboardRhythmEnabled,
   activeAppPresenceEnabled,
+  privacyOnboardingSeen,
+  findIanShortcutEnabled,
+  findIanShortcut,
+  findIanShortcutStatus,
   quietHours,
   developerWorkspace,
   developerSnooze,
@@ -110,18 +130,23 @@ export function IanStage({
   onSettingsClose,
   onBehaviorModeChange,
   onRemindersEnabledChange,
+  onReminderIntervalMinutesChange,
+  onDoNotDisturbChange,
+  onPrivacyOnboardingSeenChange,
+  onFindIan,
+  onFindIanShortcutEnabledChange,
   onQuietHoursChange,
   onDeveloperWorkspaceChange,
   onDeveloperSnoozeChange,
   onPetChange,
+  onResetAppearance,
+  onResetPosition,
   onCreatureSettingsChange,
   onCapabilityEnabledChange,
   onDragStart,
-  onDragMove,
   onDragEnd,
 }: IanStageProps) {
   const dragOrigin = useRef<Point | null>(null);
-  const dragScreenOrigin = useRef<Point | null>(null);
   const isDragging = useRef(false);
   const suppressNextClick = useRef(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
@@ -129,13 +154,6 @@ export function IanStage({
 
   function pointFromPointer(event: PointerEvent<HTMLElement>): Point {
     return pointFromClient(event);
-  }
-
-  function screenPointFromPointer(event: PointerEvent<HTMLElement>): Point {
-    return {
-      x: event.screenX,
-      y: event.screenY,
-    };
   }
 
   function pointFromMouse(event: MouseEvent<HTMLElement>): Point {
@@ -169,7 +187,6 @@ export function IanStage({
           }
 
           dragOrigin.current = pointFromPointer(event);
-          dragScreenOrigin.current = screenPointFromPointer(event);
           isDragging.current = false;
           setIsDraggingView(false);
         }}
@@ -189,17 +206,7 @@ export function IanStage({
 
           const offset = getDragOffset(dragOrigin.current, point);
           if (isDesktopWindow) {
-            const screenOrigin = dragScreenOrigin.current;
-            if (!screenOrigin) {
-              return;
-            }
-            onDragMove(
-              getPhysicalDragOffset(
-                screenOrigin,
-                screenPointFromPointer(event),
-                window.devicePixelRatio,
-              ),
-            );
+            return;
           } else {
             setDragOffset(offset);
           }
@@ -211,7 +218,6 @@ export function IanStage({
             suppressNextClick.current = true;
           }
           dragOrigin.current = null;
-          dragScreenOrigin.current = null;
           isDragging.current = false;
           setIsDraggingView(false);
           setDragOffset({ x: 0, y: 0 });
@@ -221,7 +227,6 @@ export function IanStage({
         }}
         onPointerCancel={(event) => {
           dragOrigin.current = null;
-          dragScreenOrigin.current = null;
           isDragging.current = false;
           setIsDraggingView(false);
           setDragOffset({ x: 0, y: 0 });
@@ -250,11 +255,18 @@ export function IanStage({
         <SettingsPanel
           behaviorMode={behaviorMode}
           remindersEnabled={remindersEnabled}
+          reminderIntervalMinutes={reminderIntervalMinutes}
+          doNotDisturb={doNotDisturb}
           byomEnabled={byomEnabled}
+          byomKeyConfigured={byomKeyConfigured}
           gitMetadataEnabled={gitMetadataEnabled}
           buildTestEventsEnabled={buildTestEventsEnabled}
           keyboardRhythmEnabled={keyboardRhythmEnabled}
           activeAppPresenceEnabled={activeAppPresenceEnabled}
+          privacyOnboardingSeen={privacyOnboardingSeen}
+          findIanShortcutEnabled={findIanShortcutEnabled}
+          findIanShortcut={findIanShortcut}
+          findIanShortcutStatus={findIanShortcutStatus}
           quietHours={quietHours}
           developerWorkspace={developerWorkspace}
           developerSnooze={developerSnooze}
@@ -270,10 +282,17 @@ export function IanStage({
           onClose={onSettingsClose}
           onModeChange={onBehaviorModeChange}
           onRemindersEnabledChange={onRemindersEnabledChange}
+          onReminderIntervalMinutesChange={onReminderIntervalMinutesChange}
+          onDoNotDisturbChange={onDoNotDisturbChange}
+          onPrivacyOnboardingSeenChange={onPrivacyOnboardingSeenChange}
+          onFindIan={onFindIan}
+          onFindIanShortcutEnabledChange={onFindIanShortcutEnabledChange}
           onQuietHoursChange={onQuietHoursChange}
           onDeveloperWorkspaceChange={onDeveloperWorkspaceChange}
           onDeveloperSnoozeChange={onDeveloperSnoozeChange}
           onPetChange={onPetChange}
+          onResetAppearance={onResetAppearance}
+          onResetPosition={onResetPosition}
           onCreatureSettingsChange={onCreatureSettingsChange}
           onCapabilityEnabledChange={onCapabilityEnabledChange}
         />

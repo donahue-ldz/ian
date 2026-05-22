@@ -14,12 +14,8 @@ pub fn configure_main_window(app: &mut App) -> tauri::Result<()> {
             let origin = monitor.position();
             let size = monitor.size();
             let window_size = window.outer_size()?;
-            let resolved_position = resolve_initial_window_position(
-                saved_position,
-                *origin,
-                *size,
-                window_size,
-            );
+            let resolved_position =
+                resolve_initial_window_position(saved_position, *origin, *size, window_size);
             window.set_position(resolved_position)?;
             if let Some(runtime) = app.try_state::<Mutex<IanRuntime>>() {
                 if let Ok(mut runtime) = runtime.lock() {
@@ -45,7 +41,9 @@ fn resolve_initial_window_position(
 ) -> PhysicalPosition<i32> {
     let position = saved_position
         .and_then(restorable_position)
-        .unwrap_or_else(|| default_bottom_right_position(monitor_origin, monitor_size, window_size));
+        .unwrap_or_else(|| {
+            default_bottom_right_position(monitor_origin, monitor_size, window_size)
+        });
 
     clamp_window_position(position, monitor_origin, monitor_size, window_size)
 }
@@ -60,6 +58,19 @@ fn default_bottom_right_position(
     PhysicalPosition::new(x, y)
 }
 
+pub fn reset_webview_window_position(
+    window: &tauri::WebviewWindow,
+) -> tauri::Result<PhysicalPosition<i32>> {
+    let Some(monitor) = window.current_monitor()? else {
+        return Ok(PhysicalPosition::new(0, 0));
+    };
+
+    let position =
+        default_bottom_right_position(*monitor.position(), *monitor.size(), window.outer_size()?);
+    window.set_position(position)?;
+    Ok(position)
+}
+
 fn clamp_window_position(
     position: PhysicalPosition<i32>,
     monitor_origin: PhysicalPosition<i32>,
@@ -71,7 +82,10 @@ fn clamp_window_position(
     let max_x = monitor_origin.x + monitor_size.width.saturating_sub(window_size.width) as i32;
     let max_y = monitor_origin.y + monitor_size.height.saturating_sub(window_size.height) as i32;
 
-    PhysicalPosition::new(position.x.clamp(min_x, max_x), position.y.clamp(min_y, max_y))
+    PhysicalPosition::new(
+        position.x.clamp(min_x, max_x),
+        position.y.clamp(min_y, max_y),
+    )
 }
 
 fn restorable_position(position: Position) -> Option<PhysicalPosition<i32>> {

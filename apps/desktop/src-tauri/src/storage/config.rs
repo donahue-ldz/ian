@@ -15,6 +15,14 @@ struct ConfigFile {
     #[serde(default)]
     reminder: ReminderConfig,
     #[serde(default)]
+    dialogue: DialogueConfig,
+    #[serde(default)]
+    privacy: PrivacyConfig,
+    #[serde(default)]
+    shortcut: ShortcutConfig,
+    #[serde(default)]
+    disturbance: DisturbanceConfig,
+    #[serde(default)]
     capabilities: CapabilityConfig,
     position: Position,
     #[serde(default)]
@@ -70,12 +78,51 @@ impl Default for CreatureConfig {
 #[derive(Debug, Serialize, Deserialize)]
 struct ReminderConfig {
     enabled: bool,
+    #[serde(default = "default_reminder_interval_minutes")]
+    interval_minutes: u16,
 }
 
 impl Default for ReminderConfig {
     fn default() -> Self {
-        Self { enabled: true }
+        Self {
+            enabled: true,
+            interval_minutes: default_reminder_interval_minutes(),
+        }
     }
+}
+
+fn default_reminder_interval_minutes() -> u16 {
+    90
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct DialogueConfig {
+    byom_key_configured: bool,
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct PrivacyConfig {
+    onboarding_seen: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct ShortcutConfig {
+    find_ian_enabled: bool,
+    find_ian_shortcut: String,
+}
+
+impl Default for ShortcutConfig {
+    fn default() -> Self {
+        Self {
+            find_ian_enabled: false,
+            find_ian_shortcut: "CommandOrControl+Shift+I".to_string(),
+        }
+    }
+}
+
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct DisturbanceConfig {
+    do_not_disturb: bool,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -297,6 +344,27 @@ y = 24.0
         assert!(!loaded.developer_snooze.enabled);
         assert!(matches!(loaded.playful_energy, PlayfulEnergy::Normal));
     }
+
+    #[test]
+    fn persist_state_round_trips_dialogue_reminders_and_privacy_without_api_key() {
+        let dir = tempdir().expect("temp dir");
+        let mut state = IanState::default();
+        state.byom_key_configured = true;
+        state.reminder_interval_minutes = 45;
+        state.do_not_disturb = true;
+        state.privacy_onboarding_seen = true;
+
+        persist_state(dir.path(), &state).expect("persist state");
+        let raw = fs::read_to_string(dir.path().join("config.toml")).expect("read config");
+        let loaded = load_state(dir.path()).expect("load state");
+
+        assert!(loaded.byom_key_configured);
+        assert_eq!(loaded.reminder_interval_minutes, 45);
+        assert!(loaded.do_not_disturb);
+        assert!(loaded.privacy_onboarding_seen);
+        assert!(!raw.contains("sk-"));
+        assert!(!raw.contains("api_key"));
+    }
 }
 
 impl From<IanState> for ConfigFile {
@@ -311,6 +379,20 @@ impl From<IanState> for ConfigFile {
             },
             reminder: ReminderConfig {
                 enabled: state.reminders_enabled,
+                interval_minutes: state.reminder_interval_minutes.clamp(15, 240),
+            },
+            dialogue: DialogueConfig {
+                byom_key_configured: state.byom_key_configured,
+            },
+            privacy: PrivacyConfig {
+                onboarding_seen: state.privacy_onboarding_seen,
+            },
+            shortcut: ShortcutConfig {
+                find_ian_enabled: state.find_ian_shortcut_enabled,
+                find_ian_shortcut: state.find_ian_shortcut,
+            },
+            disturbance: DisturbanceConfig {
+                do_not_disturb: state.do_not_disturb,
             },
             capabilities: CapabilityConfig {
                 byom_enabled: state.byom_enabled,
@@ -347,11 +429,17 @@ impl From<ConfigFile> for IanState {
             active_resource_pack: config.app.active_resource_pack,
             behavior_mode: config.behavior.mode,
             reminders_enabled: config.reminder.enabled,
-            byom_enabled: config.capabilities.byom_enabled,
+            reminder_interval_minutes: config.reminder.interval_minutes.clamp(15, 240),
+            do_not_disturb: config.disturbance.do_not_disturb,
+            byom_enabled: config.capabilities.byom_enabled && config.dialogue.byom_key_configured,
+            byom_key_configured: config.dialogue.byom_key_configured,
             git_metadata_enabled: config.capabilities.git_metadata_enabled,
             build_test_events_enabled: config.capabilities.build_test_events_enabled,
             keyboard_rhythm_enabled: config.capabilities.keyboard_rhythm_enabled,
             active_app_presence_enabled: config.capabilities.active_app_presence_enabled,
+            privacy_onboarding_seen: config.privacy.onboarding_seen,
+            find_ian_shortcut_enabled: config.shortcut.find_ian_enabled,
+            find_ian_shortcut: config.shortcut.find_ian_shortcut,
             home_anchor: config.home_anchor.unwrap_or(config.position),
             screen_bounds: None,
             last_user_interaction_ms: 0,

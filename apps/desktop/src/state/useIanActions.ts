@@ -12,7 +12,12 @@ import type {
   MovementSpeed,
   Position,
 } from "../protocol/generated";
-import { getIanState, saveIanPosition, sendIanEvent } from "../lib/tauriBridge";
+import {
+  getIanState,
+  resetIanPosition,
+  saveIanPosition,
+  sendIanEvent,
+} from "../lib/tauriBridge";
 import { getDesktopWindowPosition, moveDesktopWindow } from "../lib/position";
 import {
   createInitialIanViewState,
@@ -78,10 +83,16 @@ export function useIanActions() {
     [applyActions],
   );
 
+  const resetPosition = useCallback(async () => {
+    const actions = await resetIanPosition();
+    applyActions(actions);
+  }, [applyActions]);
+
   return {
     viewState,
     sendEvent,
     savePosition,
+    resetPosition,
   };
 }
 

@@ -5,3 +5,5 @@ pub mod memory_repo;
 pub mod mood_repo;
 pub mod pet_repo;
 pub mod reminder_repo;
+pub mod social_whitelist_repo;
+pub mod visit_record_repo;

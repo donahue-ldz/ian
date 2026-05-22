@@ -70,6 +70,30 @@ impl CreatureState {
         self.state.reminders_enabled = enabled;
     }
 
+    pub fn set_reminder_settings(&mut self, enabled: bool, interval_minutes: u16) {
+        self.state.reminders_enabled = enabled;
+        self.state.reminder_interval_minutes = interval_minutes.clamp(15, 240);
+    }
+
+    pub fn set_do_not_disturb(&mut self, enabled: bool) {
+        self.state.do_not_disturb = enabled;
+    }
+
+    pub fn set_privacy_onboarding_seen(&mut self, seen: bool) {
+        self.state.privacy_onboarding_seen = seen;
+    }
+
+    pub fn set_find_ian_shortcut_enabled(&mut self, enabled: bool) {
+        self.state.find_ian_shortcut_enabled = enabled;
+    }
+
+    pub fn set_byom_key_configured(&mut self, configured: bool) {
+        self.state.byom_key_configured = configured;
+        if !configured {
+            self.state.byom_enabled = false;
+        }
+    }
+
     pub fn set_dragging(&mut self, is_dragging: bool) {
         self.state.is_dragging = is_dragging;
     }

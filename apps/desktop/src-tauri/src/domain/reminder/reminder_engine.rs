@@ -1,4 +1,5 @@
 use super::reminder_policy::ReminderPolicy;
+use crate::domain::behavior::day_phase_policy::minute_of_day_from_epoch_ms;
 use crate::protocol::{IanAction, IanState};
 
 #[derive(Default)]
@@ -15,7 +16,12 @@ impl ReminderEngine {
     pub fn actions_for_tick(&mut self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
         if !self.policy.enabled
             || !state.reminders_enabled
+            || state.do_not_disturb
             || state.current_animation == "run"
+            || state.is_bubble_input_active
+            || state
+                .quiet_hours
+                .is_active_at_minute(minute_of_day_from_epoch_ms(now_ms))
             || self
                 .policy
                 .should_reduce_for_app_category(state.active_app_category.as_deref())
@@ -28,7 +34,8 @@ impl ReminderEngine {
             return Vec::new();
         };
 
-        if now_ms - last_reminder_ms < self.policy.cooldown_ms {
+        let cooldown_ms = i64::from(state.reminder_interval_minutes.clamp(15, 240)) * 60 * 1000;
+        if now_ms - last_reminder_ms < cooldown_ms {
             return Vec::new();
         }
 
@@ -97,5 +104,32 @@ mod tests {
 
         assert!(engine.actions_for_tick(1_000, &state).is_empty());
         assert!(engine.actions_for_tick(5_401_000, &state).is_empty());
+    }
+
+    #[test]
+    fn quiet_hours_and_open_input_suppress_reminders() {
+        let mut quiet_engine = ReminderEngine::default();
+        let mut quiet_state = IanState::default();
+        quiet_state.quiet_hours.enabled = true;
+        quiet_state.quiet_hours.start_minute = 0;
+        quiet_state.quiet_hours.end_minute = 24 * 60;
+
+        assert!(quiet_engine
+            .actions_for_tick(1_000, &quiet_state)
+            .is_empty());
+        assert!(quiet_engine
+            .actions_for_tick(5_401_000, &quiet_state)
+            .is_empty());
+
+        let mut input_engine = ReminderEngine::default();
+        let mut input_state = IanState::default();
+        input_state.is_bubble_input_active = true;
+
+        assert!(input_engine
+            .actions_for_tick(1_000, &input_state)
+            .is_empty());
+        assert!(input_engine
+            .actions_for_tick(5_401_000, &input_state)
+            .is_empty());
     }
 }

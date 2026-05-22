@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  getDragOffset,
-  getPhysicalDragOffset,
-  shouldStartDrag,
-} from "./dragGesture";
+import { getDragOffset, shouldStartDrag } from "./dragGesture";
 
 describe("dragGesture", () => {
   it("does not start dragging for a stationary Ian click", () => {
@@ -19,12 +15,10 @@ describe("dragGesture", () => {
     });
   });
 
-  it("converts screen-space drag movement to physical window movement", () => {
-    expect(
-      getPhysicalDragOffset({ x: 500, y: 300 }, { x: 560, y: 335 }, 2),
-    ).toEqual({
-      x: 120,
-      y: 70,
+  it("keeps desktop drag gestures in logical preview space only", () => {
+    expect(getDragOffset({ x: 500, y: 300 }, { x: 560, y: 335 })).toEqual({
+      x: 60,
+      y: 35,
     });
   });
 });

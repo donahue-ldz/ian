@@ -57,11 +57,17 @@ export type IanState = {
   active_resource_pack: string;
   behavior_mode: BehaviorMode;
   reminders_enabled: boolean;
+  reminder_interval_minutes: number;
+  do_not_disturb: boolean;
   byom_enabled: boolean;
+  byom_key_configured: boolean;
   git_metadata_enabled: boolean;
   build_test_events_enabled: boolean;
   keyboard_rhythm_enabled: boolean;
   active_app_presence_enabled: boolean;
+  privacy_onboarding_seen: boolean;
+  find_ian_shortcut_enabled: boolean;
+  find_ian_shortcut: string;
   home_anchor: Position;
   screen_bounds?: ScreenBounds | null;
   last_user_interaction_ms: number;
@@ -121,7 +127,8 @@ export type IanEvent =
       category: string;
       confidence: number;
       app_id?: string | null;
-    };
+    }
+  | { type: "system.shortcut_triggered"; action: string; now_ms: number };
 
 export type IanAction =
   | { type: "animation.play"; name: AnimationName; looped: boolean }

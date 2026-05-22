@@ -18,17 +18,25 @@ import {
   saveCreatureSettings,
   saveDeveloperSnooze,
   saveDeveloperWorkspace,
+  saveDoNotDisturb,
+  saveFindIanShortcutEnabled,
+  savePrivacyOnboardingSeen,
   saveQuietHours,
+  saveReminderSettings,
   saveRemindersEnabled,
 } from "./lib/tauriBridge";
 import {
   getDesktopCursorPosition,
   getDesktopScreenBounds,
   getDesktopWindowPosition,
-  moveDesktopWindow,
   resolveSavedDragPosition,
   startDesktopWindowDrag,
 } from "./lib/position";
+import {
+  registerFindIanShortcut,
+  unregisterFindIanShortcut,
+  type FindIanShortcutStatus,
+} from "./lib/findIanShortcut";
 import { useIanActions } from "./state/useIanActions";
 import { viewStateForWindowContent } from "./state/ianActions";
 
@@ -47,6 +55,7 @@ type LeaveChaseDependencies = {
   point: Position;
   isDesktopWindow: boolean;
   isChaseArmed: boolean;
+  isSettingsOpen?: boolean;
   now: () => number;
   getCursorPosition: () => Promise<Position | null>;
   sendEvent: (event: IanEvent) => Promise<void> | void;
@@ -65,6 +74,19 @@ type SwitchPetResourcePackDependencies = {
   setActivePetId: (id: string) => void;
 };
 
+type FindIanDependencies = {
+  now: () => number;
+  sendEvent: (event: IanEvent) => Promise<void> | void;
+};
+
+export async function findIan({ now, sendEvent }: FindIanDependencies): Promise<void> {
+  await sendEvent({
+    type: "system.shortcut_triggered",
+    action: "find_ian",
+    now_ms: now(),
+  });
+}
+
 export async function sendIanClickAndArmChase({
   point,
   isDesktopWindow,
@@ -78,6 +100,7 @@ export async function sendIanLeaveWithArmedChase({
   point,
   isDesktopWindow,
   isChaseArmed,
+  isSettingsOpen,
   now,
   getCursorPosition,
   sendEvent,
@@ -87,6 +110,7 @@ export async function sendIanLeaveWithArmedChase({
   return sendArmedChaseCandidate({
     isDesktopWindow,
     isChaseArmed,
+    isSettingsOpen,
     now,
     getCursorPosition,
     sendEvent,
@@ -96,11 +120,12 @@ export async function sendIanLeaveWithArmedChase({
 export async function sendArmedChaseCandidate({
   isDesktopWindow,
   isChaseArmed,
+  isSettingsOpen,
   now,
   getCursorPosition,
   sendEvent,
 }: ArmedChaseDependencies): Promise<boolean> {
-  if (!isDesktopWindow || !isChaseArmed) {
+  if (!isDesktopWindow || !isChaseArmed || isSettingsOpen) {
     return false;
   }
 
@@ -135,6 +160,13 @@ export default function App() {
   const [activePetId, setActivePetId] = useState(DEFAULT_RESOURCE_PACK_ID);
   const [behaviorMode, setBehaviorMode] = useState<BehaviorMode>("normal");
   const [remindersEnabled, setRemindersEnabled] = useState(true);
+  const [reminderIntervalMinutes, setReminderIntervalMinutes] = useState(90);
+  const [doNotDisturb, setDoNotDisturb] = useState(false);
+  const [privacyOnboardingSeen, setPrivacyOnboardingSeen] = useState(false);
+  const [findIanShortcutEnabled, setFindIanShortcutEnabled] = useState(false);
+  const [findIanShortcut, setFindIanShortcut] = useState("CommandOrControl+Shift+I");
+  const [findIanShortcutStatus, setFindIanShortcutStatus] =
+    useState<FindIanShortcutStatus>("idle");
   const [capabilities, setCapabilities] = useState(createCapabilityState());
   const [quietHours, setQuietHours] = useState<QuietHours>({
     enabled: false,
@@ -155,10 +187,9 @@ export default function App() {
   });
   const [creatureSettings, setCreatureSettings] = useState(createCreatureSettingsState());
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const desktopDragOrigin = useRef<{ x: number; y: number } | null>(null);
   const pointerLeaveChaseArmed = useRef(false);
   const pointerChaseFallbackTimeout = useRef<number | null>(null);
-  const { savePosition, sendEvent, viewState } = useIanActions();
+  const { resetPosition, savePosition, sendEvent, viewState } = useIanActions();
   const isDesktopWindow = "__TAURI_INTERNALS__" in window;
   const stageViewState = viewStateForWindowContent(viewState, isDesktopWindow);
 
@@ -175,6 +206,11 @@ export default function App() {
         );
       setBehaviorMode(state.behavior_mode);
       setRemindersEnabled(state.reminders_enabled);
+      setReminderIntervalMinutes(state.reminder_interval_minutes);
+      setDoNotDisturb(state.do_not_disturb);
+      setPrivacyOnboardingSeen(state.privacy_onboarding_seen);
+      setFindIanShortcutEnabled(state.find_ian_shortcut_enabled);
+      setFindIanShortcut(state.find_ian_shortcut);
       setCapabilities(capabilityStateFromIanState(state));
       setQuietHours(state.quiet_hours);
       setDeveloperWorkspace(state.developer_workspace);
@@ -195,7 +231,7 @@ export default function App() {
   }, [sendEvent]);
 
   useEffect(() => {
-    if (!isDesktopWindow) {
+    if (!isDesktopWindow || isSettingsOpen) {
       return;
     }
 
@@ -214,7 +250,30 @@ export default function App() {
     }, POINTER_CHASE_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [isDesktopWindow, sendEvent]);
+  }, [isDesktopWindow, isSettingsOpen, sendEvent]);
+
+  useEffect(() => {
+    if (!findIanShortcutEnabled) {
+      void unregisterFindIanShortcut(findIanShortcut).then(() =>
+        setFindIanShortcutStatus("idle"),
+      );
+      return;
+    }
+
+    let cancelled = false;
+    void registerFindIanShortcut(findIanShortcut, () => {
+      void findIan({ now: Date.now, sendEvent });
+    }).then((status) => {
+      if (!cancelled) {
+        setFindIanShortcutStatus(status);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+      void unregisterFindIanShortcut(findIanShortcut);
+    };
+  }, [findIanShortcut, findIanShortcutEnabled, sendEvent]);
 
   return (
     <IanStage
@@ -222,11 +281,18 @@ export default function App() {
       viewState={stageViewState}
       behaviorMode={behaviorMode}
       remindersEnabled={remindersEnabled}
+      reminderIntervalMinutes={reminderIntervalMinutes}
+      doNotDisturb={doNotDisturb}
       byomEnabled={capabilities.byom}
+      byomKeyConfigured={capabilities.byomKeyConfigured}
       gitMetadataEnabled={capabilities.gitMetadata}
       buildTestEventsEnabled={capabilities.buildTestEvents}
       keyboardRhythmEnabled={capabilities.keyboardRhythm}
       activeAppPresenceEnabled={capabilities.activeAppPresence}
+      privacyOnboardingSeen={privacyOnboardingSeen}
+      findIanShortcutEnabled={findIanShortcutEnabled}
+      findIanShortcut={findIanShortcut}
+      findIanShortcutStatus={findIanShortcutStatus}
       quietHours={quietHours}
       developerWorkspace={developerWorkspace}
       developerSnooze={developerSnooze}
@@ -260,6 +326,7 @@ export default function App() {
             void sendArmedChaseCandidate({
               isDesktopWindow,
               isChaseArmed: pointerLeaveChaseArmed.current,
+              isSettingsOpen,
               now: Date.now,
               getCursorPosition: getDesktopCursorPosition,
               sendEvent,
@@ -286,6 +353,7 @@ export default function App() {
           point,
           isDesktopWindow,
           isChaseArmed: pointerLeaveChaseArmed.current,
+          isSettingsOpen,
           now: Date.now,
           getCursorPosition: getDesktopCursorPosition,
           sendEvent,
@@ -316,6 +384,36 @@ export default function App() {
           setRemindersEnabled(state.reminders_enabled);
         });
       }}
+      onReminderIntervalMinutesChange={(intervalMinutes) => {
+        setReminderIntervalMinutes(intervalMinutes);
+        void saveReminderSettings(remindersEnabled, intervalMinutes).then((state) => {
+          setRemindersEnabled(state.reminders_enabled);
+          setReminderIntervalMinutes(state.reminder_interval_minutes);
+        });
+      }}
+      onDoNotDisturbChange={(enabled) => {
+        setDoNotDisturb(enabled);
+        void saveDoNotDisturb(enabled).then((state) => {
+          setDoNotDisturb(state.do_not_disturb);
+        });
+      }}
+      onPrivacyOnboardingSeenChange={(seen) => {
+        setPrivacyOnboardingSeen(seen);
+        void savePrivacyOnboardingSeen(seen).then((state) => {
+          setPrivacyOnboardingSeen(state.privacy_onboarding_seen);
+        });
+      }}
+      onFindIan={() => {
+        void findIan({ now: Date.now, sendEvent });
+      }}
+      onFindIanShortcutEnabledChange={(enabled) => {
+        setFindIanShortcutEnabled(enabled);
+        setFindIanShortcutStatus(enabled ? "idle" : "idle");
+        void saveFindIanShortcutEnabled(enabled).then((state) => {
+          setFindIanShortcutEnabled(state.find_ian_shortcut_enabled);
+          setFindIanShortcut(state.find_ian_shortcut);
+        });
+      }}
       onQuietHoursChange={(nextQuietHours) => {
         setQuietHours(nextQuietHours);
         void saveQuietHours(nextQuietHours).then((state) => {
@@ -343,6 +441,31 @@ export default function App() {
           setActivePetId,
         }).catch(() => undefined);
       }}
+      onResetAppearance={() => {
+        const defaults = createCreatureSettingsState();
+        setCreatureSettings(defaults);
+        void saveCreatureSettings({
+          movement_intensity: defaults.movementIntensity,
+          bubble_frequency: defaults.bubbleFrequency,
+          rest_behavior: defaults.restBehavior,
+          playful_energy: defaults.playfulEnergy,
+          playful_snoozed_until_ms: defaults.playfulSnoozedUntilMs,
+          surface_scale: defaults.surfaceScale,
+          diagnostics_enabled: defaults.diagnosticsEnabled,
+        }).then((state) => {
+          setCreatureSettings(creatureSettingsFromIanState(state));
+        });
+        void switchPetResourcePack({
+          nextPetId: DEFAULT_RESOURCE_PACK_ID,
+          loadPetResourcePack,
+          saveActivePet,
+          setResourcePack,
+          setActivePetId,
+        }).catch(() => undefined);
+      }}
+      onResetPosition={() => {
+        void resetPosition();
+      }}
       onCreatureSettingsChange={(nextSettings) => {
         setCreatureSettings(nextSettings);
         void saveCreatureSettings({
@@ -358,6 +481,9 @@ export default function App() {
         });
       }}
       onCapabilityEnabledChange={(capability, enabled) => {
+        if (capability === "byom" && enabled && !capabilities.byomKeyConfigured) {
+          return;
+        }
         setCapabilities((current) => ({
           ...current,
           [capabilityToStateKey(capability)]: enabled,
@@ -375,28 +501,11 @@ export default function App() {
           await sendEvent({ type: "mouse.drag_end", ...dragEndPosition });
           await savePosition(dragEndPosition);
         })();
-        desktopDragOrigin.current = null;
-      }}
-      onDragMove={(offset) => {
-        if (!isDesktopWindow || !desktopDragOrigin.current) {
-          return;
-        }
-
-        void moveDesktopWindow({
-          x: desktopDragOrigin.current.x + offset.x,
-          y: desktopDragOrigin.current.y + offset.y,
-        });
       }}
       onDragStart={(point) => {
         void sendEvent({ type: "mouse.drag_start", ...point });
-        desktopDragOrigin.current = viewState.position;
         if (isDesktopWindow) {
           void startDesktopWindowDrag().catch(() => undefined);
-          void getDesktopWindowPosition().then((desktopPosition) => {
-            if (desktopPosition) {
-              desktopDragOrigin.current = desktopPosition;
-            }
-          });
         }
       }}
     />
@@ -406,6 +515,7 @@ export default function App() {
 function createCapabilityState() {
   return {
     byom: false,
+    byomKeyConfigured: false,
     gitMetadata: false,
     buildTestEvents: false,
     keyboardRhythm: false,
@@ -428,6 +538,7 @@ function createCreatureSettingsState() {
 function capabilityStateFromIanState(state: Awaited<ReturnType<typeof getIanSettings>>) {
   return {
     byom: state.byom_enabled,
+    byomKeyConfigured: state.byom_key_configured,
     gitMetadata: state.git_metadata_enabled,
     buildTestEvents: state.build_test_events_enabled,
     keyboardRhythm: state.keyboard_rhythm_enabled,

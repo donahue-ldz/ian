@@ -101,7 +101,7 @@ describe("reduceIanActions", () => {
   });
 
   function testIanState(overrides: Partial<IanState> = {}): IanState {
-    return {
+    const state: IanState = {
       active_pet_id: "ian-alpaca",
       current_behavior: "idle" as const,
       current_animation: "idle" as const,
@@ -109,11 +109,17 @@ describe("reduceIanActions", () => {
       active_resource_pack: "ian-alpaca",
       behavior_mode: "normal" as const,
       reminders_enabled: true,
+      reminder_interval_minutes: 90,
+      do_not_disturb: false,
       byom_enabled: false,
+      byom_key_configured: false,
       git_metadata_enabled: false,
       build_test_events_enabled: false,
       keyboard_rhythm_enabled: false,
       active_app_presence_enabled: false,
+      privacy_onboarding_seen: false,
+      find_ian_shortcut_enabled: false,
+      find_ian_shortcut: "CommandOrControl+Shift+I",
       home_anchor: { x: 0, y: 0 },
       screen_bounds: null,
       last_user_interaction_ms: 0,
@@ -140,8 +146,9 @@ describe("reduceIanActions", () => {
       },
       developer_snooze: { enabled: false, until_ms: null, reason: null },
       active_app_category: null,
-      ...overrides,
     };
+
+    return { ...state, ...overrides } as IanState;
   }
 
 

@@ -41,6 +41,23 @@ pub fn save_window_position(
 }
 
 #[tauri::command]
+pub fn reset_window_position(
+    window: tauri::WebviewWindow,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<Vec<IanAction>, String> {
+    let position =
+        super::window::reset_webview_window_position(&window).map_err(|error| error.to_string())?;
+
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_position(Position {
+            x: f64::from(position.x),
+            y: f64::from(position.y),
+        })
+}
+
+#[tauri::command]
 pub fn get_settings(runtime: State<'_, Mutex<IanRuntime>>) -> Result<IanState, String> {
     get_ian_state(runtime)
 }
@@ -112,6 +129,51 @@ pub fn save_reminders_enabled(
         .lock()
         .map_err(|_| "Ian runtime lock poisoned".to_string())?
         .save_reminders_enabled(enabled)
+}
+
+#[tauri::command]
+pub fn save_reminder_settings(
+    enabled: bool,
+    interval_minutes: u16,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_reminder_settings(enabled, interval_minutes)
+}
+
+#[tauri::command]
+pub fn save_do_not_disturb(
+    enabled: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_do_not_disturb(enabled)
+}
+
+#[tauri::command]
+pub fn save_privacy_onboarding_seen(
+    seen: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_privacy_onboarding_seen(seen)
+}
+
+#[tauri::command]
+pub fn save_find_ian_shortcut_enabled(
+    enabled: bool,
+    runtime: State<'_, Mutex<IanRuntime>>,
+) -> Result<IanState, String> {
+    runtime
+        .lock()
+        .map_err(|_| "Ian runtime lock poisoned".to_string())?
+        .save_find_ian_shortcut_enabled(enabled)
 }
 
 #[tauri::command]

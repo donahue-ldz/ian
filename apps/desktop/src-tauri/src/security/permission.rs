@@ -59,6 +59,7 @@ impl PermissionGate {
             | IanEvent::MouseDragEnd { .. }
             | IanEvent::MouseChaseCandidate { .. }
             | IanEvent::ScreenBounds { .. }
+            | IanEvent::SystemShortcutTriggered { .. }
             | IanEvent::DialogueUserMessage { .. }
             | IanEvent::BubbleInputStarted
             | IanEvent::BubbleInputEnded => Ok(()),

@@ -35,13 +35,15 @@ export type PetResourcePack = {
 export type PetResourcePackOption = {
   id: string;
   label: string;
+  previewAnimation: string;
+  previewTone: string;
 };
 
 export const BUILT_IN_PET_RESOURCE_PACKS: PetResourcePackOption[] = [
-  { id: "ian-adventurer", label: "小冒险家" },
-  { id: "ian-puppy", label: "小狗" },
-  { id: "ian-kitten", label: "小猫" },
-  { id: "ian-alpaca", label: "羊驼" },
+  { id: "ian-adventurer", label: "小冒险家", previewAnimation: "happy", previewTone: "像素" },
+  { id: "ian-puppy", label: "小狗", previewAnimation: "happy", previewTone: "圆润" },
+  { id: "ian-kitten", label: "小猫", previewAnimation: "idle", previewTone: "轻巧" },
+  { id: "ian-alpaca", label: "羊驼", previewAnimation: "idle", previewTone: "安静" },
 ];
 
 export class ResourcePackError extends Error {
@@ -85,9 +87,21 @@ export function validatePetResourcePack(pack: PetResourcePack): void {
     throw new ResourcePackError("Resource pack animation meta must be positive");
   }
 
-  const idle = pack.animations.animations.idle;
-  if (!idle || idle.frames.length === 0) {
-    throw new ResourcePackError("Resource pack must define idle animation");
+  for (const animationName of [
+    "idle",
+    "walk",
+    "run",
+    "zoomies",
+    "happy",
+    "rest",
+    "sleep",
+  ] as const) {
+    const animation = pack.animations.animations[animationName];
+    if (!animation || animation.frames.length === 0) {
+      throw new ResourcePackError(
+        `Resource pack must define ${animationName} animation`,
+      );
+    }
   }
 }
 

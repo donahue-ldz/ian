@@ -218,6 +218,53 @@
   font: inherit;
 }
 
+.ian-pet-preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ian-pet-preview-card {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 6px;
+  border: 1px solid rgba(69, 86, 76, 0.18);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.68);
+  color: #26322c;
+  font: inherit;
+  line-height: 1.15;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ian-pet-preview-card[data-active="true"] {
+  border-color: rgba(90, 107, 96, 0.48);
+  background: rgba(90, 107, 96, 0.12);
+}
+
+.ian-pet-preview-card small {
+  display: block;
+  margin-top: 2px;
+  color: #65736a;
+  font-size: 10px;
+}
+
+.ian-pet-preview-mark {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: rgba(90, 107, 96, 0.12);
+  color: #4b5f54;
+  font-weight: 700;
+}
+
 .ian-settings-size-row {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
@@ -264,6 +311,25 @@
   color: #65736a;
   font-size: 10px;
   text-align: right;
+}
+
+.ian-settings-reset-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.ian-settings-reset-row button {
+  min-width: 0;
+  height: 26px;
+  padding: 0 6px;
+  border: 1px solid rgba(69, 86, 76, 0.2);
+  border-radius: 7px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #4b5f54;
+  font: inherit;
+  cursor: pointer;
 }
 
 .ian-settings-toggle-row input {

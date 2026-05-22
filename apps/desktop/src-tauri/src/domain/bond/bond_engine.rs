@@ -27,6 +27,14 @@ impl BondEngine {
 
         self.state
     }
+
+    pub fn milestone_event(&self) -> Option<&'static str> {
+        match self.state {
+            BondStateView::New => None,
+            BondStateView::GettingCloser => Some("bond.getting_closer"),
+            BondStateView::Familiar => Some("bond.familiar"),
+        }
+    }
 }
 
 #[cfg(test)]
@@ -48,5 +56,17 @@ mod tests {
             engine.apply(BondSignal::UserInteraction),
             BondStateView::Familiar
         );
+    }
+
+    #[test]
+    fn bond_milestones_are_internal_events_without_numeric_ui_levels() {
+        let mut engine = BondEngine::default();
+
+        assert_eq!(engine.milestone_event(), None);
+        engine.apply(BondSignal::UserInteraction);
+        assert_eq!(engine.milestone_event(), Some("bond.getting_closer"));
+        engine.apply(BondSignal::UserInteraction);
+        engine.apply(BondSignal::UserInteraction);
+        assert_eq!(engine.milestone_event(), Some("bond.familiar"));
     }
 }
