@@ -10,6 +10,9 @@ pub enum IanMomentKind {
     DropSettle,
     RareIdleSurprise,
     MemoryEcho,
+    IdlePeekAround,
+    IdleTinyPatrol,
+    IdlePretendInnocent,
 }
 
 impl IanMomentKind {
@@ -21,6 +24,9 @@ impl IanMomentKind {
             Self::DropSettle => "drop_settle",
             Self::RareIdleSurprise => "rare_idle_surprise",
             Self::MemoryEcho => "memory_echo",
+            Self::IdlePeekAround => "idle_peek_around",
+            Self::IdleTinyPatrol => "idle_tiny_patrol",
+            Self::IdlePretendInnocent => "idle_pretend_innocent",
         }
     }
 
@@ -32,6 +38,9 @@ impl IanMomentKind {
             "drop_settle" => Some(Self::DropSettle),
             "rare_idle_surprise" => Some(Self::RareIdleSurprise),
             "memory_echo" => Some(Self::MemoryEcho),
+            "idle_peek_around" => Some(Self::IdlePeekAround),
+            "idle_tiny_patrol" => Some(Self::IdleTinyPatrol),
+            "idle_pretend_innocent" => Some(Self::IdlePretendInnocent),
             _ => None,
         }
     }
@@ -44,6 +53,9 @@ impl IanMomentKind {
             Self::DropSettle => 5_000,
             Self::RareIdleSurprise => 60 * 60 * 1000,
             Self::MemoryEcho => 12 * 60 * 60 * 1000,
+            Self::IdlePeekAround | Self::IdleTinyPatrol | Self::IdlePretendInnocent => {
+                20 * 60 * 1000
+            }
         }
     }
 }
@@ -236,6 +248,22 @@ mod tests {
                 .result,
             "blocked_budget"
         );
+    }
+
+    #[test]
+    fn private_life_moments_have_independent_cooldowns_and_budget() {
+        let mut orchestrator = MomentOrchestrator::default();
+        let state = IanState::default();
+
+        let first = orchestrator.decide(IanMomentKind::IdlePeekAround, 1_200_000, &state);
+        let repeated = orchestrator.decide(IanMomentKind::IdlePeekAround, 1_260_000, &state);
+        let different = orchestrator.decide(IanMomentKind::IdleTinyPatrol, 1_320_000, &state);
+        let third = orchestrator.decide(IanMomentKind::IdlePretendInnocent, 1_380_000, &state);
+
+        assert_eq!(first.result, "triggered");
+        assert_eq!(repeated.result, "blocked_cooldown");
+        assert_eq!(different.result, "triggered");
+        assert_eq!(third.result, "triggered");
     }
 
     #[test]

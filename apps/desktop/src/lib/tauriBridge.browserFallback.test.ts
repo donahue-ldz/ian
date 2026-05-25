@@ -78,4 +78,38 @@ describe("browser fallback runtime parity", () => {
     });
     expect(JSON.stringify(actions)).not.toContain("/Users/");
   });
+
+  it("mirrors private life Moment debug triggers in browser fallback", async () => {
+    await saveDoNotDisturb(false);
+    await saveCreatureSettings({
+      movement_intensity: "normal",
+      bubble_frequency: "normal",
+      rest_behavior: "normal",
+      playful_energy: "normal",
+      playful_snoozed_until_ms: null,
+      surface_scale: 1,
+      diagnostics_enabled: true,
+    });
+
+    const actions = await sendIanEvent({
+      type: "moment.debug_trigger",
+      kind: "idle_pretend_innocent",
+      now_ms: 42_500,
+    });
+
+    expect(actions).toContainEqual({
+      type: "playful.diagnostic",
+      timestamp_ms: 42_500,
+      reason: "idle_pretend_innocent",
+      result: "diagnostic_triggered",
+      cooldown_key: "idle_pretend_innocent",
+      chosen_reaction_key: "idle_pretend_innocent_sequence",
+    });
+    expect(actions).toContainEqual({
+      type: "speech.show",
+      text: "我什么都没做。",
+      mood: "calm",
+      duration_ms: 1300,
+    });
+  });
 });

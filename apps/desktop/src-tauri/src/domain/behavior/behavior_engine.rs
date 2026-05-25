@@ -15,6 +15,7 @@ use super::{
     moment_story::MomentStory,
     momentary_life_state::MomentaryLifeState,
     movement_boundary_policy::MovementBoundaryPolicy,
+    novelty_policy::{NoveltyCandidate, NoveltyPolicy},
 };
 
 pub struct BehaviorEngine {
@@ -29,6 +30,7 @@ pub struct BehaviorEngine {
     absence_return: std::sync::Mutex<AbsenceReturnPolicy>,
     moments: std::sync::Mutex<MomentOrchestrator>,
     life_drive: std::sync::Mutex<LifeDrive>,
+    novelty: std::sync::Mutex<NoveltyPolicy>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -55,6 +57,7 @@ impl Default for BehaviorEngine {
             absence_return: std::sync::Mutex::new(AbsenceReturnPolicy::default()),
             moments: std::sync::Mutex::new(MomentOrchestrator::default()),
             life_drive: std::sync::Mutex::new(LifeDrive::default()),
+            novelty: std::sync::Mutex::new(NoveltyPolicy::default()),
         }
     }
 }
@@ -575,6 +578,10 @@ impl BehaviorEngine {
             return actions;
         }
 
+        if let Some(actions) = self.actions_for_private_life_moment(now_ms, state) {
+            return actions;
+        }
+
         if let Some(actions) = self.actions_for_perimeter_patrol_tick(now_ms, state) {
             return actions;
         }
@@ -706,6 +713,169 @@ impl BehaviorEngine {
                 looped: true,
             },
         ])
+    }
+
+    fn actions_for_private_life_moment(
+        &self,
+        now_ms: i64,
+        state: &IanState,
+    ) -> Option<Vec<IanAction>> {
+        let second = now_ms.div_euclid(1000);
+        if second < 1_200 || second.rem_euclid(1_200) >= 15 {
+            return None;
+        }
+
+        let candidates = self.private_life_candidates();
+        let Some(candidate) = self
+            .novelty
+            .lock()
+            .ok()
+            .and_then(|policy| policy.choose_non_recent(&candidates).copied())
+            .or_else(|| candidates.first().copied())
+        else {
+            return None;
+        };
+        let Some(kind) = IanMomentKind::from_key(candidate.kind) else {
+            return None;
+        };
+
+        let decision = self.moment_decision(kind, now_ms, state);
+        if !decision.triggered() {
+            return Some(vec![decision.diagnostic(now_ms)]);
+        }
+
+        if let Ok(mut policy) = self.novelty.lock() {
+            policy.record(candidate.record());
+        }
+
+        let mut actions = vec![decision.diagnostic(now_ms)];
+        actions.extend(self.actions_for_private_life_story(kind, state));
+        Some(actions)
+    }
+
+    fn private_life_candidates(&self) -> [NoveltyCandidate; 3] {
+        let drive = self
+            .life_drive
+            .lock()
+            .map(|drive| drive.snapshot())
+            .unwrap_or_else(|_| LifeDrive::default().snapshot());
+
+        let peek = NoveltyCandidate {
+            kind: "idle_peek_around",
+            variant: "peek_sideways",
+            phrase: Some("phrase_peek_01"),
+        };
+        let patrol = NoveltyCandidate {
+            kind: "idle_tiny_patrol",
+            variant: "two_step_patrol",
+            phrase: Some("phrase_patrol_01"),
+        };
+        let pretend = NoveltyCandidate {
+            kind: "idle_pretend_innocent",
+            variant: "pretend_innocent",
+            phrase: Some("phrase_pretend_01"),
+        };
+
+        if drive.boredom >= 45 && drive.energy >= 45 {
+            [patrol, pretend, peek]
+        } else if drive.curiosity >= 45 {
+            [peek, pretend, patrol]
+        } else {
+            [pretend, peek, patrol]
+        }
+    }
+
+    fn actions_for_private_life_story(
+        &self,
+        kind: IanMomentKind,
+        state: &IanState,
+    ) -> Vec<IanAction> {
+        match kind {
+            IanMomentKind::IdlePeekAround => vec![
+                IanAction::AnimationPlay {
+                    name: "wave".to_string(),
+                    looped: false,
+                },
+                IanAction::EffectPlay {
+                    name: "tail_wag".to_string(),
+                    intensity: "low".to_string(),
+                    duration_ms: 700,
+                },
+                IanAction::BubbleOpen,
+                IanAction::SpeechShow {
+                    text: "我看一眼。".to_string(),
+                    mood: Some("calm".to_string()),
+                    duration_ms: Some(1200),
+                },
+                IanAction::AnimationPlay {
+                    name: "idle".to_string(),
+                    looped: true,
+                },
+            ],
+            IanMomentKind::IdleTinyPatrol => {
+                let first = self.movement_boundary.constrain_target(
+                    state.position.clone(),
+                    Position {
+                        x: state.position.x + 34.0,
+                        y: state.position.y + 8.0,
+                    },
+                    &state.behavior_mode,
+                );
+                let second = self.movement_boundary.constrain_target(
+                    first.clone(),
+                    Position {
+                        x: state.position.x - 18.0,
+                        y: state.position.y + 12.0,
+                    },
+                    &state.behavior_mode,
+                );
+
+                vec![
+                    IanAction::AnimationPlay {
+                        name: "walk".to_string(),
+                        looped: true,
+                    },
+                    IanAction::MovementMoveTo {
+                        x: first.x,
+                        y: first.y,
+                        speed: MovementSpeed::Slow,
+                        profile: MotionProfile::Gentle,
+                    },
+                    IanAction::MovementMoveTo {
+                        x: second.x,
+                        y: second.y,
+                        speed: MovementSpeed::Slow,
+                        profile: MotionProfile::Settle,
+                    },
+                    IanAction::AnimationPlay {
+                        name: "idle".to_string(),
+                        looped: true,
+                    },
+                ]
+            }
+            IanMomentKind::IdlePretendInnocent => vec![
+                IanAction::AnimationPlay {
+                    name: "happy".to_string(),
+                    looped: false,
+                },
+                IanAction::EffectPlay {
+                    name: "blush_puff".to_string(),
+                    intensity: "low".to_string(),
+                    duration_ms: 650,
+                },
+                IanAction::BubbleOpen,
+                IanAction::SpeechShow {
+                    text: "我什么都没做。".to_string(),
+                    mood: Some("calm".to_string()),
+                    duration_ms: Some(1300),
+                },
+                IanAction::AnimationPlay {
+                    name: "idle".to_string(),
+                    looped: true,
+                },
+            ],
+            _ => Vec::new(),
+        }
     }
 
     fn actions_for_debug_moment(
@@ -873,6 +1043,13 @@ impl BehaviorEngine {
                     duration_ms: Some(1800),
                 },
             ],
+            IanMomentKind::IdlePeekAround
+            | IanMomentKind::IdleTinyPatrol
+            | IanMomentKind::IdlePretendInnocent => {
+                let mut actions = vec![diagnostic];
+                actions.extend(self.actions_for_private_life_story(kind, state));
+                actions
+            }
         }
     }
 
@@ -2938,6 +3115,101 @@ mod tests {
     }
 
     #[test]
+    fn idle_private_life_defines_three_debuggable_story_variants() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.diagnostics_enabled = true;
+
+        for (kind, expected_action) in [
+            ("idle_peek_around", "peek"),
+            ("idle_tiny_patrol", "patrol"),
+            ("idle_pretend_innocent", "pretend"),
+        ] {
+            let actions = engine.decide(
+                &IanEvent::MomentDebugTrigger {
+                    kind: kind.to_string(),
+                    now_ms: 42_000,
+                },
+                &state,
+            );
+
+            assert!(
+                actions.iter().any(|action| matches!(
+                    action,
+                    IanAction::PlayfulDiagnostic { reason, result, .. }
+                        if reason == kind && result == "diagnostic_triggered"
+                )),
+                "missing private life diagnostic for {kind}: {actions:?}"
+            );
+            assert!(
+                private_life_story_duration_ms(&actions) <= 5_000,
+                "private life story should stay short: {actions:?}"
+            );
+            assert!(plays_animation(&actions, "idle"));
+            match expected_action {
+                "peek" => assert!(actions.iter().any(|action| matches!(
+                    action,
+                    IanAction::SpeechShow { text, .. } if text.contains("看")
+                ))),
+                "patrol" => assert!(has_movement(&actions)),
+                "pretend" => assert!(actions.iter().any(|action| matches!(
+                    action,
+                    IanAction::SpeechShow { text, .. } if text.contains("没")
+                ))),
+                _ => unreachable!(),
+            }
+        }
+    }
+
+    #[test]
+    fn idle_private_life_tick_respects_user_controls_and_reduced_motion() {
+        let engine = BehaviorEngine::default();
+        let state = IanState::default();
+        let normal = engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &state);
+
+        let mut dnd = state.clone();
+        dnd.do_not_disturb = true;
+        let mut quiet = state.clone();
+        quiet.playful_energy = PlayfulEnergy::Off;
+        let mut reduced = state.clone();
+        reduced.movement_intensity = "reduced".to_string();
+        let mut typing = state.clone();
+        typing.is_bubble_input_active = true;
+
+        assert!(private_life_triggered_reason(&normal).is_some());
+        for actions in [
+            engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &dnd),
+            engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &quiet),
+            engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &reduced),
+            engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &typing),
+        ] {
+            assert!(private_life_triggered_reason(&actions).is_none());
+            assert!(!has_movement(&actions));
+            assert!(!actions.iter().any(|action| matches!(
+                action,
+                IanAction::SpeechShow { .. } | IanAction::EffectPlay { .. }
+            )));
+        }
+    }
+
+    #[test]
+    fn idle_private_life_novelty_avoids_immediate_story_repeats() {
+        let engine = BehaviorEngine::default();
+        let state = IanState::default();
+
+        let first = engine.decide(&IanEvent::TimeTick { now_ms: 1_200_000 }, &state);
+        let second = engine.decide(&IanEvent::TimeTick { now_ms: 2_400_000 }, &state);
+        let third = engine.decide(&IanEvent::TimeTick { now_ms: 4_800_000 }, &state);
+
+        let first_reason = private_life_triggered_reason(&first).expect("first private moment");
+        let second_reason = private_life_triggered_reason(&second).expect("second private moment");
+        let third_reason = private_life_triggered_reason(&third).expect("third private moment");
+
+        assert_ne!(first_reason, second_reason);
+        assert_ne!(second_reason, third_reason);
+    }
+
+    #[test]
     fn moment_debug_trigger_reaches_core_for_each_known_moment() {
         let engine = BehaviorEngine::default();
         let state = IanState::default();
@@ -2949,6 +3221,9 @@ mod tests {
             ("drop_settle", "drop_settle"),
             ("rare_idle_surprise", "rare_idle_surprise"),
             ("memory_echo", "memory_echo"),
+            ("idle_peek_around", "idle_peek_around"),
+            ("idle_tiny_patrol", "idle_tiny_patrol"),
+            ("idle_pretend_innocent", "idle_pretend_innocent"),
         ] {
             let actions = engine.decide(
                 &IanEvent::MomentDebugTrigger {
@@ -3255,6 +3530,31 @@ mod tests {
                 IanAction::EffectPlay { name, .. } if name == expected_name
             )
         })
+    }
+
+    fn private_life_triggered_reason(actions: &[IanAction]) -> Option<&str> {
+        actions.iter().find_map(|action| {
+            if let IanAction::PlayfulDiagnostic { reason, result, .. } = action {
+                if result == "triggered" && reason.starts_with("idle_") && reason != "idle_surprise"
+                {
+                    return Some(reason.as_str());
+                }
+            }
+            None
+        })
+    }
+
+    fn private_life_story_duration_ms(actions: &[IanAction]) -> u64 {
+        actions
+            .iter()
+            .map(|action| match action {
+                IanAction::SpeechShow { duration_ms, .. } => duration_ms.unwrap_or(0),
+                IanAction::EffectPlay { duration_ms, .. } => *duration_ms,
+                IanAction::AppearanceScaleTo { duration_ms, .. } => *duration_ms,
+                IanAction::BehaviorZoomies { duration_ms, .. } => *duration_ms,
+                _ => 0,
+            })
+            .sum()
     }
 
     fn assert_no_autonomous_movement_or_sleep(actions: &[IanAction]) {

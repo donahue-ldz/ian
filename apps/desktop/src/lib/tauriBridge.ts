@@ -423,6 +423,41 @@ export async function sendIanEvent(event: IanEvent): Promise<IanAction[]> {
           duration_ms: 1800,
         },
       ],
+      idle_peek_around: [
+        diagnostic,
+        { type: "animation.play", name: "wave", looped: false },
+        { type: "effect.play", name: "tail_wag", intensity: "low", duration_ms: 700 },
+        { type: "bubble.open" },
+        { type: "speech.show", text: "我看一眼。", mood: "calm", duration_ms: 1200 },
+        { type: "animation.play", name: "idle", looped: true },
+      ],
+      idle_tiny_patrol: [
+        diagnostic,
+        { type: "animation.play", name: "walk", looped: true },
+        {
+          type: "movement.move_to",
+          x: browserFallbackState.position.x + 34,
+          y: browserFallbackState.position.y + 8,
+          speed: "slow",
+          profile: "gentle",
+        },
+        {
+          type: "movement.move_to",
+          x: browserFallbackState.position.x - 18,
+          y: browserFallbackState.position.y + 12,
+          speed: "slow",
+          profile: "settle",
+        },
+        { type: "animation.play", name: "idle", looped: true },
+      ],
+      idle_pretend_innocent: [
+        diagnostic,
+        { type: "animation.play", name: "happy", looped: false },
+        { type: "effect.play", name: "blush_puff", intensity: "low", duration_ms: 650 },
+        { type: "bubble.open" },
+        { type: "speech.show", text: "我什么都没做。", mood: "calm", duration_ms: 1300 },
+        { type: "animation.play", name: "idle", looped: true },
+      ],
     };
 
     return actionsByKind[event.kind] ?? [

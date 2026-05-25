@@ -233,6 +233,9 @@ describe("SettingsPanel information architecture", () => {
     expect(enabled).toContain("Moment 诊断");
     expect(enabled).toContain('aria-label="诊断触发找回入场"');
     expect(enabled).toContain('aria-label="诊断触发鼠标好奇"');
+    expect(enabled).toContain('aria-label="诊断触发偷偷张望"');
+    expect(enabled).toContain('aria-label="诊断触发小巡逻"');
+    expect(enabled).toContain('aria-label="诊断触发装作无事"');
     expect(enabled).toContain("只触发本地 Core action，不读取屏幕内容。");
     expect(disabled).not.toContain("Moment 诊断");
   });

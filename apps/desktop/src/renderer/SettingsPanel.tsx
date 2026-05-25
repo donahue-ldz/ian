@@ -635,6 +635,9 @@ const momentDebugOptions = [
   { kind: "drop_settle", label: "放下" },
   { kind: "rare_idle_surprise", label: "Idle 惊喜" },
   { kind: "memory_echo", label: "记忆回响" },
+  { kind: "idle_peek_around", label: "偷偷张望" },
+  { kind: "idle_tiny_patrol", label: "小巡逻" },
+  { kind: "idle_pretend_innocent", label: "装作无事" },
 ] as const;
 
 type MemoryCandidateListProps = {

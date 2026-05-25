@@ -10,5 +10,6 @@ pub mod moment_orchestrator;
 pub mod moment_story;
 pub mod momentary_life_state;
 pub mod movement_boundary_policy;
+pub mod novelty_policy;
 
 pub use behavior_engine::BehaviorEngine;
