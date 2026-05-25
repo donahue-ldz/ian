@@ -188,43 +188,7 @@ impl BehaviorEngine {
     fn actions_for_find_ian(&self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
         let decision = self.moment_decision(IanMomentKind::FindIanEntrance, now_ms, state);
         let can_move = decision.triggered();
-        let mut actions = vec![
-            decision.diagnostic(now_ms),
-            IanAction::BubbleOpen,
-            IanAction::SpeechShow {
-                text: "我在这儿。".to_string(),
-                mood: Some("calm".to_string()),
-                duration_ms: Some(2200),
-            },
-            IanAction::EffectPlay {
-                name: "find_beacon".to_string(),
-                intensity: "low".to_string(),
-                duration_ms: 1_600,
-            },
-            IanAction::AnimationPlay {
-                name: "find".to_string(),
-                looped: false,
-            },
-            IanAction::AnimationPlay {
-                name: "happy".to_string(),
-                looped: false,
-            },
-        ];
-
-        if can_move && !is_position_visible(state) {
-            let target = find_ian_target(state);
-            actions.insert(
-                1,
-                IanAction::MovementMoveTo {
-                    x: target.x,
-                    y: target.y,
-                    speed: MovementSpeed::Fast,
-                    profile: MotionProfile::Gentle,
-                },
-            );
-        }
-
-        actions
+        self.find_ian_story_actions(decision.diagnostic(now_ms), can_move, state)
     }
 
     fn actions_for_attention(&self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
@@ -293,6 +257,70 @@ impl BehaviorEngine {
                 name: "idle".to_string(),
                 looped: true,
             })
+    }
+
+    fn find_ian_story_actions(
+        &self,
+        diagnostic: IanAction,
+        can_move: bool,
+        state: &IanState,
+    ) -> Vec<IanAction> {
+        let target = find_ian_target(state);
+        let reduced_motion = is_reduced_motion_enabled(state);
+        let mut actions = vec![diagnostic];
+
+        if can_move && !is_position_visible(state) {
+            if reduced_motion {
+                actions.push(IanAction::MovementMoveTo {
+                    x: target.x,
+                    y: target.y,
+                    speed: MovementSpeed::Slow,
+                    profile: MotionProfile::Gentle,
+                });
+            } else {
+                let peek = find_ian_peek_target(&target, state);
+                actions.push(IanAction::MovementMoveTo {
+                    x: peek.x,
+                    y: peek.y,
+                    speed: MovementSpeed::Fast,
+                    profile: MotionProfile::Playful,
+                });
+                actions.push(IanAction::AnimationPlay {
+                    name: "find".to_string(),
+                    looped: false,
+                });
+                actions.push(IanAction::MovementMoveTo {
+                    x: target.x,
+                    y: target.y,
+                    speed: MovementSpeed::Normal,
+                    profile: MotionProfile::Settle,
+                });
+            }
+        }
+
+        actions.extend([
+            IanAction::BubbleOpen,
+            IanAction::SpeechShow {
+                text: "我在这儿。".to_string(),
+                mood: Some("calm".to_string()),
+                duration_ms: Some(if reduced_motion { 1800 } else { 2200 }),
+            },
+            IanAction::EffectPlay {
+                name: "find_beacon".to_string(),
+                intensity: "low".to_string(),
+                duration_ms: if reduced_motion { 900 } else { 1_600 },
+            },
+            IanAction::AnimationPlay {
+                name: "happy".to_string(),
+                looped: false,
+            },
+            IanAction::AnimationPlay {
+                name: "idle".to_string(),
+                looped: true,
+            },
+        ]);
+
+        actions
     }
 
     fn actions_for_run_around(&self, state: &IanState) -> Vec<IanAction> {
@@ -405,12 +433,15 @@ impl BehaviorEngine {
                 },
             ],
             TouchReaction::DragStart => vec![
-                self.moment_decision(
-                    IanMomentKind::DragCarry,
-                    chrono::Utc::now().timestamp_millis(),
-                    state,
-                )
-                .diagnostic(chrono::Utc::now().timestamp_millis()),
+                {
+                    let now_ms = chrono::Utc::now().timestamp_millis();
+                    self.moment_decision(IanMomentKind::DragCarry, now_ms, state)
+                        .diagnostic(now_ms)
+                },
+                IanAction::PlayfulStateSet {
+                    state: PlayfulState::WarmingUp,
+                    until_ms: Some(chrono::Utc::now().timestamp_millis() + 900),
+                },
                 IanAction::AppearanceScaleTo {
                     scale: 0.92,
                     duration_ms: 180,
@@ -436,47 +467,68 @@ impl BehaviorEngine {
             ],
             TouchReaction::DragEnd => {
                 let target = target.unwrap_or_else(|| state.position.clone());
-                let distance = ((target.x - state.position.x).powi(2)
-                    + (target.y - state.position.y).powi(2))
-                .sqrt();
-                let mut actions = vec![
-                    IanAction::MovementMoveTo {
-                        x: target.x,
-                        y: target.y,
-                        speed: MovementSpeed::Normal,
-                        profile: MotionProfile::Settle,
-                    },
-                    IanAction::EffectPlay {
-                        name: "blush_puff".to_string(),
-                        intensity: "low".to_string(),
-                        duration_ms: 800,
-                    },
-                    IanAction::AnimationPlay {
-                        name: "happy".to_string(),
-                        looped: false,
-                    },
-                    IanAction::SpeechShow {
-                        text: "放这里。".to_string(),
-                        mood: Some("calm".to_string()),
-                        duration_ms: Some(1600),
-                    },
-                ];
-
-                if distance >= 48.0 {
-                    actions.push(
-                        self.moment_decision(
-                            IanMomentKind::DropSettle,
-                            chrono::Utc::now().timestamp_millis(),
-                            state,
-                        )
-                        .diagnostic(chrono::Utc::now().timestamp_millis()),
-                    );
-                }
-
-                actions
+                self.actions_for_drop_settle(state, target)
             }
             TouchReaction::RunAround => self.actions_for_run_around(state),
         }
+    }
+
+    fn actions_for_drop_settle(&self, state: &IanState, target: Position) -> Vec<IanAction> {
+        let now_ms = chrono::Utc::now().timestamp_millis();
+        let decision = self.moment_decision(IanMomentKind::DropSettle, now_ms, state);
+        let diagnostic = decision.diagnostic(now_ms);
+
+        if !decision.triggered() {
+            return vec![
+                diagnostic,
+                IanAction::MovementMoveTo {
+                    x: target.x,
+                    y: target.y,
+                    speed: MovementSpeed::Normal,
+                    profile: MotionProfile::Gentle,
+                },
+                IanAction::AnimationPlay {
+                    name: "idle".to_string(),
+                    looped: true,
+                },
+            ];
+        }
+
+        let drive = self
+            .life_drive
+            .lock()
+            .map(|drive| drive.snapshot())
+            .unwrap_or_else(|_| LifeDrive::default().snapshot());
+        let settle_duration_ms = if drive.energy <= 40 { 1_000 } else { 800 };
+        let effect_intensity = if drive.comfort >= 64 { "low" } else { "medium" };
+
+        vec![
+            diagnostic,
+            IanAction::MovementMoveTo {
+                x: target.x,
+                y: target.y,
+                speed: MovementSpeed::Normal,
+                profile: MotionProfile::Settle,
+            },
+            IanAction::EffectPlay {
+                name: "blush_puff".to_string(),
+                intensity: effect_intensity.to_string(),
+                duration_ms: settle_duration_ms,
+            },
+            IanAction::AnimationPlay {
+                name: "happy".to_string(),
+                looped: false,
+            },
+            IanAction::SpeechShow {
+                text: "放这里。".to_string(),
+                mood: Some("calm".to_string()),
+                duration_ms: Some(1400),
+            },
+            IanAction::AnimationPlay {
+                name: "idle".to_string(),
+                looped: true,
+            },
+        ]
     }
 
     fn actions_for_tick(&self, now_ms: i64, state: &IanState) -> Vec<IanAction> {
@@ -1132,11 +1184,23 @@ impl BehaviorEngine {
             )];
         }
 
+        let drive = self
+            .life_drive
+            .lock()
+            .map(|drive| drive.snapshot())
+            .unwrap_or_else(|_| LifeDrive::default().snapshot());
+        let drive_multiplier = if drive.curiosity >= 62 || drive.energy >= 64 {
+            1.22
+        } else if drive.curiosity >= 52 {
+            1.0
+        } else {
+            0.9
+        };
         let step = match state.behavior_mode {
             crate::protocol::BehaviorMode::Lively => 150.0,
             crate::protocol::BehaviorMode::Normal => 110.0,
             crate::protocol::BehaviorMode::Quiet => 0.0,
-        };
+        } * drive_multiplier;
         let ratio = (step / distance).min(0.72);
         let first_target = self.movement_boundary.constrain_target(
             state.position.clone(),
@@ -1175,6 +1239,10 @@ impl BehaviorEngine {
                 state: PlayfulState::WarmingUp,
                 until_ms: Some(now_ms + 1_800),
             },
+            IanAction::AnimationPlay {
+                name: "wave".to_string(),
+                looped: false,
+            },
             IanAction::EffectPlay {
                 name: "speed_lines".to_string(),
                 intensity: self
@@ -1204,6 +1272,11 @@ impl BehaviorEngine {
                 y: settle_target.y,
                 speed: MovementSpeed::Fast,
                 profile: MotionProfile::Settle,
+            },
+            IanAction::SpeechShow {
+                text: "差一点追到。".to_string(),
+                mood: Some("happy".to_string()),
+                duration_ms: Some(1200),
             },
             IanAction::AnimationPlay {
                 name: "idle".to_string(),
@@ -1452,6 +1525,20 @@ fn find_ian_target(state: &IanState) -> Position {
     }
 
     Position { x: 48.0, y: 48.0 }
+}
+
+fn find_ian_peek_target(target: &Position, state: &IanState) -> Position {
+    if let Some(bounds) = &state.screen_bounds {
+        return Position {
+            x: (target.x - 72.0).max(bounds.x - 24.0),
+            y: target.y.max(bounds.y + 24.0),
+        };
+    }
+
+    Position {
+        x: (target.x - 36.0).max(0.0),
+        y: target.y,
+    }
 }
 
 #[cfg(test)]
@@ -2186,6 +2273,80 @@ mod tests {
     }
 
     #[test]
+    fn pointer_chase_is_a_tease_story_with_discover_chase_and_settle() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.behavior_mode = crate::protocol::BehaviorMode::Lively;
+        state.playful_energy = PlayfulEnergy::High;
+        state.position = crate::protocol::Position { x: 300.0, y: 300.0 };
+
+        let actions = engine.decide(
+            &IanEvent::MouseChaseCandidate {
+                x: 520.0,
+                y: 430.0,
+                now_ms: 300_000,
+            },
+            &state,
+        );
+
+        let wave_index = action_index(
+            &actions,
+            |action| matches!(action, IanAction::AnimationPlay { name, .. } if name == "wave"),
+        )
+        .expect("pointer chase should start with a visible attention beat");
+        let first_movement_index = action_index(&actions, |action| {
+            matches!(action, IanAction::MovementMoveTo { .. })
+        })
+        .expect("pointer chase should include bounded movement beats");
+        let speech_index = action_index(
+            &actions,
+            |action| matches!(action, IanAction::SpeechShow { text, .. } if text == "差一点追到。"),
+        )
+        .expect("pointer chase should have a playful ending line");
+
+        assert!(wave_index < first_movement_index);
+        assert!(first_movement_index < speech_index);
+        assert!(plays_animation(&actions, "idle"));
+        assert_eq!(movement_count(&actions), 3);
+    }
+
+    #[test]
+    fn pointer_chase_uses_life_drive_to_change_chase_strength() {
+        let fresh_engine = BehaviorEngine::default();
+        let charged_engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.behavior_mode = crate::protocol::BehaviorMode::Lively;
+        state.playful_energy = PlayfulEnergy::High;
+        state.position = crate::protocol::Position { x: 300.0, y: 300.0 };
+
+        for _ in 0..5 {
+            let _ = charged_engine.decide(&IanEvent::MouseClick { x: 2.0, y: 2.0 }, &state);
+        }
+
+        let fresh = fresh_engine.decide(
+            &IanEvent::MouseChaseCandidate {
+                x: 520.0,
+                y: 430.0,
+                now_ms: 300_000,
+            },
+            &state,
+        );
+        let charged = charged_engine.decide(
+            &IanEvent::MouseChaseCandidate {
+                x: 520.0,
+                y: 430.0,
+                now_ms: 300_000,
+            },
+            &state,
+        );
+
+        assert!(
+            first_movement_distance(&charged, &state.position)
+                > first_movement_distance(&fresh, &state.position)
+        );
+    }
+
+    #[test]
     fn pointer_chase_cooldown_is_short_enough_for_desktop_feel_testing() {
         let engine = BehaviorEngine::default();
         let mut state = IanState::default();
@@ -2445,15 +2606,15 @@ mod tests {
         let drag_end = engine.decide(&IanEvent::MouseDragEnd { x: 120.0, y: 132.0 }, &state);
         let run = engine.decide(&IanEvent::MouseDoubleClick { x: 100.0, y: 100.0 }, &state);
 
-        assert!(matches!(
-            drag_end.as_slice(),
-            [
-                IanAction::MovementMoveTo { .. },
-                IanAction::EffectPlay { .. },
-                IanAction::AnimationPlay { .. },
-                IanAction::SpeechShow { .. }
-            ]
-        ));
+        assert!(drag_end.iter().any(|action| matches!(
+            action,
+            IanAction::MovementMoveTo {
+                profile: MotionProfile::Settle,
+                ..
+            }
+        )));
+        assert!(has_effect(&drag_end, "blush_puff"));
+        assert!(plays_animation(&drag_end, "idle"));
         assert!(run.iter().any(|action| matches!(
             action,
             IanAction::PlayfulStateSet { state, .. } if matches!(state, PlayfulState::Settling)
@@ -2547,6 +2708,80 @@ mod tests {
     }
 
     #[test]
+    fn find_ian_uses_peek_enter_and_settle_story_when_offscreen() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.position = Position {
+            x: -900.0,
+            y: -900.0,
+        };
+        state.screen_bounds = Some(crate::protocol::ScreenBounds {
+            x: 0.0,
+            y: 0.0,
+            width: 1200.0,
+            height: 800.0,
+        });
+
+        let actions = engine.decide(
+            &IanEvent::SystemShortcutTriggered {
+                action: "find_ian".to_string(),
+                now_ms: 10_000,
+            },
+            &state,
+        );
+
+        let movements = movement_targets(&actions);
+
+        assert!(
+            movements.len() >= 2,
+            "find Ian should peek from an edge before settling into the safe target: {actions:?}"
+        );
+        assert!(plays_animation(&actions, "find"));
+        assert!(plays_animation(&actions, "idle"));
+        assert!(movements.iter().all(|target| {
+            target.x >= -24.0 && target.x <= 980.0 && target.y >= 24.0 && target.y <= 540.0
+        }));
+        assert_eq!(movements.last().map(|position| position.x), Some(980.0));
+        assert_eq!(movements.last().map(|position| position.y), Some(540.0));
+    }
+
+    #[test]
+    fn find_ian_reduced_motion_uses_single_gentle_return() {
+        let engine = BehaviorEngine::default();
+        let mut state = IanState::default();
+        state.movement_intensity = "reduced".to_string();
+        state.position = Position {
+            x: -900.0,
+            y: -900.0,
+        };
+        state.screen_bounds = Some(crate::protocol::ScreenBounds {
+            x: 0.0,
+            y: 0.0,
+            width: 1200.0,
+            height: 800.0,
+        });
+
+        let actions = engine.decide(
+            &IanEvent::SystemShortcutTriggered {
+                action: "find_ian".to_string(),
+                now_ms: 10_000,
+            },
+            &state,
+        );
+
+        assert_eq!(movement_count(&actions), 1);
+        assert!(actions.iter().any(|action| matches!(
+            action,
+            IanAction::MovementMoveTo {
+                speed: MovementSpeed::Slow,
+                profile: MotionProfile::Gentle,
+                ..
+            }
+        )));
+        assert!(!has_effect(&actions, "speed_lines"));
+    }
+
+    #[test]
     fn pointer_curiosity_moment_is_low_frequency_and_context_gated() {
         let engine = BehaviorEngine::default();
         let state = IanState::default();
@@ -2617,6 +2852,61 @@ mod tests {
             action,
             IanAction::SpeechShow { text, .. } if text.contains("怎么") || text.contains("不理")
         )));
+    }
+
+    #[test]
+    fn drag_start_sets_carry_state_and_blocks_other_moments_while_dragging() {
+        let engine = BehaviorEngine::default();
+        let state = IanState::default();
+        let mut dragging = state.clone();
+        dragging.is_dragging = true;
+
+        let carry = engine.decide(&IanEvent::MouseDragStart { x: 1.0, y: 1.0 }, &state);
+        let chase = engine.decide(
+            &IanEvent::MouseChaseCandidate {
+                x: 220.0,
+                y: 160.0,
+                now_ms: 120_000,
+            },
+            &dragging,
+        );
+        let idle = engine.decide(&IanEvent::TimeTick { now_ms: 3_600_000 }, &dragging);
+
+        assert!(carry.iter().any(|action| matches!(
+            action,
+            IanAction::PlayfulStateSet { state, .. } if matches!(state, PlayfulState::WarmingUp)
+        )));
+        assert!(chase.is_empty());
+        assert!(idle.is_empty());
+    }
+
+    #[test]
+    fn drop_settle_returns_to_idle_and_does_not_stack_when_repeated() {
+        let engine = BehaviorEngine::default();
+        let state = IanState::default();
+
+        let first = engine.decide(&IanEvent::MouseDragEnd { x: 180.0, y: 120.0 }, &state);
+        let repeated = engine.decide(&IanEvent::MouseDragEnd { x: 184.0, y: 124.0 }, &state);
+
+        assert!(first.iter().any(|action| matches!(
+            action,
+            IanAction::MovementMoveTo {
+                profile: MotionProfile::Settle,
+                ..
+            }
+        )));
+        assert!(plays_animation(&first, "idle"));
+        assert!(first.iter().any(|action| matches!(
+            action,
+            IanAction::PlayfulDiagnostic { reason, result, .. }
+                if reason == "drop_settle" && result == "triggered"
+        )));
+        assert!(repeated.iter().any(|action| matches!(
+            action,
+            IanAction::PlayfulDiagnostic { reason, result, .. }
+                if reason == "drop_settle" && result == "blocked_cooldown"
+        )));
+        assert!(!has_effect(&repeated, "blush_puff"));
     }
 
     #[test]
@@ -2890,6 +3180,40 @@ mod tests {
                 IanAction::AnimationPlay { name, .. } if name == animation
             )
         })
+    }
+
+    fn action_index(
+        actions: &[IanAction],
+        predicate: impl Fn(&IanAction) -> bool,
+    ) -> Option<usize> {
+        actions.iter().position(predicate)
+    }
+
+    fn movement_count(actions: &[IanAction]) -> usize {
+        actions
+            .iter()
+            .filter(|action| matches!(action, IanAction::MovementMoveTo { .. }))
+            .count()
+    }
+
+    fn movement_targets(actions: &[IanAction]) -> Vec<Position> {
+        actions
+            .iter()
+            .filter_map(|action| {
+                if let IanAction::MovementMoveTo { x, y, .. } = action {
+                    Some(Position { x: *x, y: *y })
+                } else {
+                    None
+                }
+            })
+            .collect()
+    }
+
+    fn first_movement_distance(actions: &[IanAction], origin: &Position) -> f64 {
+        movement_targets(actions)
+            .first()
+            .map(|target| ((target.x - origin.x).powi(2) + (target.y - origin.y).powi(2)).sqrt())
+            .unwrap_or(0.0)
     }
 
     fn has_movement(actions: &[IanAction]) -> bool {

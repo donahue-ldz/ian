@@ -24,6 +24,8 @@ type Point = {
   y: number;
 };
 
+type DragPhase = "resting" | "pickup" | "carried" | "dropping";
+
 type IanStageProps = {
   resourcePack: PetResourcePack | null;
   viewState: IanViewState;
@@ -174,6 +176,7 @@ export function IanStage({
   const suppressNextClick = useRef(false);
   const [dragOffset, setDragOffset] = useState<Point>({ x: 0, y: 0 });
   const [isDraggingView, setIsDraggingView] = useState(false);
+  const [dragPhase, setDragPhase] = useState<DragPhase>("resting");
 
   function pointFromPointer(event: PointerEvent<HTMLElement>): Point {
     return pointFromClient(event);
@@ -199,6 +202,7 @@ export function IanStage({
         className="ian-creature-surface"
         data-behavior-mode={behaviorMode}
         data-dragging={isDraggingView ? "true" : "false"}
+        data-drag-phase={dragPhase}
         data-motion-profile={viewState.movementTarget?.profile ?? "gentle"}
         style={{
           transform: `translate(${viewState.position.x + dragOffset.x}px, ${
@@ -213,6 +217,7 @@ export function IanStage({
           dragOrigin.current = pointFromPointer(event);
           isDragging.current = false;
           setIsDraggingView(false);
+          setDragPhase("resting");
         }}
         onPointerMove={(event) => {
           if (!dragOrigin.current) return;
@@ -224,8 +229,11 @@ export function IanStage({
 
             isDragging.current = true;
             setIsDraggingView(true);
+            setDragPhase("pickup");
             onDragStart(dragOrigin.current);
             event.currentTarget.setPointerCapture(event.pointerId);
+          } else if (dragPhase === "pickup") {
+            setDragPhase("carried");
           }
 
           const offset = getDragOffset(dragOrigin.current, point);
@@ -240,6 +248,10 @@ export function IanStage({
           if (dragOrigin.current && isDragging.current) {
             onDragEnd(point);
             suppressNextClick.current = true;
+            setDragPhase("dropping");
+            window.setTimeout(() => setDragPhase("resting"), 260);
+          } else {
+            setDragPhase("resting");
           }
           dragOrigin.current = null;
           isDragging.current = false;
@@ -253,6 +265,7 @@ export function IanStage({
           dragOrigin.current = null;
           isDragging.current = false;
           setIsDraggingView(false);
+          setDragPhase("resting");
           setDragOffset({ x: 0, y: 0 });
           if (event.currentTarget.hasPointerCapture(event.pointerId)) {
             event.currentTarget.releasePointerCapture(event.pointerId);

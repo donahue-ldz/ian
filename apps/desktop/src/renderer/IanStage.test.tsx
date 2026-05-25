@@ -47,6 +47,7 @@ describe("IanStage desktop chrome", () => {
     const html = renderToStaticMarkup(<IanStage {...baseProps()} />);
 
     expect(html).toContain('data-dragging="false"');
+    expect(html).toContain('data-drag-phase="resting"');
   });
 
   it("marks movement profiles so CSS can express body feel", () => {
@@ -107,7 +108,12 @@ describe("IanStage idle visual comfort", () => {
     expect(ianStageCss).toContain(
       '.ian-creature-surface[data-dragging="true"] .ian-sprite',
     );
+    expect(ianStageCss).toContain('[data-drag-phase="pickup"]');
+    expect(ianStageCss).toContain('[data-drag-phase="carried"]');
+    expect(ianStageCss).toContain('[data-drag-phase="dropping"]');
     expect(ianStageCss).toContain("@keyframes ian-carry-wiggle");
+    expect(ianStageCss).toContain("@keyframes ian-pickup-flinch");
+    expect(ianStageCss).toContain("@keyframes ian-drop-squash");
   });
 
   it("defines the tail wag micro-life visual effect", () => {
